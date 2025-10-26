@@ -1,0 +1,7 @@
+{
+  "name": "alertbxt",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
