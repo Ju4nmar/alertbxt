@@ -1,0 +1,115 @@
+@import '../theme/variables';
+
+/* ================= ENCABEZADO ================= */
+ion-header,
+ion-toolbar {
+  --background: #0b2f78;
+  --color: #ffffff;
+}
+
+ion-toolbar ion-title {
+  font-weight: bold;
+}
+
+/* ================= MENÚ LATERAL ================= */
+ion-menu {
+  --width: 200px;
+  background: #ffffff;
+  border-right: 1px solid #dcdcdc;
+}
+
+/* Título del menú */
+.menu-title {
+  display: block;
+  padding: 16.5px 16px;
+  font-size: 20px;
+  font-weight: bold;
+  background: #0b2f78;
+  color: #ffffff;
+}
+
+/* Ajuste específico para iPhone (iOS) */
+.ios .menu-title {
+  margin-bottom: 8px;
+}
+
+/* ================= ÍTEMS ================= */
+ion-item {
+  --background: #ffffff;
+  --color: #333;
+  --padding-start: 16px;
+  transition: background 0.2s;
+
+  ion-icon {
+    color: #ef4444;
+    font-size: 1.4rem;
+    margin-right: 8px;
+  }
+}
+
+/* Ítem activo */
+ion-item.router-link-active {
+  --background: #0b2f78;
+  --color: #ffffff;
+}
+
+/* ================= MENÚ HAMBURGUESA ================= */
+ion-menu-button {
+  display: none; /* Ocultar en pantallas grandes */
+}
+
+/* Mostrar menú hamburguesa solo en móviles */
+@media (max-width: 991px) {
+  ion-menu-button {
+    display: block !important;
+    color: #ffffff; /* Asegura que se vea sobre el fondo azul */
+  }
+
+  ion-split-pane {
+    --side-min-width: 0;
+    --side-max-width: 0;
+  }
+
+  ion-menu {
+    --width: 250px;
+  }
+}
+
+/* ================= BOTÓN SOS ================= */
+.sos-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  margin-top: 2rem;
+}
+
+.sos-btn {
+  --background: #e32636;
+  --color: white;
+  width: 80px;
+  height: 80px;
+  border-radius: 100%;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(227, 38, 54, 0.6);
+}
+
+/* ================= USUARIO LOGUEADO ================= */
+.user-info {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 15px;
+}
+
+.user-icon {
+  font-size: 1.4rem;
+  color: #ef4444;
+}
+
+ion-label {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #ffffff;
+}

@@ -1,0 +1,53 @@
+<ion-content>
+  <h2 class="page-title">Gestión de Avisos</h2>
+
+  <form (ngSubmit)="guardarAviso()">
+    <ion-item>
+      <ion-label position="floating">Título del aviso</ion-label>
+      <ion-input [(ngModel)]="titulo" name="titulo"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Tipo de aviso</ion-label>
+      <ion-select [(ngModel)]="tipo" name="tipo">
+        <ion-select-option value="emergencia">Emergencia</ion-select-option>
+        <ion-select-option value="mantenimiento"
+          >Mantenimiento</ion-select-option
+        >
+        <ion-select-option value="informativo">Informativo</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Descripción</ion-label>
+      <ion-textarea [(ngModel)]="descripcion" name="descripcion"></ion-textarea>
+    </ion-item>
+
+    <div class="upload-container">
+      <label class="custom-file-upload">
+        <input type="file" (change)="seleccionarArchivo($event)" />
+        <span>Seleccionar archivo</span>
+      </label>
+      <p *ngIf="archivo" class="file-name">{{ archivo.name }}</p>
+    </div>
+
+    <ion-button expand="block" type="submit">
+      {{ idEditando ? 'Actualizar Aviso' : 'Guardar Aviso' }}
+    </ion-button>
+  </form>
+
+  <div class="lista-avisos">
+    <h3>Avisos registrados</h3>
+
+    <div *ngFor="let aviso of avisos" class="aviso-item">
+      <span>{{ aviso.titulo }}</span>
+
+      <div class="acciones">
+        <button class="btn-Editar" (click)="editarAviso(aviso)">Editar</button>
+        <button class="btn-Eliminar" (click)="eliminarAviso(aviso.id)">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</ion-content>

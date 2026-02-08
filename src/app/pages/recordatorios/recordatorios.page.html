@@ -1,0 +1,46 @@
+<ion-content>
+  <h2 class="page-title">Recordatorios</h2>
+
+  <!-- Formulario para crear recordatorio -->
+  <form (ngSubmit)="guardarRecordatorio()">
+    <ion-item>
+      <ion-label position="floating">Título</ion-label>
+      <ion-input [(ngModel)]="titulo" name="titulo"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Descripción</ion-label>
+      <ion-textarea [(ngModel)]="descripcion" name="descripcion"></ion-textarea>
+    </ion-item>
+
+    <div class="input-group">
+      <label for="fecha">Fecha y hora del recordatorio:</label>
+      <input type="datetime-local" id="fecha" name="fecha" />
+    </div>
+
+    <ion-button expand="block" type="submit" class="guardar-btn">
+      {{ idEditando ? 'Actualizar' : 'Guardar' }}
+    </ion-button>
+  </form>
+
+  <!-- Lista de recordatorios -->
+  <div class="lista-recordatorios">
+    <h3>Lista de Recordatorios</h3>
+
+    <div *ngFor="let recordatorio of recordatorios" class="recordatorio-item">
+      <span>{{ recordatorio.titulo }}</span>
+
+      <div class="acciones">
+        <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">
+          Editar
+        </button>
+        <button
+          class="btn-eliminar"
+          (click)="eliminarRecordatorio(recordatorio.id)"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</ion-content>

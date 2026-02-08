@@ -1,3 +1,54 @@
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+  <ion-split-pane contentId="main-content" when="lg">
+    <!-- id del menu para controlarlo -->
+    <ion-menu contentId="main-content" type="overlay" menuId="main-menu">
+      <ion-content class="menu-content">
+        <div class="menu-title">AlertBxt</div>
+        <ion-list>
+          <ion-item button (click)="onMenuItemClick('/alertas-eventos')" [class.router-link-active]="currentPath === '/alertas-eventos'">
+            <ion-icon slot="start" name="alert-circle"></ion-icon>
+            <ion-label>Alertas y Eventos</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="onMenuItemClick('/gestion-avisos')" [class.router-link-active]="currentPath === '/gestion-avisos'">
+            <ion-icon slot="start" name="notifications"></ion-icon>
+            <ion-label>Gestión de Avisos</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="onMenuItemClick('/recordatorios')" [class.router-link-active]="currentPath === '/recordatorios'">
+            <ion-icon slot="start" name="calendar"></ion-icon>
+            <ion-label>Recordatorios</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="onMenuItemClick('/perfil-usuario')" [class.router-link-active]="currentPath === '/perfil-usuario'">
+            <ion-icon slot="start" name="person"></ion-icon>
+            <ion-label>Perfil de usuario</ion-label>
+          </ion-item>
+        </ion-list>
+
+        <div class="sos-container">
+          <ion-button class="sos-btn" (click)="generarAlerta()">
+            SOS
+          </ion-button>
+        </div>
+      </ion-content>
+    </ion-menu>
+
+    <ion-content id="main-content" class="main-content">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-menu-button color="primary"></ion-menu-button>
+          </ion-buttons>
+
+          <ion-buttons slot="end" class="user-info">
+            <ion-label>{{ nombreUsuario || "Administrador" }}</ion-label>
+            <ion-icon name="person" class="user-icon"></ion-icon>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-router-outlet></ion-router-outlet>
+    </ion-content>
+  </ion-split-pane>
 </ion-app>

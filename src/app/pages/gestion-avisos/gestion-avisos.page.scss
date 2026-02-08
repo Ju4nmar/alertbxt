@@ -1,0 +1,117 @@
+.page-title {
+  padding-top: 70px;
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.upload-box {
+  margin: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.guardar-btn {
+  margin: 1.5rem;
+}
+
+h3 {
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.lista-avisos {
+  margin-top: 20px;
+}
+
+.aviso-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px;
+  padding: 8px 12px;
+  border: 1px solid #cfcccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.upload-container {
+  display: flex;
+  gap: 5px;
+  align-items: flex-start;
+  margin: 1rem 16px;
+}
+
+.custom-file-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0b2f78;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.custom-file-upload:hover {
+  background: #153f9f;
+}
+
+.custom-file-upload input {
+  display: none;
+}
+
+.file-name {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-Editar {
+  background: #2590e7;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  border: none;
+}
+
+.btn-Eliminar {
+  background: #ef4444;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  border: none;
+}
+
+/* ✅ Vista móvil: título arriba y botones abajo */
+@media (max-width: 768px) {
+  .aviso-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .acciones {
+    margin-top: 8px;
+    justify-content: center;
+  }
+
+  .btn-Editar{
+    margin-right: 15px;
+  }
+}

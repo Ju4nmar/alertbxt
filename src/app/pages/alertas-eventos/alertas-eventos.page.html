@@ -1,0 +1,65 @@
+<ion-content scrollEvents="true" (ionScroll)="scrollChanged($event)">
+  <h2 class="page-title">Alertas y Eventos</h2>
+
+  <!-- Carrusel de tarjetas -->
+  <div class="cards-container">
+    <div
+      class="cards-scroll"
+      [style.transform]="'translateX(-' + (currentPage * 100) + '%)'"
+    >
+      <div class="cards-group" *ngFor="let grupo of gruposAvisos">
+        <div *ngFor="let aviso of grupo" class="alert-card">
+          <div class="header">{{ aviso.titulo }}</div>
+          <img *ngIf="aviso.imagen" [src]="aviso.imagen" class="card-img" />
+          <div class="content">
+            <p>
+              {{ aviso.descripcion | slice: 0:50 }}
+              {{ aviso.descripcion.length > 50 ? '...' : '' }}
+            </p>
+            <ion-button fill="clear" (click)="abrirModal(aviso)">Ver más</ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones inferiores -->
+  <div class="dots-container">
+    <div
+      *ngFor="let grupo of gruposAvisos; let i = index"
+      class="dot"
+      [class.active]="i === currentPage"
+      (click)="cambiarPagina(i)"
+    ></div>
+  </div>
+</ion-content>
+
+<!-- ✅ MODAL -->
+<ion-modal
+  [isOpen]="modalAbierto"
+  (didDismiss)="cerrarModal()"
+  (ionModalDidPresent)="onModalPresent()"
+>
+  <ion-content class="modal-content">
+    <div *ngIf="avisoSeleccionado" class="modal-card">
+      <h2 class="modal-title">{{ avisoSeleccionado.titulo }}</h2>
+      <img
+        *ngIf="avisoSeleccionado.imagen"
+        [src]="avisoSeleccionado.imagen"
+        class="modal-img"
+      />
+      <div class="modal-details">
+        <p class="modal-text">{{ avisoSeleccionado.descripcion }}</p>
+        <p *ngIf="avisoSeleccionado.tipo">
+          <strong>Tipo:</strong> {{ avisoSeleccionado.tipo }}
+        </p>
+        <p *ngIf="avisoSeleccionado.fecha">
+          <strong>Fecha:</strong>
+          {{ avisoSeleccionado.fecha | date: 'medium' }}
+        </p>
+      </div>
+      <ion-button expand="block" (click)="cerrarModal()">Cerrar</ion-button>
+    </div>
+    <div *ngIf="!avisoSeleccionado" style="color: red;">No hay datos seleccionados</div>
+  </ion-content>
+</ion-modal>

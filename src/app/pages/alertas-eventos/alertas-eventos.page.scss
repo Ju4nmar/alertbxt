@@ -1,0 +1,229 @@
+ion-content {
+  text-align: center;
+}
+.page-title {
+  padding-top: 70px;
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+
+ion-title {
+  margin-top: 1.5rem;
+  font-weight: bold;
+  font-size: 1.2rem;
+  padding-top: 60px;
+  padding-bottom: 15px;
+}
+
+/* ==================== CARRUSEL ==================== */
+.cards-container {
+  overflow: hidden;
+  width: 100%;
+  margin: auto;
+  min-height: 400px;
+}
+
+.cards-scroll {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  width: 100%;
+}
+
+.cards-group {
+  flex: 0 0 100%;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 15px;
+}
+
+/* Tarjetas */
+.alert-card {
+  width: 200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.alert-card:hover {
+  transform: translateY(-3px);
+}
+
+.header {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.6rem;
+  border-radius: 12px 12px 0 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.content {
+  padding: 0.8rem;
+  font-size: 0.9rem;
+}
+
+/* ==================== DOTS ==================== */
+.dots-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.8rem;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.dot.active {
+  background: #007bff;
+}
+
+/* ==================== MODAL ==================== */
+.modal-content {
+  text-align: center;
+  padding: 1.4rem;
+  background: white !important;
+  color: #000 !important;
+  height: auto !important;
+  min-height: 200px;
+  overflow: auto;
+  display: block !important;
+}
+
+.modal-card {
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+}
+
+.modal-img {
+  max-width: 90%;
+  max-height: 250px;
+  object-fit: contain;
+  display: block;
+  margin: 1rem auto;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.modal-details {
+  text-align: left;
+  margin: 1rem 0;
+  padding: 0 1rem;
+}
+
+.modal-text {
+  margin-top: 0.6rem;
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+ion-button {
+  margin-top: 1rem;
+  --background: #ef4444;
+  --color: white;
+  --border-radius: 8px;
+}
+
+ion-modal::part(content) {
+  background: white !important;
+}
+
+ion-modal {
+  --width: 80%;
+  --max-width: 400px;
+  --height: auto;
+  --border-radius: 14px;
+  --background: rgba(0, 0, 0, 0.4);
+}
+
+/* ==================== SOLO VISTA MÓVIL ==================== */
+@media (max-width: 768px) {
+  .cards-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    
+  }
+
+  .cards-scroll,
+  .cards-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .alert-card {
+    width: 90%;
+    max-width: 350px;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+
+  .dots-container {
+    display: none;
+  }
+}
+
+/* ==================== AJUSTES EXTRA PARA iPHONE (Safari) ==================== */
+@supports (-webkit-touch-callout: none) {
+  ion-content {
+    --overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cards-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cards-group {
+    align-items: stretch;
+  }
+
+  .alert-card {
+    width: 90%;
+    max-width: 380px;
+  }
+
+  ion-header, ion-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .modal-content {
+    height: auto !important;
+    overflow-y: auto !important;
+  }
+}
+
