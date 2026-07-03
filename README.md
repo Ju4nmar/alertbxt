@@ -1,154 +1,123 @@
-# AlertBxt
+<p align="center">
+  <img src="src/assets/icon/Alertlogo.png" width="120" />
+</p>
+
+<h1 align="center">AlertBxt</h1>
 
 <p align="center">
-  <img src="src/assets/icon/Alertlogo.png" alt="AlertBxt Logo" width="180">
+  Plataforma web progresiva para la gestión de alertas comunitarias, avisos y recordatorios en conjuntos residenciales.
 </p>
 
 <p align="center">
-  <strong>Aplicación Web Progresiva (PWA) para la gestión de alertas, avisos y recordatorios en comunidades residenciales.</strong>
-</p>
-
-<p align="center">
-Proyecto de grado · Ingeniería de Sistemas · UNIAJC
+  Angular • Ionic • Firebase • PWA
 </p>
 
 ---
 
-## Descripción
+## 📌 Descripción del proyecto
 
-AlertBxt es una Aplicación Web Progresiva (PWA) desarrollada para mejorar la comunicación entre administradores y residentes dentro de comunidades residenciales.
+AlertBxt es una aplicación web progresiva (PWA) diseñada para mejorar la comunicación y seguridad en comunidades residenciales.
 
-Aunque nació como un proyecto aplicado a los conjuntos Aureal y Caña Dulce, su arquitectura permite adaptarse a cualquier conjunto residencial o comunidad que requiera una plataforma centralizada para gestionar alertas, avisos y recordatorios.
+Permite a los usuarios reportar alertas en tiempo real, gestionar avisos administrativos y crear recordatorios personales dentro de su comunidad.
 
-La aplicación fue desarrollada utilizando Angular, Ionic y Firebase, ofreciendo una experiencia moderna, rápida e instalable en dispositivos móviles y computadores.
-
----
-
-## Estado del proyecto
-
-**Versión actual:** v1.0.0
-
-Estado:
-
-- En desarrollo activo
-- Funcional
-- Desplegado en Firebase Hosting
-
-### Próximas mejoras
-
-- Notificaciones Push mediante Firebase Cloud Messaging (FCM)
-- Mejoras de rendimiento
-- Nuevas funciones para administradores
-- Optimización de la experiencia de usuario
+El sistema está basado en roles (administrador y residente) y utiliza Firebase como backend en tiempo real.
 
 ---
 
-## Demo
+## 🚨 Funcionalidades principales
 
-Aplicación disponible en:
-
-https://alertbxt.web.app
-
----
-
-## Características
-
-### Residentes
-
+### 👥 Usuarios
 - Registro e inicio de sesión
-- Creación de alertas SOS
-- Creación de recordatorios
-- Administración del perfil
-- Unirse a una vecindad
+- Roles: administrador y residente
+- Gestión de perfil
 
-### Administradores
+### 🚨 Alertas (SOS)
+- Creación de alertas en tiempo real por cualquier usuario
+- Visualización de alertas en la comunidad
 
-- Gestión de avisos comunitarios
-- Administración de usuarios
-- Publicación de información para toda la comunidad
+### 📢 Avisos
+- Solo administradores pueden crear avisos
+- Categorías: mantenimiento, emergencia, informativo
 
-### Funcionalidades generales
+### 📝 Recordatorios
+- Creación de recordatorios personales
+- Gestión individual por usuario
 
-- Autenticación con Firebase Authentication
-- Base de datos en Firestore
-- Aplicación Web Progresiva (PWA)
-- Instalación en dispositivos móviles
-- Notificaciones locales
-- Control de acceso mediante roles
+### 🔔 Notificaciones
+- Notificaciones locales en navegador/dispositivo
 
 ---
 
-## Tecnologías utilizadas
+## 🧱 Arquitectura del sistema
 
-Frontend
-
-- Angular 20
-- Ionic 8
-- TypeScript
-- SCSS
-
-Backend / Cloud
-
-- Firebase Authentication
-- Cloud Firestore
-- Firebase Hosting
-
-Herramientas
-
-- Angular CLI
-- Capacitor
-- Git
-- GitHub
+- Frontend: Angular + Ionic
+- Backend: Firebase
+  - Authentication
+  - Firestore Database
+  - Storage
+- Hosting: Firebase Hosting
+- PWA: Service Workers habilitados
 
 ---
 
-## Arquitectura del proyecto
+## 🔐 Seguridad
 
-```
+- Reglas de Firestore basadas en roles
+- Validación de comunidad por usuario
+- Restricción de acceso por autenticación
+- Control de permisos por documento
+
+---
+
+## 📁 Estructura del proyecto
+
+```bash
 src/
-│
-├── app/
-│   ├── guards/
-│   ├── models/
-│   ├── pages/
-│   └── services/
-│
-├── assets/
-│
-├── environments/
-│
-└── theme/
+ ├── app/
+ │   ├── pages/
+ │   │   ├── alertas-eventos/
+ │   │   ├── gestion-avisos/
+ │   │   ├── recordatorios/
+ │   │   ├── login/
+ │   │   ├── registro/
+ │   │   ├── perfil-usuario/
+ │   │   ├── forgot-password/
+ │   │   ├── gestion-usuarios/
+ │   │   └── unirse-vecindad/
+ │   ├── services/
+ │   ├── guards/
+ │   ├── models/
+ │   ├── app.routes.ts
+ │   ├── app.config.ts
+ │   └── app.component.ts
+ │
+ ├── assets/
+ │   ├── icon/
+ │   ├── sirena-alerta.webp
+ │   └── Alertlogo.png
+ │
+ ├── environments/
+ │   ├── environment.ts
+ │   └── environment.prod.ts
+ │
+ ├── global.scss
+ ├── index.html
+ └── main.ts
 ```
-
 ---
 
-## Instalación
-
-Clonar el repositorio
+## ⚙️ Instalación y ejecución
 
 ```bash
 git clone https://github.com/Ju4nmar/alertbxt.git
-```
-
-Entrar al proyecto
-
-```bash
 cd alertbxt
-```
-
-Instalar dependencias
-
-```bash
 npm install
+ng serve
 ```
 
-Ejecutar
+---
 
-```bash
-ionic serve
-```
-
-Compilar
+## 🚀 Build de producción
 
 ```bash
 npm run build
@@ -156,59 +125,26 @@ npm run build
 
 ---
 
-## Estructura funcional
+## 🌐 Deploy
 
-La aplicación cuenta con dos roles principales:
-
-### Administrador
-
-- Gestionar avisos
-- Gestionar usuarios
-- Administrar información de la comunidad
-
-### Residente
-
-- Crear alertas SOS
-- Crear recordatorios
-- Gestionar su perfil
+```bash
+firebase deploy
+```
 
 ---
 
-## Seguridad
+## 👨‍💻 Autores
 
-AlertBxt utiliza servicios de Firebase para:
-
-- Firebase Authentication
-- Cloud Firestore
-- Reglas de seguridad mediante Firestore Rules
-- Storage Rules
-
-La configuración pública de Firebase utilizada por la aplicación corresponde únicamente a la configuración del cliente y no incluye credenciales privadas.
+- Paola Andrea García Díaz  
+- Juan Martín Hernández Pulgarín  
+- Andrés Camilo Millán Arango  
 
 ---
 
-## Equipo de desarrollo
+## 📌 Estado del proyecto
 
-Proyecto desarrollado por:
+✔ En desarrollo  
+✔ Funcional  
+✔ Desplegado en Firebase Hosting  
 
-- Paola Andrea García Díaz
-- Juan Martín Hernández Pulgarín
-- Andrés Camilo Millán Arango
 
-Ingeniería de Sistemas
-
-UNIAJC
-
----
-
-## Licencia
-
-Este proyecto se distribuye bajo la licencia MIT.
-
----
-
-## Autor
-
-Desarrollado como Proyecto de Grado para optar al título de Ingeniero de Sistemas.
-
-2026
