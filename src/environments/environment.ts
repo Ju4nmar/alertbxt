@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   firebaseConfig : {
-  apiKey: "AIzaSyC2IYSbpZxvxUlHYCqS0oWPh0-pFu__8X8",
+  apiKey: "AIzaSyAgcluXkKPlYonfQSBDFqZUotBcyU-tpBA",
   authDomain: "alertbxt.firebaseapp.com",
   projectId: "alertbxt",
   storageBucket: "alertbxt.firebasestorage.app",
