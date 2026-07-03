@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasUserDoc() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function currentUser() {
+      return firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    match /avisos/{comunidadId}/{fileName} {
+      allow read: if hasUserDoc()
+        && currentUser().comunidadId == comunidadId;
+      allow write: if hasUserDoc()
+        && currentUser().rol == 'admin'
+        && currentUser().comunidadId == comunidadId
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+  }
+}

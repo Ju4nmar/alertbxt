@@ -1,54 +1,76 @@
 <ion-app>
-  <ion-split-pane contentId="main-content" when="lg">
-    <!-- id del menu para controlarlo -->
-    <ion-menu contentId="main-content" type="overlay" menuId="main-menu">
+  <div *ngIf="showSplash" class="app-splash">
+    <img src="assets/icon/Alertlogo.png" alt="AlertBxt" width="128" height="128" decoding="async" />
+    <span>AlertBxt</span>
+  </div>
+
+  <ion-split-pane contentId="main-content" when="lg" [disabled]="!isLoggedIn">
+    <ion-menu *ngIf="isLoggedIn" contentId="main-content" type="overlay" menuId="main-menu">
       <ion-content class="menu-content">
         <div class="menu-title">AlertBxt</div>
         <ion-list>
-          <ion-item button (click)="onMenuItemClick('/alertas-eventos')" [class.router-link-active]="currentPath === '/alertas-eventos'">
+          <ion-item button (click)="goToAlertasyEventos()">
             <ion-icon slot="start" name="alert-circle"></ion-icon>
             <ion-label>Alertas y Eventos</ion-label>
           </ion-item>
 
-          <ion-item button (click)="onMenuItemClick('/gestion-avisos')" [class.router-link-active]="currentPath === '/gestion-avisos'">
+          <ion-item *ngIf="currentUser?.rol === 'admin'" button (click)="goToGestionAvisos()">
             <ion-icon slot="start" name="notifications"></ion-icon>
-            <ion-label>Gestión de Avisos</ion-label>
+            <ion-label>Gestion de Avisos</ion-label>
           </ion-item>
 
-          <ion-item button (click)="onMenuItemClick('/recordatorios')" [class.router-link-active]="currentPath === '/recordatorios'">
+          <ion-item button (click)="goToRecordatorios()">
             <ion-icon slot="start" name="calendar"></ion-icon>
             <ion-label>Recordatorios</ion-label>
           </ion-item>
 
-          <ion-item button (click)="onMenuItemClick('/perfil-usuario')" [class.router-link-active]="currentPath === '/perfil-usuario'">
+          <ion-item *ngIf="currentUser?.rol === 'admin'" button (click)="goToGestionUsuarios()">
+            <ion-icon slot="start" name="people"></ion-icon>
+            <ion-label>Gestión de Usuarios</ion-label>
+          </ion-item>
+
+          <ion-item *ngIf="!currentUser?.comunidadId" button (click)="goToUnirseVecindad()">
+            <ion-icon slot="start" name="people"></ion-icon>
+            <ion-label>Unirse a Vecindad</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="goToPerfilUsuario()">
             <ion-icon slot="start" name="person"></ion-icon>
             <ion-label>Perfil de usuario</ion-label>
+          </ion-item>
+
+          <ion-item *ngIf="isMobileDevice && (canInstallPwa || showIosInstallHelp)" button (click)="installPwa()" class="install-item">
+            <ion-icon slot="start" name="download"></ion-icon>
+            <ion-label>Instalar app</ion-label>
           </ion-item>
         </ion-list>
 
         <div class="sos-container">
-          <ion-button class="sos-btn" (click)="generarAlerta()">
+          <ion-button class="sos-btn" (click)="generarAlerta()" [disabled]="!currentUser?.comunidadId">
             SOS
           </ion-button>
         </div>
       </ion-content>
     </ion-menu>
 
-    <ion-content id="main-content" class="main-content">
-      <ion-header>
+    <div id="main-content" class="main-content">
+      <ion-header *ngIf="isLoggedIn">
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-menu-button color="primary"></ion-menu-button>
+            <ion-menu-button color="primary" aria-label="Abrir menu principal"></ion-menu-button>
           </ion-buttons>
 
           <ion-buttons slot="end" class="user-info">
-            <ion-label>{{ nombreUsuario || "Administrador" }}</ion-label>
+            <ion-label>{{ nombreUsuario || "Usuario" }}</ion-label>
             <ion-icon name="person" class="user-icon"></ion-icon>
+            <ion-button fill="clear" (click)="logout()" aria-label="Cerrar sesion">
+              <ion-icon name="log-out" slot="icon-only"></ion-icon>
+            </ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
 
-      <ion-router-outlet></ion-router-outlet>
-    </ion-content>
+      <router-outlet></router-outlet>
+    </div>
   </ion-split-pane>
 </ion-app>

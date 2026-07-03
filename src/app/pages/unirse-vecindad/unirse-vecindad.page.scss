@@ -1,0 +1,49 @@
+ion-content {
+  --background: #ffffff;
+  color: #111827;
+}
+
+ion-content::part(scroll) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+}
+
+form {
+  width: min(100%, 460px);
+  padding: 1.2rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+ion-item {
+  width: 100%;
+}
+
+ion-input {
+  --color: #111827;
+}
+
+ion-button {
+  --border-radius: 8px;
+  --background: #0b2f78;
+  --color: #ffffff;
+  margin-top: 14px;
+}
+
+ion-button[fill="clear"] {
+  --background: transparent;
+  --color: #0b2f78;
+}
+
+@media (max-width: 768px) {
+  ion-content::part(scroll) {
+    align-items: flex-start;
+  }
+
+  form {
+    margin-top: 1rem;
+  }
+}

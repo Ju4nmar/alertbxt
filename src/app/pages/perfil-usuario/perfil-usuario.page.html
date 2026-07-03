@@ -1,5 +1,79 @@
-<ion-content class="ion-padding">
-  <div class="perfil-container">
-    <h2 class="titulo-desarrollo">Sección en desarrollo 🚧</h2>
-  </div>
+<ion-content>
+  <h2 class="page-title">Perfil de Usuario</h2>
+
+  <section class="perfil-panel">
+    <h3>Datos personales</h3>
+
+    <form *ngIf="usuario" #perfilForm="ngForm" (ngSubmit)="guardarPerfil()" novalidate>
+      <div class="perfil-grid">
+        <ion-item>
+          <ion-input label="Nombre" label-placement="floating" [(ngModel)]="nombre" name="nombre" required minlength="3" maxlength="80" #nombreInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="nombreInput.invalid && (nombreInput.dirty || nombreInput.touched)" class="field-error">
+          <span *ngIf="nombreInput.errors?.['required']">El nombre es requerido.</span>
+          <span *ngIf="nombreInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+          <span *ngIf="nombreInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
+        </div>
+
+        <ion-item>
+          <ion-input label="Correo" label-placement="floating" type="email" [(ngModel)]="correo" name="correo" required email maxlength="120" #correoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="correoInput.invalid && (correoInput.dirty || correoInput.touched)" class="field-error">
+          <span *ngIf="correoInput.errors?.['required']">El correo es requerido.</span>
+          <span *ngIf="correoInput.errors?.['email']">Ingresa un correo valido.</span>
+          <span *ngIf="correoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
+        </div>
+
+        <ion-item>
+          <ion-input label="Telefono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="telefonoInput.invalid && (telefonoInput.dirty || telefonoInput.touched)" class="field-error">
+          <span *ngIf="telefonoInput.errors?.['required']">El telefono es requerido.</span>
+          <span *ngIf="telefonoInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
+          <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo numeros, espacios o +, maximo 15 caracteres.</span>
+        </div>
+
+        <ion-item>
+          <ion-select label="Rol" label-placement="floating" [(ngModel)]="rol" name="rol" [disabled]="usuario.rol !== 'admin'" (ionChange)="mensajeGuardado = ''">
+            <ion-select-option value="admin">admin</ion-select-option>
+            <ion-select-option value="residente">residente</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
+
+      <ion-button class="save-btn" type="submit" [disabled]="perfilForm.invalid || isSaving">
+        {{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}
+      </ion-button>
+    </form>
+    <p *ngIf="mensajeGuardado" class="copy-message">{{ mensajeGuardado }}</p>
+  </section>
+
+  <section class="perfil-panel">
+    <h3>Vecindad</h3>
+
+    <div *ngIf="comunidad; else sinComunidad" class="invite-box">
+      <ion-item>
+        <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" [readonly]="usuario?.rol !== 'admin'" maxlength="60" (ionInput)="mensajeGuardado = ''"></ion-input>
+      </ion-item>
+      <p class="field-hint">Maximo 60 caracteres.</p>
+
+      <p class="invite-label">Codigo de invitacion</p>
+      <div class="codigo-row">
+        <span>{{ comunidad.codigoInvitacion }}</span>
+        <ion-button size="small" (click)="copiarCodigo()">Copiar</ion-button>
+      </div>
+
+      <p class="invite-label">Enlace de invitacion</p>
+      <div class="link-row">
+        <span>{{ enlaceInvitacion }}</span>
+        <ion-button size="small" (click)="copiarEnlace()">Copiar enlace</ion-button>
+      </div>
+
+      <p *ngIf="mensajeCopiado" class="copy-message">{{ mensajeCopiado }}</p>
+    </div>
+
+    <ng-template #sinComunidad>
+      <p class="empty-text">Aun no perteneces a una vecindad.</p>
+    </ng-template>
+  </section>
 </ion-content>

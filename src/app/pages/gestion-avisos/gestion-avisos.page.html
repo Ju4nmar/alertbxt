@@ -1,52 +1,64 @@
 <ion-content>
-  <h2 class="page-title">Gestión de Avisos</h2>
+  <h2 class="page-title">Gestion de Avisos</h2>
 
-  <form (ngSubmit)="guardarAviso()">
+  <form class="aviso-form" (ngSubmit)="guardarAviso()" #avisoForm="ngForm" novalidate>
+    <h3>{{ idEditando ? 'Editar Aviso' : 'Crear Aviso' }}</h3>
+
     <ion-item>
-      <ion-label position="floating">Título del aviso</ion-label>
-      <ion-input [(ngModel)]="titulo" name="titulo"></ion-input>
+      <ion-input label="Titulo del aviso" label-placement="floating" [(ngModel)]="titulo" name="titulo" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="avisoError = ''"></ion-input>
     </ion-item>
+    <div *ngIf="tituloInput.invalid && (tituloInput.dirty || tituloInput.touched)" class="field-error">
+      <span *ngIf="tituloInput.errors?.['required']">El titulo del aviso es requerido.</span>
+      <span *ngIf="tituloInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+      <span *ngIf="tituloInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
+    </div>
 
     <ion-item>
-      <ion-label>Tipo de aviso</ion-label>
-      <ion-select [(ngModel)]="tipo" name="tipo">
+      <ion-select label="Tipo de aviso" label-placement="floating" [(ngModel)]="tipo" name="tipo" required #tipoInput="ngModel" (ionChange)="avisoError = ''">
         <ion-select-option value="emergencia">Emergencia</ion-select-option>
-        <ion-select-option value="mantenimiento"
-          >Mantenimiento</ion-select-option
-        >
+        <ion-select-option value="mantenimiento">Mantenimiento</ion-select-option>
         <ion-select-option value="informativo">Informativo</ion-select-option>
       </ion-select>
     </ion-item>
+    <div *ngIf="tipoInput.invalid && (tipoInput.dirty || tipoInput.touched)" class="field-error">
+      Selecciona el tipo de aviso.
+    </div>
 
     <ion-item>
-      <ion-label position="floating">Descripción</ion-label>
-      <ion-textarea [(ngModel)]="descripcion" name="descripcion"></ion-textarea>
+      <ion-textarea label="Descripcion" label-placement="floating" [(ngModel)]="descripcion" name="descripcion" required minlength="10" maxlength="500" autoGrow="true" #descripcionInput="ngModel" (ionInput)="avisoError = ''"></ion-textarea>
     </ion-item>
+    <div *ngIf="descripcionInput.invalid && (descripcionInput.dirty || descripcionInput.touched)" class="field-error">
+      <span *ngIf="descripcionInput.errors?.['required']">La descripcion es requerida.</span>
+      <span *ngIf="descripcionInput.errors?.['minlength']">Debe tener al menos 10 caracteres.</span>
+      <span *ngIf="descripcionInput.errors?.['maxlength']">No debe superar 500 caracteres.</span>
+    </div>
 
     <div class="upload-container">
       <label class="custom-file-upload">
-        <input type="file" (change)="seleccionarArchivo($event)" />
+        <input type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" />
         <span>Seleccionar archivo</span>
       </label>
+      <p class="field-hint">Formatos permitidos: JPG, PNG o WebP. Tamano maximo original: 10 MB.</p>
       <p *ngIf="archivo" class="file-name">{{ archivo.name }}</p>
+      <p *ngIf="compressionInfo" class="compression-info">{{ compressionInfo }}</p>
     </div>
 
-    <ion-button expand="block" type="submit">
-      {{ idEditando ? 'Actualizar Aviso' : 'Guardar Aviso' }}
+    <div *ngIf="avisoError" class="error-message" role="alert">
+      {{ avisoError }}
+    </div>
+
+    <ion-button class="guardar-aviso" expand="block" type="submit" [disabled]="avisoForm.invalid || isLoading">
+      {{ isLoading ? 'Guardando...' : (idEditando ? 'Actualizar Aviso' : 'Guardar Aviso') }}
     </ion-button>
   </form>
 
   <div class="lista-avisos">
-    <h3>Avisos registrados</h3>
-
-    <div *ngFor="let aviso of avisos" class="aviso-item">
-      <span>{{ aviso.titulo }}</span>
-
+    <h3>Avisos Existentes</h3>
+    <div *ngFor="let aviso of avisos; trackBy: trackByAvisoId" class="aviso-item">
+      <h4 class="aviso-titulo">{{ aviso.tituloAviso }}</h4>
       <div class="acciones">
-        <button class="btn-Editar" (click)="editarAviso(aviso)">Editar</button>
-        <button class="btn-Eliminar" (click)="eliminarAviso(aviso.id)">
-          Eliminar
-        </button>
+        <ion-button class="btn-editar-aviso" (click)="editarAviso(aviso)">Editar</ion-button>
+        <ion-button class="btn-eliminar-aviso" (click)="eliminarAviso(aviso.idAviso)">Eliminar</ion-button>
       </div>
     </div>
   </div>

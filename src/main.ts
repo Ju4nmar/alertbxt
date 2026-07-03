@@ -1,47 +1,32 @@
+import { enableProdMode, isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import {
-  RouteReuseStrategy,
-  provideRouter,
-  withPreloading,
-  PreloadAllModules,
-} from '@angular/router';
-import {
-  IonicRouteStrategy,
-  provideIonicAngular,
-} from '@ionic/angular/standalone';
-
-import { provideStorage, getStorage } from '@angular/fire/storage';
-
-import { routes } from './app/app.routes';
-import { AppComponent } from './app/app.component';
-
-// 🔥 Importaciones de Firebase
-import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { RouteReuseStrategy, provideRouter } from '@angular/router';
+import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
+import { getApp, provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideServiceWorker } from '@angular/service-worker';
+
+import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
 import { environment } from './environments/environment';
 
-import { addIcons } from 'ionicons';
-import { alertCircle, notifications, calendar, person } from 'ionicons/icons';
-
-addIcons({
-  alertCircle,
-  notifications,
-  calendar,
-  person,
-});
+if (environment.production) {
+  enableProdMode();
+}
 
 bootstrapApplication(AppComponent, {
   providers: [
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    provideRouter(routes),
     provideIonicAngular(),
-    provideStorage(() => getStorage()),
-    provideRouter(routes, withPreloading(PreloadAllModules)),
-
-    // ✅ Inicializar Firebase
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
-    provideFirestore(() => getFirestore()),
+    provideFirestore(() => getFirestore(getApp())),
     provideAuth(() => getAuth()),
-    provideStorage(() => getStorage()),
-  ],
-});
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerImmediately',
+    }),
+  ]
+}).catch(err => console.error(err));
+

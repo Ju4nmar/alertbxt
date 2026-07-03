@@ -1,0 +1,79 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Unirse a Vecindad</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form (ngSubmit)="joinComunidad()" #unirseForm="ngForm" novalidate>
+    <ng-container *ngIf="!isLoggedIn">
+      <ion-item>
+        <ion-input label="Nombre completo" label-placement="floating" [(ngModel)]="nombre" name="nombre" required minlength="3" maxlength="80" #nombreInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="nombreInput.invalid && (nombreInput.dirty || nombreInput.touched)" class="field-error">
+        <span *ngIf="nombreInput.errors?.['required']">El nombre completo es requerido.</span>
+        <span *ngIf="nombreInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+        <span *ngIf="nombreInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Correo electronico" label-placement="floating" type="email" [(ngModel)]="correo" name="correo" required email maxlength="120" #correoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="correoInput.invalid && (correoInput.dirty || correoInput.touched)" class="field-error">
+        <span *ngIf="correoInput.errors?.['required']">El correo es requerido.</span>
+        <span *ngIf="correoInput.errors?.['email']">Ingresa un correo valido.</span>
+        <span *ngIf="correoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Telefono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="telefonoInput.invalid && (telefonoInput.dirty || telefonoInput.touched)" class="field-error">
+        <span *ngIf="telefonoInput.errors?.['required']">El telefono es requerido.</span>
+        <span *ngIf="telefonoInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
+        <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo numeros, espacios o +, maximo 15 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Contrasena" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">
+        <span *ngIf="passwordInput.errors?.['required']">La contrasena es requerida.</span>
+        <span *ngIf="passwordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
+        <span *ngIf="passwordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Confirmar contrasena" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required minlength="8" maxlength="40" #confirmPasswordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="field-error">
+        <span *ngIf="confirmPasswordInput.errors?.['required']">Confirma la contrasena.</span>
+        <span *ngIf="confirmPasswordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
+        <span *ngIf="confirmPasswordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+      </div>
+      <div *ngIf="confirmPassword && password !== confirmPassword" class="field-error">
+        Las contrasenas no coinciden.
+      </div>
+    </ng-container>
+
+    <ion-item>
+      <ion-input label="Codigo de invitacion" label-placement="floating" [(ngModel)]="codigoInvitacion" name="codigoInvitacion" required minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" placeholder="ABCD2345" #codigoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+    </ion-item>
+    <div *ngIf="codigoInput.invalid && (codigoInput.dirty || codigoInput.touched)" class="field-error">
+      <span *ngIf="codigoInput.errors?.['required']">El codigo de invitacion es requerido.</span>
+      <span *ngIf="codigoInput.errors?.['minlength'] || codigoInput.errors?.['maxlength'] || codigoInput.errors?.['pattern']">El codigo debe tener 8 letras o numeros.</span>
+    </div>
+
+    <div *ngIf="joinError" class="error-message" role="alert">
+      {{ joinError }}
+    </div>
+
+    <ion-button expand="block" type="submit" [disabled]="unirseForm.invalid || (!isLoggedIn && password !== confirmPassword) || isLoading">
+      {{ isLoading ? 'Uniendo...' : 'Unirse a Vecindad' }}
+    </ion-button>
+
+    <ion-button *ngIf="!isLoggedIn" expand="block" fill="clear" type="button" (click)="goToLogin()">
+      Ya tengo cuenta
+    </ion-button>
+  </form>
+</ion-content>

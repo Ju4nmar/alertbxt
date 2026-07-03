@@ -1,8 +1,7 @@
 {
   "name": "alertbxt",
-  "version": "0.0.1",
-  "author": "Ionic Framework",
-  "homepage": "https://ionicframework.com/",
+  "version": "1.0.0",
+  "author": "Paola Andrea García Díaz, Juan Martín Hernández Pulgarín, Andrés Camilo Millán Arango",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -22,6 +21,7 @@
     "@angular/platform-browser": "^20.0.0",
     "@angular/platform-browser-dynamic": "^20.0.0",
     "@angular/router": "^20.0.0",
+    "@angular/service-worker": "^20.3.7",
     "@capacitor/app": "7.1.0",
     "@capacitor/core": "7.4.4",
     "@capacitor/haptics": "7.0.2",
@@ -62,5 +62,5 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.8.0"
   },
-  "description": "An Ionic project"
+  "description": "Aplicación web progresiva para la gestión de alertas comunitarias, avisos y recordatorios en conjuntos residenciales, desarrollada con Angular, Ionic y Firebase."
 }

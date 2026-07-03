@@ -1,0 +1,126 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/usuarios/$(uid));
+    }
+
+    function currentUser() {
+      return userDoc(request.auth.uid).data;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdminForCommunity(comunidadId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && currentUser().rol == 'admin'
+        && currentUser().comunidadId == comunidadId;
+    }
+
+    function isMemberOfCommunity(comunidadId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && currentUser().comunidadId == comunidadId;
+    }
+
+    function isValidCommunity(comunidadId) {
+      return comunidadId is string
+        && comunidadId != ''
+        && exists(/databases/$(database)/documents/comunidades/$(comunidadId));
+    }
+
+    match /usuarios/{uid} {
+      allow read: if isSelf(uid)
+        || isAdminForCommunity(resource.data.comunidadId)
+        || isMemberOfCommunity(resource.data.comunidadId);
+
+      allow create: if isSelf(uid)
+        && request.resource.data.idUsuario == uid
+        && request.resource.data.correo == request.auth.token.email
+        && (
+          request.resource.data.rol == 'residente'
+          || (
+            request.resource.data.rol == 'admin'
+            && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
+            && get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.administradorCorreo == request.auth.token.email
+          )
+        );
+
+      allow update: if isSelf(uid)
+        && request.resource.data.idUsuario == uid
+        && (
+          request.resource.data.rol == resource.data.rol
+          || currentUser().rol == 'admin'
+        )
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['nombre', 'correo', 'telefono', 'rol', 'fotoPerfil', 'comunidadId', 'fechaRegistro'])
+        && request.resource.data.rol in ['admin', 'residente']
+        && (
+          request.resource.data.comunidadId == resource.data.comunidadId
+          || (
+            resource.data.comunidadId == ''
+            && isValidCommunity(request.resource.data.comunidadId)
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    match /comunidades/{comunidadId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.administradorCorreo == request.auth.token.email
+        && request.resource.data.codigoInvitacion is string
+        && request.resource.data.codigoInvitacion.size() == 8;
+
+      allow update, delete: if isAdminForCommunity(comunidadId);
+    }
+
+    match /avisos/{avisoId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+
+      allow create: if signedIn()
+        && request.resource.data.autorId == request.auth.uid
+        && isMemberOfCommunity(request.resource.data.comunidadId)
+        && request.resource.data.tipoAviso in ['alerta', 'emergencia', 'mantenimiento', 'informativo']
+        && (
+          request.resource.data.tipoAviso == 'alerta'
+          || isAdminForCommunity(request.resource.data.comunidadId)
+        );
+
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && request.resource.data.comunidadId == resource.data.comunidadId;
+
+      allow delete: if isAdminForCommunity(resource.data.comunidadId);
+    }
+
+    match /comunicados/{comunicadoId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+      allow create: if isAdminForCommunity(request.resource.data.comunidadId);
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && request.resource.data.comunidadId == resource.data.comunidadId;
+      allow delete: if isAdminForCommunity(resource.data.comunidadId);
+    }
+
+    match /recordatorios/{recordatorioId} {
+      allow read, delete: if signedIn() && resource.data.idUsuario == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.idUsuario == request.auth.uid
+        && request.resource.data.idUsuario == request.auth.uid
+        && request.resource.data.comunidadId == resource.data.comunidadId;
+      allow create: if signedIn()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && request.resource.data.idUsuario == request.auth.uid
+        && request.resource.data.comunidadId == currentUser().comunidadId;
+    }
+  }
+}

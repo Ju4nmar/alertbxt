@@ -1,0 +1,70 @@
+<ion-content>
+  <h2 class="page-title">Gestión de Usuarios</h2>
+
+  <div *ngIf="isLoading" class="loading-spinner">
+    Cargando usuarios...
+  </div>
+
+  <ion-list *ngIf="!isLoading && usuarios.length" class="usuarios-list">
+    <ion-item *ngFor="let usuario of usuarios; trackBy: trackByUsuarioId" button (click)="abrirDetalle(usuario)" class="usuario-item">
+      <ion-icon slot="start" name="person-circle" class="usuario-icon"></ion-icon>
+      <div class="usuario-info">
+        <ion-label class="usuario-nombre">{{ usuario.nombre }}</ion-label>
+        <span class="usuario-rol" [ngClass]="obtenerBadgeRol(usuario.rol).clase">
+          {{ obtenerBadgeRol(usuario.rol).label }}
+        </span>
+      </div>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="!isLoading && !usuarios.length" class="empty-state">
+    <p>No hay usuarios en esta comunidad</p>
+  </div>
+
+  <!-- Modal de detalle -->
+  <ion-modal [isOpen]="modalAbierto" (onDidDismiss)="cerrarModal()" class="usuario-modal">
+    <ng-template #content>
+      <ion-toolbar class="modal-toolbar">
+        <ion-label class="modal-title">Detalles del Usuario</ion-label>
+        <ion-button class="modal-close-btn" slot="end" fill="clear" type="button" (click)="cerrarModal()" aria-label="Cerrar detalles del usuario">
+          <ion-icon name="close" aria-hidden="true"></ion-icon>
+        </ion-button>
+      </ion-toolbar>
+
+      <div class="modal-content" *ngIf="usuarioSeleccionado">
+        <div class="usuario-avatar">
+          <ion-icon name="person-circle"></ion-icon>
+        </div>
+
+        <div class="usuario-detalles">
+          <div class="detalle-fila">
+            <span class="detalle-label">Nombre:</span>
+            <span class="detalle-valor">{{ usuarioSeleccionado.nombre || 'No disponible' }}</span>
+          </div>
+
+          <div class="detalle-fila">
+            <span class="detalle-label">Correo:</span>
+            <span class="detalle-valor">{{ usuarioSeleccionado.correo || 'No disponible' }}</span>
+          </div>
+
+          <div class="detalle-fila">
+            <span class="detalle-label">Teléfono:</span>
+            <span class="detalle-valor">{{ usuarioSeleccionado.telefono || 'No disponible' }}</span>
+          </div>
+
+          <div class="detalle-fila">
+            <span class="detalle-label">Rol:</span>
+            <span class="detalle-valor" [ngClass]="obtenerBadgeRol(usuarioSeleccionado.rol).clase">
+              {{ obtenerBadgeRol(usuarioSeleccionado.rol).label }}
+            </span>
+          </div>
+
+          <div class="detalle-fila" *ngIf="usuarioSeleccionado.fechaRegistro">
+            <span class="detalle-label">Registrado:</span>
+            <span class="detalle-valor">{{ usuarioSeleccionado.fechaRegistro | date: 'medium' }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </ion-modal>
+</ion-content>

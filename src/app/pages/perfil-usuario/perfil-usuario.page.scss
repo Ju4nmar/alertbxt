@@ -1,13 +1,87 @@
-.perfil-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80vh;
+.page-title {
+ // padding-top: 10px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.3rem;
 }
 
-.titulo-desarrollo {
+.perfil-panel {
+  max-width: 760px;
+  margin: 1rem auto;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.perfil-panel h3 {
+  margin: 0 0 1rem;
   text-align: center;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #444;
+  font-size: 1rem;
+}
+
+ion-item {
+  width: 100%;
+}
+
+ion-input,
+ion-select {
+  --color: #111827;
+}
+
+.perfil-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.invite-label {
+  margin: 0.8rem 0 0.4rem;
+  font-weight: 700;
+}
+
+.codigo-row,
+.link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.codigo-row span,
+.link-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-message,
+.empty-text {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-weight: 700;
+  color: #0b2f78;
+}
+
+ion-button {
+  --background: #0b2f78;
+  --color: #ffffff;
+}
+
+.save-btn {
+  display: block;
+  max-width: 220px;
+  margin: 1rem auto 0;
+}
+
+@media (max-width: 768px) {
+  .page-title { padding-top: 16px; }
+  .perfil-panel { margin: 0.8rem; }
+  .perfil-grid { grid-template-columns: 1fr; }
+  .codigo-row,
+  .link-row { align-items: stretch; flex-direction: column; }
 }

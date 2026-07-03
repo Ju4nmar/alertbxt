@@ -1,5 +1,3 @@
-@import '../theme/variables';
-
 /* ================= ENCABEZADO ================= */
 ion-header,
 ion-toolbar {
@@ -9,6 +7,98 @@ ion-toolbar {
 
 ion-toolbar ion-title {
   font-weight: bold;
+}
+
+.main-content {
+  width: 100%;
+  min-height: 100%;
+  background: var(--ion-background-color, #ffffff);
+}
+
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  display: grid;
+  place-content: center;
+  gap: 16px;
+  color: #0b2f78;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+  animation: splash-fade 0.28s ease 0.62s forwards;
+}
+
+.app-splash img {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  animation: drop-bounce 0.45s ease-out forwards;
+}
+
+.app-splash span {
+  width: 0;
+  overflow: hidden;
+  margin: 0 auto;
+  font-size: 1.3rem;
+  font-weight: 800;
+  animation: typing 0.45s steps(9, end) 0.15s forwards, fade-in 0.35s ease 0.15s forwards;
+}
+
+/* Animaciones para el splash screen */
+
+@keyframes drop-bounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.85);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(8px) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 9ch;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes alert-flash {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 transparent);
+    color: #0b2f78;
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(227, 38, 54, 0.85));
+    color: #dc2626;
+  }
+}
+
+@keyframes splash-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 
 /* ================= MENÚ LATERAL ================= */
@@ -51,6 +141,13 @@ ion-item {
 ion-item.router-link-active {
   --background: #0b2f78;
   --color: #ffffff;
+}
+
+ion-item.install-item {
+  --background: #eef6ff;
+  --color: #0b2f78;
+  margin-top: 8px;
+  font-weight: 700;
 }
 
 /* ================= MENÚ HAMBURGUESA ================= */
@@ -99,7 +196,6 @@ ion-menu-button {
 .user-info {
   display: flex;
   align-items: center;
-  padding: 10px;
   gap: 15px;
 }
 

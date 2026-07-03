@@ -68,3 +68,19 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Firebase
+.firebase/
+.firebase/*
+
+# Firebase local emulator
+firebase-debug.log
+ui-debug.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS
+Desktop.ini

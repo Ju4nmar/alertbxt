@@ -1,0 +1,235 @@
+ion-content {
+  --background: #f8f9fa;
+}
+
+.page-title {
+  padding: 20px 16px 16px;
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0b2f78;
+}
+
+.usuarios-list {
+  padding: 0 12px;
+  --background: transparent;
+}
+
+.usuario-item {
+  --background: #ffffff;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-start: 12px;
+  --inner-padding-end: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s ease;
+}
+
+.usuario-item:active {
+  --background: #f0f4ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.usuario-icon {
+  font-size: 2.4rem;
+  color: #0b2f78;
+  margin-right: 8px;
+}
+
+.usuario-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.usuario-nombre {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.usuario-rol {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  width: fit-content;
+  font-weight: 500;
+}
+
+.badge-admin {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-residente {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 1rem;
+}
+
+.usuario-modal {
+  --width: min(92vw, 520px);
+  --height: auto;
+  --max-height: 88vh;
+  --border-radius: 16px;
+
+  ion-toolbar {
+    --background: #0b2f78;
+    --color: #ffffff;
+    --border-radius: 16px 16px 0 0;
+  }
+
+  &::part(content) {
+    overflow: hidden;
+  }
+}
+
+.modal-toolbar {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+}
+
+.modal-title {
+  display: block;
+  padding: 0 56px 0 16px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #ffffff;
+  white-space: normal;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: #ffffff;
+  --background-hover: rgba(255, 255, 255, 0.12);
+  --background-activated: rgba(255, 255, 255, 0.18);
+
+  ion-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    color: #ffffff;
+    font-size: 24px;
+  }
+}
+
+.modal-content {
+  padding: 24px 20px;
+  max-height: calc(88vh - 56px);
+  overflow-y: auto;
+}
+
+.usuario-avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+
+  ion-icon {
+    font-size: 4rem;
+    color: #0b2f78;
+  }
+}
+
+.usuario-detalles {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detalle-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #0b2f78;
+}
+
+.detalle-label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.detalle-valor {
+  color: #111827;
+  font-weight: 500;
+  text-align: right;
+  flex: 1;
+  margin-left: 12px;
+  word-break: break-word;
+}
+
+.detalle-valor.badge-admin,
+.detalle-valor.badge-residente {
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .usuario-modal {
+    --width: 100%;
+    --max-height: 92vh;
+    --border-radius: 16px 16px 0 0;
+    align-items: flex-end;
+  }
+
+  .modal-title {
+    padding-left: 14px;
+    font-size: 1rem;
+  }
+
+  .modal-content {
+    padding: 18px 14px 22px;
+    max-height: calc(92vh - 56px);
+  }
+
+  .usuario-avatar {
+    margin-bottom: 16px;
+  }
+
+  .detalle-fila {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .detalle-valor {
+    text-align: left;
+    margin-left: 0;
+    margin-top: 6px;
+    max-width: 100%;
+  }
+}

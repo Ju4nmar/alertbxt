@@ -1,0 +1,86 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>AlertBxt</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="registro-container">
+    <h1 class="registro-title">Registrar Vecindad</h1>
+
+    <form (ngSubmit)="createComunidad()" #registroForm="ngForm" class="registro-form" novalidate>
+      <ion-item>
+        <ion-input label="Nombre de Vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" required minlength="3" maxlength="60" #nombreComunidadInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="nombreComunidadInput.invalid && (nombreComunidadInput.dirty || nombreComunidadInput.touched)" class="field-error">
+        <span *ngIf="nombreComunidadInput.errors?.['required']">El nombre de la vecindad es requerido.</span>
+        <span *ngIf="nombreComunidadInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+        <span *ngIf="nombreComunidadInput.errors?.['maxlength']">No debe superar 60 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Nombre del Administrador" label-placement="floating" [(ngModel)]="administradorNombre" name="administradorNombre" required minlength="3" maxlength="80" #administradorNombreInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="administradorNombreInput.invalid && (administradorNombreInput.dirty || administradorNombreInput.touched)" class="field-error">
+        <span *ngIf="administradorNombreInput.errors?.['required']">El nombre del administrador es requerido.</span>
+        <span *ngIf="administradorNombreInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+        <span *ngIf="administradorNombreInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Correo Electronico del Administrador" label-placement="floating" type="email" [(ngModel)]="administradorCorreo" name="administradorCorreo" required email maxlength="120" #administradorCorreoInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="administradorCorreoInput.invalid && (administradorCorreoInput.dirty || administradorCorreoInput.touched)" class="field-error">
+        <span *ngIf="administradorCorreoInput.errors?.['required']">El correo del administrador es requerido.</span>
+        <span *ngIf="administradorCorreoInput.errors?.['email']">Ingresa un correo valido.</span>
+        <span *ngIf="administradorCorreoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Celular del Administrador" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="administradorCelular" name="administradorCelular" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #administradorCelularInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="administradorCelularInput.invalid && (administradorCelularInput.dirty || administradorCelularInput.touched)" class="field-error">
+        <span *ngIf="administradorCelularInput.errors?.['required']">El celular del administrador es requerido.</span>
+        <span *ngIf="administradorCelularInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
+        <span *ngIf="administradorCelularInput.errors?.['pattern'] || administradorCelularInput.errors?.['maxlength']">Usa solo numeros, espacios o +, maximo 15 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Contrasena" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">
+        <span *ngIf="passwordInput.errors?.['required']">La contrasena es requerida.</span>
+        <span *ngIf="passwordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
+        <span *ngIf="passwordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Confirmar Contrasena" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required minlength="8" maxlength="40" #confirmPasswordInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="field-error">
+        <span *ngIf="confirmPasswordInput.errors?.['required']">Confirma la contrasena.</span>
+        <span *ngIf="confirmPasswordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
+        <span *ngIf="confirmPasswordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+      </div>
+      <div *ngIf="confirmPassword && password !== confirmPassword" class="field-error">
+        Las contrasenas no coinciden.
+      </div>
+
+      <ion-item class="chekbox">
+        <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
+        <ion-label>Acepto terminos y condiciones del servicio</ion-label>
+      </ion-item>
+      <div *ngIf="terminosInput.invalid && (terminosInput.dirty || terminosInput.touched)" class="field-error">
+        Debes aceptar los terminos y condiciones.
+      </div>
+
+      <div *ngIf="registroError" class="error-message" role="alert">
+        {{ registroError }}
+      </div>
+
+      <ion-button expand="block" type="submit" [disabled]="registroForm.invalid || password !== confirmPassword || isLoading" class="confirm-btn">
+        {{ isLoading ? 'Creando...' : 'Confirmar' }}
+      </ion-button>
+    </form>
+  </div>
+</ion-content>

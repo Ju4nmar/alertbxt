@@ -1,85 +1,136 @@
 .page-title {
-  padding-top: 70px;
+  padding-top: 10px;
   text-align: center;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 1.3rem;
 }
 
-form {
-  background: #fff;
-  margin: 1rem auto;
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-}
-
-ion-item {
-  margin-bottom: 0.8rem;
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1rem;
-}
-
-.input-group label {
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.input-group input[type="datetime-local"] {
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 0.9rem;
-}
-
-
-.guardar-btn {
-  --background: #1e3a8a;
-  --border-radius: 8px;
-}
-
+.recordatorio-form,
 .lista-recordatorios {
-  background: #fff;
+  max-width: 760px;
   margin: 1rem auto;
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
+  padding: 1rem 1.3rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  color: #111827;
 }
 
+.recordatorio-form h3,
 .lista-recordatorios h3 {
+  margin: 0 0 1rem;
   text-align: center;
-  font-weight: bold;
-  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 25px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.form-row:not(.date-row) {
+  display: block;
+}
+
+.form-row label {
+  font-weight: 700;
+  color: #111827;
+}
+
+ion-input,
+ion-textarea {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  --color: #111827;
+}
+
+.date-row {
+  grid-template-columns: 130px 180px 140px 120px;
+}
+
+.date-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-field input {
+  width: 100%;
+  border-radius: 14px;
+}
+
+.date-field ion-icon {
+  position: absolute;
+  right: 14px;
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 1.2rem;
+  pointer-events: none;
+}
+
+.date-group-label {
+  align-self: center;
+
+}
+
+.date-row ion-button {
+  --background: #1e3a8a;
+  --color: #ffffff;
+  min-height: 36px;
 }
 
 .recordatorio-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid #ddd;
+  gap: 16px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border: 1px solid #9ca3af;
   border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 10px;
+  background: #ffffff;
+  box-shadow: 0 5px 12px rgba(15, 23, 42, 0.08);
+}
+
+.recordatorio-item h4 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .acciones button {
-  border: none;
-  border-radius: 8px;
-  color: white;
+  min-width: 86px;
   padding: 8px 16px;
-  margin-left: 8px;
-  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-weight: 700;
 }
 
-.btn-editar {
-  background-color: #3b82f6;
-}
+.btn-editar { background: #3b82f6; }
+.btn-eliminar { background: #ef4444; }
 
-.btn-eliminar {
-  background-color: #ef4444;
+@media (max-width: 768px) {
+  .page-title { padding-top: 16px; }
+  .recordatorio-form,
+  .lista-recordatorios { margin: 0.8rem; padding: 0.8rem; }
+  .form-row,
+  .date-row { grid-template-columns: 1fr; gap: 15px; }
+  .date-field { width: 100%; }
+  .recordatorio-item { gap: 10px; padding: 10px; }
+  .acciones { gap: 6px; }
+  .acciones button { min-width: 74px; padding: 8px 12px; }
 }

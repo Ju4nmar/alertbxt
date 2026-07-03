@@ -1,0 +1,45 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>AlertBxt</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="login-container">
+    <h1 class="login-title">Iniciar Sesion</h1>
+
+    <form (ngSubmit)="login()" #loginForm="ngForm" class="login-form" novalidate>
+      <ion-item>
+        <ion-input label="Correo Electronico" label-placement="floating" type="email" [(ngModel)]="email" name="email" required email maxlength="120" #emailInput="ngModel" (ionInput)="loginError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" class="field-error">
+        <span *ngIf="emailInput.errors?.['required']">El correo es requerido.</span>
+        <span *ngIf="emailInput.errors?.['email']">Ingresa un correo valido.</span>
+        <span *ngIf="emailInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
+      </div>
+
+      <ion-item>
+        <ion-input label="Contrasena" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="6" maxlength="40" #passwordInput="ngModel" (ionInput)="loginError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">
+        <span *ngIf="passwordInput.errors?.['required']">La contrasena es requerida.</span>
+        <span *ngIf="passwordInput.errors?.['minlength']">Debe tener al menos 6 caracteres.</span>
+        <span *ngIf="passwordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+      </div>
+
+      <div *ngIf="loginError" class="error-message auth-error" role="alert">
+        {{ loginError }}
+      </div>
+
+      <ion-button expand="block" type="submit" [disabled]="loginForm.invalid || isLoading" class="confirm-btn">
+        {{ isLoading ? 'Ingresando...' : 'Confirmar' }}
+      </ion-button>
+    </form>
+
+    <div class="login-links">
+      <ion-button fill="clear" type="button" (click)="goToForgotPassword()" class="link-btn">Olvidar Contrasena</ion-button>
+      <ion-button fill="clear" type="button" (click)="goToRegistro()" class="link-btn">Registrar Vecindad</ion-button>
+      <ion-button fill="clear" type="button" (click)="goToUnirseVecindad()" class="link-btn">Unirse a Vecindad</ion-button>
+    </div>
+  </div>
+</ion-content>

@@ -1,45 +1,70 @@
 <ion-content>
   <h2 class="page-title">Recordatorios</h2>
 
-  <!-- Formulario para crear recordatorio -->
-  <form (ngSubmit)="guardarRecordatorio()">
-    <ion-item>
-      <ion-label position="floating">Título</ion-label>
-      <ion-input [(ngModel)]="titulo" name="titulo"></ion-input>
-    </ion-item>
+  <form class="recordatorio-form" (ngSubmit)="guardarRecordatorio()" #recordatorioForm="ngForm" novalidate>
+    <h3>{{ idEditando ? 'Editar Recordatorio' : 'Crear Recordatorio' }}</h3>
 
-    <ion-item>
-      <ion-label position="floating">Descripción</ion-label>
-      <ion-textarea [(ngModel)]="descripcion" name="descripcion"></ion-textarea>
-    </ion-item>
-
-    <div class="input-group">
-      <label for="fecha">Fecha y hora del recordatorio:</label>
-      <input type="datetime-local" id="fecha" name="fecha" />
+    <div class="form-row">
+      <ion-item>
+        <ion-input id="titulo" label="Titulo" label-placement="floating" [(ngModel)]="tituloRecordatorio" name="tituloRecordatorio" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="recordatorioError = ''"></ion-input>
+      </ion-item>
+      <div *ngIf="tituloInput.invalid && (tituloInput.dirty || tituloInput.touched)" class="field-error">
+        <span *ngIf="tituloInput.errors?.['required']">El titulo del recordatorio es requerido.</span>
+        <span *ngIf="tituloInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+        <span *ngIf="tituloInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
+      </div>
     </div>
 
-    <ion-button expand="block" type="submit" class="guardar-btn">
-      {{ idEditando ? 'Actualizar' : 'Guardar' }}
-    </ion-button>
+    <div class="form-row">
+      <ion-item>
+        <ion-textarea id="descripcion" label="Descripcion" label-placement="floating" [(ngModel)]="descripcionRecordatorio" name="descripcionRecordatorio" required minlength="5" maxlength="300" autoGrow="true" #descripcionInput="ngModel" (ionInput)="recordatorioError = ''"></ion-textarea>
+      </ion-item>
+      <div *ngIf="descripcionInput.invalid && (descripcionInput.dirty || descripcionInput.touched)" class="field-error">
+        <span *ngIf="descripcionInput.errors?.['required']">La descripcion es requerida.</span>
+        <span *ngIf="descripcionInput.errors?.['minlength']">Debe tener al menos 5 caracteres.</span>
+        <span *ngIf="descripcionInput.errors?.['maxlength']">No debe superar 300 caracteres.</span>
+      </div>
+    </div>
+
+    <div class="form-row date-row">
+      <label class="date-group-label">Fecha y Hora</label>
+      <div class="date-field native-input-group">
+        <label class="native-label" for="fechaRecordatorio">Fecha</label>
+        <input id="fechaRecordatorio" type="date" [(ngModel)]="fechaRecordatorio" name="fechaRecordatorio" required #fechaInput="ngModel" (input)="recordatorioError = ''" />
+        <ion-icon name="calendar-outline"></ion-icon>
+      </div>
+      <div *ngIf="fechaInput.invalid && (fechaInput.dirty || fechaInput.touched)" class="field-error">
+        La fecha es requerida.
+      </div>
+
+      <div class="date-field native-input-group">
+        <label class="native-label" for="horaRecordatorio">Hora</label>
+        <input id="horaRecordatorio" type="time" [(ngModel)]="horaRecordatorio" name="horaRecordatorio" required #horaInput="ngModel" (input)="recordatorioError = ''" />
+        <ion-icon name="time-outline"></ion-icon>
+      </div>
+      <div *ngIf="horaInput.invalid && (horaInput.dirty || horaInput.touched)" class="field-error">
+        La hora es requerida.
+      </div>
+
+      <ion-button type="submit" [disabled]="recordatorioForm.invalid || isLoading">
+        {{ isLoading ? 'Guardando...' : (idEditando ? 'Actualizar' : 'Guardar') }}
+      </ion-button>
+    </div>
+
+    <div *ngIf="recordatorioError" class="error-message" role="alert">
+      {{ recordatorioError }}
+    </div>
   </form>
 
-  <!-- Lista de recordatorios -->
   <div class="lista-recordatorios">
     <h3>Lista de Recordatorios</h3>
 
-    <div *ngFor="let recordatorio of recordatorios" class="recordatorio-item">
-      <span>{{ recordatorio.titulo }}</span>
+    <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
+      <h4>{{ recordatorio.tituloRecordatorio }}</h4>
 
       <div class="acciones">
-        <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">
-          Editar
-        </button>
-        <button
-          class="btn-eliminar"
-          (click)="eliminarRecordatorio(recordatorio.id)"
-        >
-          Eliminar
-        </button>
+        <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>
+        <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio.idRecordatorios)">Eliminar</button>
       </div>
     </div>
   </div>
