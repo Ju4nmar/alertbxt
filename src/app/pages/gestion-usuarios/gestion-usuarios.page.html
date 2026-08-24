@@ -1,5 +1,5 @@
 <ion-content>
-  <h2 class="page-title">Gestión de Usuarios</h2>
+  <h2 class="page-title">Gestión de usuarios</h2>
 
   <div *ngIf="isLoading" class="loading-spinner">
     Cargando usuarios...
@@ -18,14 +18,14 @@
   </ion-list>
 
   <div *ngIf="!isLoading && !usuarios.length" class="empty-state">
-    <p>No hay usuarios en esta comunidad</p>
+    <p>No hay usuarios en esta comunidad.</p>
   </div>
 
   <!-- Modal de detalle -->
   <ion-modal [isOpen]="modalAbierto" (onDidDismiss)="cerrarModal()" class="usuario-modal">
     <ng-template #content>
       <ion-toolbar class="modal-toolbar">
-        <ion-label class="modal-title">Detalles del Usuario</ion-label>
+        <ion-label class="modal-title">Detalles del usuario</ion-label>
         <ion-button class="modal-close-btn" slot="end" fill="clear" type="button" (click)="cerrarModal()" aria-label="Cerrar detalles del usuario">
           <ion-icon name="close" aria-hidden="true"></ion-icon>
         </ion-button>

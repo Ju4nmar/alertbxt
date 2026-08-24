@@ -69,7 +69,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     const descripcion = this.descripcionRecordatorio.trim();
 
     if (!titulo || !descripcion || !this.fechaRecordatorio || !this.horaRecordatorio) {
-      this.recordatorioError = 'Completa titulo, descripcion, fecha y hora.';
+      this.recordatorioError = 'Completa título, descripción, fecha y hora.';
       return;
     }
 
@@ -80,7 +80,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
     const fechaHora = `${this.fechaRecordatorio}T${this.horaRecordatorio}`;
     if (Number.isNaN(new Date(fechaHora).getTime())) {
-      this.recordatorioError = 'Selecciona una fecha y hora validas.';
+      this.recordatorioError = 'Selecciona una fecha y hora válidas.';
       return;
     }
 

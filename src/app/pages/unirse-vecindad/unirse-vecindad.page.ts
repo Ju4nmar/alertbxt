@@ -46,7 +46,7 @@ export class UnirseVecindadPage implements OnInit {
     this.joinError = '';
     const codigoInvitacion = this.codigoInvitacion.trim().toUpperCase();
     if (!/^[A-Z0-9]{8}$/.test(codigoInvitacion)) {
-      this.joinError = 'El codigo debe tener 8 letras o numeros.';
+      this.joinError = 'El código debe tener 8 letras o números.';
       return;
     }
 
@@ -102,12 +102,12 @@ export class UnirseVecindadPage implements OnInit {
     }
 
     if (!this.isValidEmail(correo) || !this.isValidPhone(telefono)) {
-      this.joinError = 'Revisa el formato del correo o el telefono.';
+      this.joinError = 'Revisa el formato del correo o del teléfono.';
       return false;
     }
 
     if (this.password !== this.confirmPassword) {
-      this.joinError = 'Las contrasenas no coinciden.';
+      this.joinError = 'Las contraseñas no coinciden.';
       return false;
     }
 
@@ -120,20 +120,20 @@ export class UnirseVecindadPage implements OnInit {
       : '';
 
     if (code === 'auth/email-already-in-use') {
-      return 'Este correo ya esta registrado. Inicia sesion para unirte.';
+      return 'Este correo ya está registrado. Inicia sesión para unirte.';
     }
 
     if (code === 'auth/invalid-email') {
-      return 'El correo no tiene un formato valido.';
+      return 'El correo no tiene un formato válido.';
     }
 
     if (code === 'auth/weak-password') {
-      return 'La contrasena es demasiado debil.';
+      return 'La contraseña es demasiado débil.';
     }
 
     const message = error instanceof Error ? error.message.toLowerCase() : '';
-    if (message.includes('codigo')) {
-      return 'El codigo de invitacion no es valido.';
+    if (message.includes('código') || message.includes('codigo')) {
+      return 'El código de invitación no es válido.';
     }
 
     return 'No se pudo unir a la vecindad. Intenta nuevamente.';

@@ -45,7 +45,7 @@ export class AuthService {
           const userData = await this.loadUserData(firebaseUser.uid);
           this.currentUserSubject.next(userData);
         } catch (error) {
-          console.error('Error resolviendo sesion:', error);
+          console.error('Error resolviendo sesión:', error);
           this.currentUserSubject.next(null);
         } finally {
           this.authReadySubject.next(true);
@@ -118,7 +118,7 @@ export class AuthService {
     aceptaTerminos: boolean;
   }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
     if (!data.aceptaTerminos) {
-      return throwError(() => new Error('Debe aceptar los terminos y condiciones'));
+      return throwError(() => new Error('Debe aceptar los términos y condiciones'));
     }
 
     return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.administradorCorreo.trim(), data.contrasena))).pipe(
@@ -168,7 +168,7 @@ export class AuthService {
       }),
       catchError(error => {
         console.error('Error en logout:', error);
-        return throwError(() => new Error('Error al cerrar sesion'));
+        return throwError(() => new Error('Error al cerrar sesión'));
       })
     );
   }
@@ -186,7 +186,7 @@ export class AuthService {
       take(1),
       switchMap(comunidad => {
         if (!comunidad) {
-          throw new Error('Codigo de invitacion invalido');
+          throw new Error('Código de invitación inválido');
         }
 
         const currentUser = this.getCurrentUser();
@@ -231,7 +231,7 @@ export class AuthService {
       take(1),
       switchMap(comunidad => {
         if (!comunidad?.idComunidad) {
-          throw new Error('Codigo de invitacion invalido');
+          throw new Error('Código de invitación inválido');
         }
 
         return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.correo.trim(), data.password))).pipe(

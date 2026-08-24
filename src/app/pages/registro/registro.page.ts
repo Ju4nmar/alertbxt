@@ -56,17 +56,17 @@ export class RegistroPage {
     }
 
     if (!this.isValidEmail(administradorCorreo) || !this.isValidPhone(administradorCelular)) {
-      this.registroError = 'Revisa el formato del correo o el celular.';
+      this.registroError = 'Revisa el formato del correo o del celular.';
       return;
     }
 
     if (this.password !== this.confirmPassword) {
-      this.registroError = 'Las contrasenas no coinciden.';
+      this.registroError = 'Las contraseñas no coinciden.';
       return;
     }
 
     if (!this.aceptaTerminos) {
-      this.registroError = 'Debes aceptar los terminos y condiciones.';
+      this.registroError = 'Debes aceptar los términos y condiciones.';
       return;
     }
 
@@ -95,15 +95,15 @@ export class RegistroPage {
       : '';
 
     if (code === 'auth/email-already-in-use') {
-      return 'Este correo ya esta registrado.';
+      return 'Este correo ya está registrado.';
     }
 
     if (code === 'auth/invalid-email') {
-      return 'El correo no tiene un formato valido.';
+      return 'El correo no tiene un formato válido.';
     }
 
     if (code === 'auth/weak-password') {
-      return 'La contrasena es demasiado debil.';
+      return 'La contraseña es demasiado débil.';
     }
 
     return 'No se pudo crear la vecindad. Intenta nuevamente.';

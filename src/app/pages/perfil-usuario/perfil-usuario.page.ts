@@ -72,7 +72,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       return;
     }
 
-    await this.copiarTexto(this.comunidad.codigoInvitacion, 'Codigo copiado');
+    await this.copiarTexto(this.comunidad.codigoInvitacion, 'Código copiado');
   }
 
   async copiarEnlace(): Promise<void> {
@@ -110,7 +110,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     }
 
     if (!this.isValidEmail(correo) || !this.isValidPhone(telefono)) {
-      this.mensajeGuardado = 'Revisa el formato del correo o el telefono';
+      this.mensajeGuardado = 'Revisa el formato del correo o del teléfono.';
       return;
     }
 

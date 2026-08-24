@@ -126,21 +126,21 @@ export class AppComponent implements OnDestroy {
       await firstValueFrom(this.authService.logout());
       this.router.navigate(['/login']);
     } catch (error) {
-      console.error('Error al cerrar sesion:', error);
+      console.error('Error al cerrar sesión:', error);
     }
   }
 
   async generarAlerta(): Promise<void> {
     const confirm = await this.alertCtrl.create({
       header: 'Generar Alerta SOS',
-      message: 'Deseas generar una alerta de emergencia?',
+      message: '¿Deseas generar una alerta de emergencia?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Continuar',
           handler: async () => {
             const form = await this.alertCtrl.create({
-              header: 'Detalles de la Emergencia',
+              header: 'Detalles de la emergencia',
               inputs: [
                 {
                   name: 'descripcion',
@@ -175,7 +175,7 @@ export class AppComponent implements OnDestroy {
     if (!data?.descripcion?.trim() || !data?.lugar?.trim()) {
       const warning = await this.alertCtrl.create({
         header: 'Datos incompletos',
-        message: 'Por favor ingresa descripcion y lugar.',
+        message: 'Por favor, ingresa descripción y lugar.',
         buttons: ['OK'],
       });
       await warning.present();
@@ -218,7 +218,7 @@ export class AppComponent implements OnDestroy {
       console.error('Error al generar la alerta SOS:', error);
       const errAlert = await this.alertCtrl.create({
         header: 'Error',
-        message: 'No se pudo enviar la alerta. Revisa tu conexion.',
+        message: 'No se pudo enviar la alerta. Revisa tu conexión.',
         buttons: ['OK'],
       });
       await errAlert.present();
@@ -254,7 +254,7 @@ export class AppComponent implements OnDestroy {
     if (this.showIosInstallHelp) {
       const alert = await this.alertCtrl.create({
         header: 'Instalar AlertBxt',
-        message: 'En iPhone abre el boton Compartir de Safari y selecciona Agregar a pantalla de inicio.',
+        message: 'En iPhone, abre el botón Compartir de Safari y selecciona «Agregar a pantalla de inicio».',
         buttons: ['OK'],
       });
       await alert.present();
@@ -264,8 +264,8 @@ export class AppComponent implements OnDestroy {
     const result = await this.pwaInstallService.install();
     if (result === 'unavailable') {
       const alert = await this.alertCtrl.create({
-        header: 'Instalacion no disponible',
-        message: 'Si ya esta instalada, abre AlertBxt desde el icono de tu pantalla de inicio. Si no aparece la opcion, prueba desde Chrome o Edge.',
+        header: 'Instalación no disponible',
+        message: 'Si ya está instalada, abre AlertBxt desde el ícono de tu pantalla de inicio. Si no aparece la opción, prueba desde Chrome o Edge.',
         buttons: ['OK'],
       });
       await alert.present();
@@ -282,7 +282,7 @@ export class AppComponent implements OnDestroy {
     const message = result === 'granted'
       ? 'Las notificaciones quedaron activadas para este dispositivo.'
       : result === 'denied'
-        ? 'El navegador bloqueo las notificaciones. Activalas desde la configuracion del sitio.'
+        ? 'El navegador bloqueó las notificaciones. Actívalas desde la configuración del sitio.'
         : 'Este navegador no soporta notificaciones web.';
 
     const alert = await this.alertCtrl.create({

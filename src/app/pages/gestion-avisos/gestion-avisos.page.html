@@ -1,14 +1,14 @@
 <ion-content>
-  <h2 class="page-title">Gestion de Avisos</h2>
+  <h2 class="page-title">Gestión de avisos</h2>
 
   <form class="aviso-form" (ngSubmit)="guardarAviso()" #avisoForm="ngForm" novalidate>
-    <h3>{{ idEditando ? 'Editar Aviso' : 'Crear Aviso' }}</h3>
+    <h3>{{ idEditando ? 'Editar aviso' : 'Crear aviso' }}</h3>
 
     <ion-item>
-      <ion-input label="Titulo del aviso" label-placement="floating" [(ngModel)]="titulo" name="titulo" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="avisoError = ''"></ion-input>
+      <ion-input label="Título del aviso" label-placement="floating" [(ngModel)]="titulo" name="titulo" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="avisoError = ''"></ion-input>
     </ion-item>
     <div *ngIf="tituloInput.invalid && (tituloInput.dirty || tituloInput.touched)" class="field-error">
-      <span *ngIf="tituloInput.errors?.['required']">El titulo del aviso es requerido.</span>
+      <span *ngIf="tituloInput.errors?.['required']">El título del aviso es obligatorio.</span>
       <span *ngIf="tituloInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
       <span *ngIf="tituloInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
     </div>
@@ -25,10 +25,10 @@
     </div>
 
     <ion-item>
-      <ion-textarea label="Descripcion" label-placement="floating" [(ngModel)]="descripcion" name="descripcion" required minlength="10" maxlength="500" autoGrow="true" #descripcionInput="ngModel" (ionInput)="avisoError = ''"></ion-textarea>
+      <ion-textarea label="Descripción" label-placement="floating" [(ngModel)]="descripcion" name="descripcion" required minlength="10" maxlength="500" autoGrow="true" #descripcionInput="ngModel" (ionInput)="avisoError = ''"></ion-textarea>
     </ion-item>
     <div *ngIf="descripcionInput.invalid && (descripcionInput.dirty || descripcionInput.touched)" class="field-error">
-      <span *ngIf="descripcionInput.errors?.['required']">La descripcion es requerida.</span>
+      <span *ngIf="descripcionInput.errors?.['required']">La descripción es obligatoria.</span>
       <span *ngIf="descripcionInput.errors?.['minlength']">Debe tener al menos 10 caracteres.</span>
       <span *ngIf="descripcionInput.errors?.['maxlength']">No debe superar 500 caracteres.</span>
     </div>
@@ -38,7 +38,7 @@
         <input type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" />
         <span>Seleccionar archivo</span>
       </label>
-      <p class="field-hint">Formatos permitidos: JPG, PNG o WebP. Tamano maximo original: 10 MB.</p>
+      <p class="field-hint">Formatos permitidos: JPG, PNG o WebP. Tamaño máximo original: 10 MB.</p>
       <p *ngIf="archivo" class="file-name">{{ archivo.name }}</p>
       <p *ngIf="compressionInfo" class="compression-info">{{ compressionInfo }}</p>
     </div>
@@ -48,12 +48,12 @@
     </div>
 
     <ion-button class="guardar-aviso" expand="block" type="submit" [disabled]="avisoForm.invalid || isLoading">
-      {{ isLoading ? 'Guardando...' : (idEditando ? 'Actualizar Aviso' : 'Guardar Aviso') }}
+      {{ isLoading ? 'Guardando...' : (idEditando ? 'Actualizar aviso' : 'Guardar aviso') }}
     </ion-button>
   </form>
 
   <div class="lista-avisos">
-    <h3>Avisos Existentes</h3>
+    <h3>Avisos existentes</h3>
     <div *ngFor="let aviso of avisos; trackBy: trackByAvisoId" class="aviso-item">
       <h4 class="aviso-titulo">{{ aviso.tituloAviso }}</h4>
       <div class="acciones">

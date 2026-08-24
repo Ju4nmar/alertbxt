@@ -31,19 +31,19 @@ export class ForgotPasswordPage {
     const email = this.email.trim();
 
     if (!email) {
-      this.resetError = 'Ingresa tu correo electronico.';
+      this.resetError = 'Ingresa tu correo electrónico.';
       return;
     }
 
     if (!this.isValidEmail(email) || email.length > 120) {
-      this.resetError = 'Ingresa un correo valido.';
+      this.resetError = 'Ingresa un correo válido.';
       return;
     }
 
     this.isLoading = true;
     try {
       await sendPasswordResetEmail(this.auth, email);
-      this.resetSuccess = 'Enlace de recuperacion enviado a tu correo.';
+      this.resetSuccess = 'Se envió un enlace de recuperación a tu correo.';
     } catch (error) {
       console.error('Error enviando enlace:', error);
       this.resetError = this.getResetErrorMessage(error);
@@ -62,7 +62,7 @@ export class ForgotPasswordPage {
       : '';
 
     if (code === 'auth/invalid-email') {
-      return 'El correo no tiene un formato valido.';
+      return 'El correo no tiene un formato válido.';
     }
 
     if (code === 'auth/user-not-found') {

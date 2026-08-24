@@ -203,8 +203,8 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     if (tarjeta.tipo === 'aviso' && tarjeta.aviso) {
       this.modalData = {
         variant: 'aviso',
-        titulo: tarjeta.aviso.tituloAviso || 'Sin titulo',
-        descripcion: tarjeta.aviso.descripcionAviso || 'Sin descripcion',
+        titulo: tarjeta.aviso.tituloAviso || 'Sin título',
+        descripcion: tarjeta.aviso.descripcionAviso || 'Sin descripción',
         fecha: tarjeta.aviso.fechaPublicacion,
         tipo: tarjeta.aviso.tipoAviso,
         autor: tarjeta.aviso.autorNombre || tarjeta.aviso.autorId || 'Autor no disponible',
@@ -214,7 +214,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       this.modalData = {
         variant: 'recordatorio',
         titulo: tarjeta.recordatorio.tituloRecordatorio || 'Recordatorio',
-        descripcion: tarjeta.recordatorio.descripcionRecordatorio || 'Sin descripcion',
+        descripcion: tarjeta.recordatorio.descripcionRecordatorio || 'Sin descripción',
         fecha: tarjeta.recordatorio.fechaHora,
       };
     } else {

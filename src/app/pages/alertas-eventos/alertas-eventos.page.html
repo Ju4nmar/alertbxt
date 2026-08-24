@@ -36,7 +36,7 @@
               <div class="card-body reminder-body">
                 <p class="card-date">{{ recordatorio.fechaHora | date: 'medium' }}</p>
                 <h4 class="reminder-heading">{{ recordatorio.tituloRecordatorio }}</h4>
-                <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripcion') | slice:0:140 }}</p>
+                <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripción') | slice:0:140 }}</p>
                 <div class="reminder-mark" [class.completed]="isReminderCompleted(recordatorio)">
                   {{ isReminderCompleted(recordatorio) ? 'Cumplido' : 'Pendiente' }}
                 </div>

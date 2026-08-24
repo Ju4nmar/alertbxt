@@ -126,17 +126,17 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     const descripcion = this.descripcion.trim();
 
     if (!titulo || !this.tipo || !descripcion) {
-      this.avisoError = 'Completa titulo, tipo y descripcion.';
+      this.avisoError = 'Completa título, tipo y descripción.';
       return;
     }
 
     if (!ALLOWED_AVISO_TYPES.includes(this.tipo)) {
-      this.avisoError = 'Selecciona un tipo de aviso valido.';
+      this.avisoError = 'Selecciona un tipo de aviso válido.';
       return;
     }
 
     if (titulo.length < 3 || titulo.length > 80 || descripcion.length < 10 || descripcion.length > 500) {
-      this.avisoError = 'Revisa la longitud del titulo o la descripcion.';
+      this.avisoError = 'Revisa la longitud del título o la descripción.';
       return;
     }
 
@@ -153,7 +153,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       if (this.archivo) {
         const optimized = await this.imageOptimizer.optimize(this.archivo, 0.75);
         if (optimized.optimizedSize > MAX_IMAGE_SIZE_BYTES) {
-          this.avisoError = 'La imagen optimizada supera 2 MB. Intenta con una imagen mas pequena.';
+          this.avisoError = 'La imagen optimizada supera los 2 MB. Intenta con una imagen más pequeña.';
           return;
         }
 

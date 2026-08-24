@@ -1,5 +1,5 @@
 <ion-content>
-  <h2 class="page-title">Perfil de Usuario</h2>
+  <h2 class="page-title">Perfil de usuario</h2>
 
   <section class="perfil-panel">
     <h3>Datos personales</h3>
@@ -20,17 +20,17 @@
         </ion-item>
         <div *ngIf="correoInput.invalid && (correoInput.dirty || correoInput.touched)" class="field-error">
           <span *ngIf="correoInput.errors?.['required']">El correo es requerido.</span>
-          <span *ngIf="correoInput.errors?.['email']">Ingresa un correo valido.</span>
+          <span *ngIf="correoInput.errors?.['email']">Ingresa un correo válido.</span>
           <span *ngIf="correoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
         </div>
 
         <ion-item>
-          <ion-input label="Telefono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+          <ion-input label="Teléfono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
         </ion-item>
         <div *ngIf="telefonoInput.invalid && (telefonoInput.dirty || telefonoInput.touched)" class="field-error">
-          <span *ngIf="telefonoInput.errors?.['required']">El telefono es requerido.</span>
+          <span *ngIf="telefonoInput.errors?.['required']">El teléfono es obligatorio.</span>
           <span *ngIf="telefonoInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
-          <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo numeros, espacios o +, maximo 15 caracteres.</span>
+          <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo números, espacios o +; máximo 15 caracteres.</span>
         </div>
 
         <ion-item>
@@ -55,15 +55,15 @@
       <ion-item>
         <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" [readonly]="usuario?.rol !== 'admin'" maxlength="60" (ionInput)="mensajeGuardado = ''"></ion-input>
       </ion-item>
-      <p class="field-hint">Maximo 60 caracteres.</p>
+      <p class="field-hint">Máximo 60 caracteres.</p>
 
-      <p class="invite-label">Codigo de invitacion</p>
+      <p class="invite-label">Código de invitación</p>
       <div class="codigo-row">
         <span>{{ comunidad.codigoInvitacion }}</span>
         <ion-button size="small" (click)="copiarCodigo()">Copiar</ion-button>
       </div>
 
-      <p class="invite-label">Enlace de invitacion</p>
+      <p class="invite-label">Enlace de invitación</p>
       <div class="link-row">
         <span>{{ enlaceInvitacion }}</span>
         <ion-button size="small" (click)="copiarEnlace()">Copiar enlace</ion-button>
@@ -73,7 +73,7 @@
     </div>
 
     <ng-template #sinComunidad>
-      <p class="empty-text">Aun no perteneces a una vecindad.</p>
+      <p class="empty-text">Aún no perteneces a una vecindad.</p>
     </ng-template>
   </section>
 </ion-content>

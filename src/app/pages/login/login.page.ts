@@ -31,12 +31,12 @@ export class LoginPage {
     const email = this.email.trim();
 
     if (!email || !this.password) {
-      this.loginError = 'Ingresa tu correo y contrasena.';
+      this.loginError = 'Ingresa tu correo y contraseña.';
       return;
     }
 
     if (!this.isValidEmail(email) || email.length > 120 || this.password.length < 6 || this.password.length > 40) {
-      this.loginError = 'Revisa el correo y la contrasena.';
+      this.loginError = 'Revisa el correo y la contraseña.';
       return;
     }
 
@@ -45,7 +45,7 @@ export class LoginPage {
       const user = await firstValueFrom(this.authService.login(email, this.password));
       this.router.navigate([user.comunidadId ? '/alertas-eventos' : '/unirse-vecindad']);
     } catch (error) {
-      console.error('Error de inicio de sesion:', error);
+      console.error('Error de inicio de sesión:', error);
       this.loginError = this.getLoginErrorMessage(error);
     } finally {
       this.isLoading = false;
@@ -74,7 +74,7 @@ export class LoginPage {
       code === 'auth/wrong-password' ||
       code === 'auth/user-not-found'
     ) {
-      return 'Correo o contrasena incorrectos.';
+      return 'Correo o contraseña incorrectos.';
     }
 
     if (code === 'auth/too-many-requests') {
@@ -82,10 +82,10 @@ export class LoginPage {
     }
 
     if (code === 'auth/invalid-email') {
-      return 'El formato del correo no es valido.';
+      return 'El formato del correo no es válido.';
     }
 
-    return 'No se pudo iniciar sesion. Revisa tus datos e intenta nuevamente.';
+    return 'No se pudo iniciar sesión. Revisa tus datos e inténtalo nuevamente.';
   }
 
   private isValidEmail(email: string): boolean {

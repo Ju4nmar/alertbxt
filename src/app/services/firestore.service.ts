@@ -255,9 +255,9 @@ export class FirestoreService {
       map(data => data.length > 0 ? data[0] as Comunidad : null),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
-        console.error('Error obteniendo comunidad por codigo:', error);
+        console.error('Error obteniendo comunidad por código:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al validar codigo de invitacion'));
+        return throwError(() => new Error('Error al validar código de invitación'));
       })
     );
   }
@@ -356,7 +356,7 @@ export class FirestoreService {
   private normalizeAviso(data: Aviso & Record<string, unknown>): Aviso {
     return {
       idAviso: data.idAviso,
-      tituloAviso: data.tituloAviso || String(data['titulo'] || 'Sin titulo'),
+      tituloAviso: data.tituloAviso || String(data['titulo'] || 'Sin título'),
       descripcionAviso: data.descripcionAviso || String(data['descripcion'] || ''),
       tipoAviso: data.tipoAviso || String(data['tipo'] || 'informativo'),
       fechaPublicacion: data.fechaPublicacion || String(data['fecha'] || ''),

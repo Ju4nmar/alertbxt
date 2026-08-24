@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Unirse a Vecindad</ion-title>
+    <ion-title>Unirse a una vecindad</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -17,51 +17,51 @@
       </div>
 
       <ion-item>
-        <ion-input label="Correo electronico" label-placement="floating" type="email" [(ngModel)]="correo" name="correo" required email maxlength="120" #correoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+        <ion-input label="Correo electrónico" label-placement="floating" type="email" [(ngModel)]="correo" name="correo" required email maxlength="120" #correoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
       </ion-item>
       <div *ngIf="correoInput.invalid && (correoInput.dirty || correoInput.touched)" class="field-error">
         <span *ngIf="correoInput.errors?.['required']">El correo es requerido.</span>
-        <span *ngIf="correoInput.errors?.['email']">Ingresa un correo valido.</span>
+        <span *ngIf="correoInput.errors?.['email']">Ingresa un correo válido.</span>
         <span *ngIf="correoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
       </div>
 
       <ion-item>
-        <ion-input label="Telefono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+        <ion-input label="Teléfono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
       </ion-item>
       <div *ngIf="telefonoInput.invalid && (telefonoInput.dirty || telefonoInput.touched)" class="field-error">
-        <span *ngIf="telefonoInput.errors?.['required']">El telefono es requerido.</span>
+        <span *ngIf="telefonoInput.errors?.['required']">El teléfono es obligatorio.</span>
         <span *ngIf="telefonoInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
-        <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo numeros, espacios o +, maximo 15 caracteres.</span>
+        <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo números, espacios o +; máximo 15 caracteres.</span>
       </div>
 
       <ion-item>
-        <ion-input label="Contrasena" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+        <ion-input label="Contraseña" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
       </ion-item>
       <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">
-        <span *ngIf="passwordInput.errors?.['required']">La contrasena es requerida.</span>
+        <span *ngIf="passwordInput.errors?.['required']">La contraseña es obligatoria.</span>
         <span *ngIf="passwordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
         <span *ngIf="passwordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
       </div>
 
       <ion-item>
-        <ion-input label="Confirmar contrasena" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required minlength="8" maxlength="40" #confirmPasswordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+        <ion-input label="Confirmar contraseña" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required minlength="8" maxlength="40" #confirmPasswordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
       </ion-item>
       <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="field-error">
-        <span *ngIf="confirmPasswordInput.errors?.['required']">Confirma la contrasena.</span>
+        <span *ngIf="confirmPasswordInput.errors?.['required']">Confirma la contraseña.</span>
         <span *ngIf="confirmPasswordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
         <span *ngIf="confirmPasswordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
       </div>
       <div *ngIf="confirmPassword && password !== confirmPassword" class="field-error">
-        Las contrasenas no coinciden.
+        Las contraseñas no coinciden.
       </div>
     </ng-container>
 
     <ion-item>
-      <ion-input label="Codigo de invitacion" label-placement="floating" [(ngModel)]="codigoInvitacion" name="codigoInvitacion" required minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" placeholder="ABCD2345" #codigoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+      <ion-input label="Código de invitación" label-placement="floating" [(ngModel)]="codigoInvitacion" name="codigoInvitacion" required minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" placeholder="ABCD2345" #codigoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
     </ion-item>
     <div *ngIf="codigoInput.invalid && (codigoInput.dirty || codigoInput.touched)" class="field-error">
-      <span *ngIf="codigoInput.errors?.['required']">El codigo de invitacion es requerido.</span>
-      <span *ngIf="codigoInput.errors?.['minlength'] || codigoInput.errors?.['maxlength'] || codigoInput.errors?.['pattern']">El codigo debe tener 8 letras o numeros.</span>
+      <span *ngIf="codigoInput.errors?.['required']">El código de invitación es obligatorio.</span>
+      <span *ngIf="codigoInput.errors?.['minlength'] || codigoInput.errors?.['maxlength'] || codigoInput.errors?.['pattern']">El código debe tener 8 letras o números.</span>
     </div>
 
     <div *ngIf="joinError" class="error-message" role="alert">
@@ -69,7 +69,7 @@
     </div>
 
     <ion-button expand="block" type="submit" [disabled]="unirseForm.invalid || (!isLoggedIn && password !== confirmPassword) || isLoading">
-      {{ isLoading ? 'Uniendo...' : 'Unirse a Vecindad' }}
+      {{ isLoading ? 'Uniendo...' : 'Unirse a una vecindad' }}
     </ion-button>
 
     <ion-button *ngIf="!isLoggedIn" expand="block" fill="clear" type="button" (click)="goToLogin()">
