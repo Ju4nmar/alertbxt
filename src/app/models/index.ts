@@ -17,6 +17,7 @@ export interface Usuario {
   correo: string;
   telefono: string;
   rol: 'admin' | 'residente';
+  activo: boolean;
   comunidadId: string;
   fechaRegistro?: string;
   fotoPerfil?: string;
