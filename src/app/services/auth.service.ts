@@ -93,6 +93,7 @@ export class AuthService {
           correo: userData.email.trim(),
           telefono: userData.telefono.trim(),
           rol: 'residente',
+          activo: true,
           comunidadId: userData.comunidadId || '',
           fechaRegistro: new Date().toISOString(),
         };
@@ -140,6 +141,7 @@ export class AuthService {
           correo: data.administradorCorreo.trim(),
           telefono: data.administradorCelular.trim(),
           rol: 'admin',
+          activo: true,
           comunidadId,
           fechaRegistro: new Date().toISOString(),
         };
@@ -242,6 +244,7 @@ export class AuthService {
               correo: data.correo.trim(),
               telefono: data.telefono.trim(),
               rol: 'residente',
+              activo: true,
               comunidadId: comunidad.idComunidad || '',
               fechaRegistro: new Date().toISOString(),
             };
