@@ -54,12 +54,31 @@
 
   <div class="lista-avisos">
     <h3>Avisos existentes</h3>
-    <div *ngFor="let aviso of avisos; trackBy: trackByAvisoId" class="aviso-item">
+    <div *ngFor="let aviso of avisosAdministrativos; trackBy: trackByAvisoId" class="aviso-item">
       <h4 class="aviso-titulo">{{ aviso.tituloAviso }}</h4>
       <div class="acciones">
         <ion-button class="btn-editar-aviso" (click)="editarAviso(aviso)">Editar</ion-button>
         <ion-button class="btn-eliminar-aviso" (click)="eliminarAviso(aviso.idAviso)">Eliminar</ion-button>
       </div>
     </div>
+
+    <p *ngIf="!avisosAdministrativos.length" class="empty-list">No hay avisos administrativos publicados.</p>
+  </div>
+
+  <div class="lista-avisos lista-alertas-sos">
+    <h3>Alertas SOS</h3>
+
+    <div *ngFor="let alerta of alertasSos; trackBy: trackByAvisoId" class="aviso-item alerta-sos-item">
+      <div class="alerta-sos-content">
+        <h4 class="aviso-titulo">{{ alerta.tituloAviso }}</h4>
+        <p class="alerta-sos-description">{{ alerta.descripcionAviso }}</p>
+        <small>{{ alerta.autorNombre || 'Residente' }} · {{ alerta.fechaPublicacion | date: 'medium' }}</small>
+      </div>
+      <div class="acciones">
+        <ion-button class="btn-eliminar-aviso" (click)="descartarAlertaSos(alerta)">Descartar</ion-button>
+      </div>
+    </div>
+
+    <p *ngIf="!alertasSos.length" class="empty-list">No hay alertas SOS pendientes de moderación.</p>
   </div>
 </ion-content>

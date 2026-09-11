@@ -49,6 +49,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   avisos: Aviso[] = [];
+  avisosAdministrativos: Aviso[] = [];
+  alertasSos: Aviso[] = [];
   idEditando: string | null = null;
   titulo = '';
   tipo = '';
@@ -71,7 +73,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: data => {
-        this.avisos = data;
+        this.organizarAvisos(data);
       },
       error: error => {
         console.error('Error cargando avisos:', error);
@@ -230,12 +232,33 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   }
 
   editarAviso(aviso: Aviso): void {
+    if (!ALLOWED_AVISO_TYPES.includes(aviso.tipoAviso)) {
+      this.avisoError = 'Las alertas SOS son reportes de residentes y no se pueden editar.';
+      return;
+    }
+
     this.avisoError = '';
     this.idEditando = aviso.idAviso || null;
     this.titulo = aviso.tituloAviso;
     this.tipo = aviso.tipoAviso;
     this.descripcion = aviso.descripcionAviso;
     this.imagenExistente = aviso.imagen || null;
+  }
+
+  organizarAvisos(avisos: Aviso[]): void {
+    this.avisos = avisos;
+    this.avisosAdministrativos = avisos.filter(aviso => ALLOWED_AVISO_TYPES.includes(aviso.tipoAviso));
+    this.alertasSos = avisos
+      .filter(aviso => aviso.tipoAviso === 'alerta')
+      .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''));
+  }
+
+  async descartarAlertaSos(alerta: Aviso): Promise<void> {
+    if (alerta.tipoAviso !== 'alerta') {
+      return;
+    }
+
+    await this.eliminarAviso(alerta.idAviso);
   }
 
   trackByAvisoId(_: number, aviso: Aviso): string {
