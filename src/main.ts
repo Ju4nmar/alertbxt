@@ -5,6 +5,7 @@ import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalo
 import { getApp, provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { AppComponent } from './app/app.component';
@@ -22,6 +23,7 @@ bootstrapApplication(AppComponent, {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideFirestore(() => getFirestore(getApp())),
+    provideMessaging(() => getMessaging(getApp())),
     provideAuth(() => getAuth()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

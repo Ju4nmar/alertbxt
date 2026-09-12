@@ -10,6 +10,7 @@ import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'r
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 import { Comunidad, Usuario } from '../models';
 import { FirestoreService } from './firestore.service';
+import { FcmService } from './fcm.service';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,7 @@ export class AuthService {
   private readonly injector = inject(Injector);
   private readonly auth = inject(Auth);
   private readonly firestoreService = inject(FirestoreService);
+  private readonly fcmService = inject(FcmService);
   private readonly ngZone = inject(NgZone);
   private readonly currentUserSubject = new BehaviorSubject<Usuario | null>(null);
   private readonly authReadySubject = new BehaviorSubject<boolean>(false);
@@ -44,6 +46,10 @@ export class AuthService {
 
           const userData = await this.loadUserData(firebaseUser.uid);
           this.currentUserSubject.next(userData);
+          if (userData) {
+            // FCM se inicia solo después de confirmar el perfil autenticado.
+            void this.fcmService.iniciarParaUsuario(userData);
+          }
         } catch (error) {
           console.error('Error resolviendo sesión:', error);
           this.currentUserSubject.next(null);
@@ -166,6 +172,7 @@ export class AuthService {
     return from(this.inContext(() => signOut(this.auth))).pipe(
       map(() => {
         this.currentUserSubject.next(null);
+        this.fcmService.detener();
         this.authReadySubject.next(true);
       }),
       catchError(error => {

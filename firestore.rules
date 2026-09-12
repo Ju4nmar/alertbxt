@@ -93,6 +93,10 @@ service cloud.firestore {
         && request.resource.data.rol in ['admin', 'residente'];
 
       allow delete: if false;
+
+      match /dispositivos/{token} {
+        allow read, create, update, delete: if isSelf(uid);
+      }
     }
 
     match /comunidades/{comunidadId} {

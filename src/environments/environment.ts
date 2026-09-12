@@ -12,7 +12,9 @@ export const environment = {
   messagingSenderId: "392991506907",
   appId: "1:392991506907:web:c892fc7459052ff444e7fe",
   measurementId: "G-Q8KNG7S9Q2"
-}
+},
+  // Pega aquí la clave pública VAPID de Firebase Cloud Messaging.
+  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE'
 };
 
 /*
