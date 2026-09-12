@@ -1,27 +1,38 @@
 .page-title {
- // padding-top: 10px;
+  padding-top: 1rem;
+  margin: 0 0 1rem;
   text-align: center;
   font-weight: 700;
   font-size: 1.3rem;
+  color: #111827;
 }
 
 .perfil-panel {
   max-width: 760px;
   margin: 1rem auto;
-  padding: 1rem;
+  padding: 1.3rem;
+  color: #111827;
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
+.perfil-panel:last-of-type {
+  margin-bottom: 2rem;  /* ← Espaciado final para ver el cierre completo */
+}
+
 .perfil-panel h3 {
-  margin: 0 0 1rem;
+  margin: 0 0 1.2rem;
   text-align: center;
   font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
 }
 
 ion-item {
   width: 100%;
+  --padding-start: 0;
+  --padding-end: 0;
 }
 
 ion-input,
@@ -32,12 +43,29 @@ ion-select {
 .perfil-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.6rem;
+  padding: 0 0.5rem;
+}
+
+.field-hint {
+  margin: 0.4rem 0 0.8rem;
+  color: #6b7280;
+  font-size: 0.85rem;
 }
 
 .invite-label {
-  margin: 0.8rem 0 0.4rem;
+  margin: 1rem 0 0.6rem;
   font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
 }
 
 .codigo-row,
@@ -46,56 +74,186 @@ ion-select {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
+  background: #f9fafb;
+  word-break: break-all;
 }
 
 .codigo-row span,
 .link-row span {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.codigo-row ion-button,
+.link-row ion-button {
+  flex-shrink: 0;
+  --padding-start: 10px;
+  --padding-end: 10px;
 }
 
 .copy-message,
 .empty-text {
   margin: 1rem 0 0;
   text-align: center;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #0b2f78;
+}
+
+.empty-text {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.elimination-panel p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+.elimination-panel p:last-of-type {
+  margin-top: 1rem;
 }
 
 ion-button {
   --background: #0b2f78;
   --color: #ffffff;
+  text-transform: none;
+  font-weight: 600;
 }
 
-.save-btn {
+ion-button:hover {
+  --background: #1e3a8a;
+}
+
+.save-btn,
+.delete-account-btn {
   display: block;
-  max-width: 220px;
-  margin: 1rem auto 0;
-}
-
-.elimination-panel {
-  border-left: 4px solid #dc2626;
-}
-
-.elimination-panel p {
-  color: #4b5563;
-  line-height: 1.45;
+  max-width: 240px;
+  margin: 1.5rem auto 0;
 }
 
 .delete-account-btn {
-  display: block;
-  margin: 1rem auto 0;
+  --background: #dc2626;
 }
 
+.delete-account-btn:hover {
+  --background: #b91c1c;
+}
+
+.delete-account-btn[disabled] {
+  --background: #9ca3af;
+  --color: #f3f4f6;
+}
+
+/* ================== MEDIA QUERY MOBILE ================== */
 @media (max-width: 768px) {
-  .page-title { padding-top: 16px; }
-  .perfil-panel { margin: 0.8rem; }
-  .perfil-grid { grid-template-columns: 1fr; }
+  .page-title {
+    padding-top: 1rem;
+    margin: 0 0 0.8rem;
+    font-size: 1.1rem;
+  }
+
+  .perfil-panel {
+    margin: 0.8rem;
+    padding: 1rem;
+  }
+
+  .perfil-panel:last-of-type {
+    margin-bottom: 1.5rem;
+  }
+
+  .perfil-panel h3 {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .field-error {
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .field-hint {
+    margin: 0.3rem 0 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .invite-label {
+    margin: 0.8rem 0 0.5rem;
+    font-size: 0.9rem;
+  }
+
   .codigo-row,
-  .link-row { align-items: stretch; flex-direction: column; }
+  .link-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
+
+  .codigo-row span,
+  .link-row span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-all;
+    font-size: 0.85rem;
+  }
+
+  .codigo-row ion-button,
+  .link-row ion-button {
+    width: 100%;
+  }
+
+  .copy-message,
+  .empty-text {
+    margin: 0.8rem 0 0;
+    font-size: 0.85rem;
+  }
+
+  .elimination-panel p {
+    font-size: 0.9rem;
+    margin: 0 0 0.8rem;
+  }
+
+  .save-btn,
+  .delete-account-btn {
+    max-width: 100%;
+    margin: 1rem auto 0;
+  }
+}
+
+/* ================== MEDIA QUERY TABLET ================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .perfil-panel {
+    margin: 1rem 1.5rem;
+  }
+
+  .perfil-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+}
+
+/* ================== MEDIA QUERY DESKTOP ================== */
+@media (min-width: 1025px) {
+  .perfil-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
 }
