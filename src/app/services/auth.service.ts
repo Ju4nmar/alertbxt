@@ -1,9 +1,11 @@
 import { Injectable, Injector, NgZone, inject, runInInjectionContext } from '@angular/core';
 import {
   Auth,
+  GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
 } from '@angular/fire/auth';
 import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'rxjs';
@@ -168,6 +170,77 @@ export class AuthService {
     );
   }
 
+  loginWithGoogle(): Observable<Usuario> {
+    return from(this.inContext(() => signInWithPopup(this.auth, new GoogleAuthProvider()))).pipe(
+      switchMap(async result => {
+        const userData = await this.loadUserData(result.user.uid);
+        if (!userData) {
+          await this.inContext(() => signOut(this.auth));
+          throw new Error('No existe una cuenta con este usuario de Google. Regístrate o únete con un código de invitación.');
+        }
+
+        this.currentUserSubject.next(userData);
+        this.authReadySubject.next(true);
+        return userData;
+      }),
+      catchError(error => {
+        console.error('Error en login con Google:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  joinComunidadWithGoogle(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+    const codigo = codigoInvitacion.trim().toUpperCase();
+
+    return this.firestoreService.getComunidadByCodigoInvitacion(codigo).pipe(
+      take(1),
+      switchMap(comunidad => {
+        if (!comunidad?.idComunidad) {
+          throw new Error('Código de invitación inválido');
+        }
+
+        return from(this.inContext(() => signInWithPopup(this.auth, new GoogleAuthProvider()))).pipe(
+          switchMap(async result => {
+            const existente = await this.loadUserData(result.user.uid);
+
+            if (existente) {
+              if (existente.comunidadId && existente.comunidadId !== comunidad.idComunidad) {
+                throw new Error('Esta cuenta de Google ya pertenece a otra vecindad');
+              }
+
+              const usuarioActualizado: Usuario = { ...existente, comunidadId: comunidad.idComunidad || '' };
+              await firstValueFrom(this.firestoreService.addUsuario(usuarioActualizado));
+              this.currentUserSubject.next(usuarioActualizado);
+              this.authReadySubject.next(true);
+              return { comunidad, usuario: usuarioActualizado };
+            }
+
+            const nuevoUsuario: Usuario = {
+              idUsuario: result.user.uid,
+              nombre: result.user.displayName || 'Residente',
+              correo: result.user.email || '',
+              telefono: '',
+              rol: 'residente',
+              activo: true,
+              comunidadId: comunidad.idComunidad || '',
+              fechaRegistro: new Date().toISOString(),
+            };
+
+            await firstValueFrom(this.firestoreService.addUsuario(nuevoUsuario));
+            this.currentUserSubject.next(nuevoUsuario);
+            this.authReadySubject.next(true);
+            return { comunidad, usuario: nuevoUsuario };
+          })
+        );
+      }),
+      catchError(error => {
+        console.error('Error uniéndose con Google:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   logout(): Observable<void> {
     return from(this.inContext(() => signOut(this.auth))).pipe(
       map(() => {
@@ -300,6 +373,4 @@ export class AuthService {
     const bytes = crypto.getRandomValues(new Uint8Array(8));
     return Array.from(bytes, byte => alphabet[byte % alphabet.length]).join('');
   }
-
-  joinNeighborhood = this.joinComunidad;
 }

@@ -90,6 +90,11 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       return;
     }
 
+    if (!currentUser.comunidadId) {
+      this.recordatorioError = 'Únete a una vecindad antes de crear recordatorios.';
+      return;
+    }
+
     this.isLoading = true;
     const recordatorio: Omit<Recordatorio, 'idRecordatorios'> = {
       tituloRecordatorio: titulo,

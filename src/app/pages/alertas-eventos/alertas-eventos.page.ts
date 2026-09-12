@@ -1,7 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent } from '@ionic/angular/standalone';
+import { IonButton, IonContent, IonIcon } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import {
+  alertCircleOutline,
+  calendarOutline,
+  checkmarkCircle,
+  notificationsOffOutline,
+  personCircleOutline,
+  personOutline,
+  timeOutline,
+} from 'ionicons/icons';
 import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, map, of, switchMap, takeUntil } from 'rxjs';
 import { Aviso, Recordatorio } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -25,13 +35,15 @@ interface ModalData {
   imagen?: string;
 }
 
+type FiltroPanel = 'todos' | 'aviso' | 'recordatorio';
+
 @Component({
   selector: 'app-alertas-eventos',
   templateUrl: './alertas-eventos.page.html',
   styleUrls: ['./alertas-eventos.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonButton],
+  imports: [CommonModule, FormsModule, IonContent, IonButton, IonIcon],
 })
 export class AlertasEventosPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
@@ -39,27 +51,26 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly destroy$ = new Subject<void>();
 
+  constructor() {
+    addIcons({
+      alertCircleOutline,
+      calendarOutline,
+      checkmarkCircle,
+      notificationsOffOutline,
+      personCircleOutline,
+      personOutline,
+      timeOutline,
+    });
+  }
+
   avisos: Aviso[] = [];
   recordatorios: Recordatorio[] = [];
   tarjetas: PanelCard[] = [];
-  gruposTarjetas: PanelCard[][] = [];
-  currentPage = 0;
+  tarjetasVisibles: PanelCard[] = [];
+  filtro: FiltroPanel = 'todos';
   modalAbierto = false;
   modalData: ModalData | null = null;
   isLoading = false;
-  private cardsPerPage = this.getCardsPerPage();
-  private touchStartX = 0;
-  private touchStartY = 0;
-
-  @HostListener('window:resize')
-  onResize(): void {
-    const nextCardsPerPage = this.getCardsPerPage();
-    if (nextCardsPerPage !== this.cardsPerPage) {
-      this.cardsPerPage = nextCardsPerPage;
-      this.currentPage = 0;
-      this.agruparTarjetas();
-    }
-  }
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -88,8 +99,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
         this.avisos = avisos;
         this.recordatorios = recordatorios;
         this.tarjetas = this.crearTarjetas(avisos, recordatorios);
-        this.currentPage = 0;
-        this.agruparTarjetas();
+        this.aplicarFiltro();
         this.cdr.markForCheck();
       },
       error: error => {
@@ -107,24 +117,27 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  agruparTarjetas(): void {
-    const grupos: PanelCard[][] = [];
-    for (let i = 0; i < this.tarjetas.length; i += this.cardsPerPage) {
-      grupos.push(this.tarjetas.slice(i, i + this.cardsPerPage));
-    }
-    this.gruposTarjetas = grupos;
+  get totalEmergencias(): number {
+    return this.avisos.filter(aviso => aviso.tipoAviso === 'emergencia' || aviso.tipoAviso === 'alerta').length;
   }
 
-  private getCardsPerPage(): number {
-    if (window.innerWidth <= 768) {
-      return 1;
-    }
+  get totalPendientes(): number {
+    return this.recordatorios.filter(recordatorio => !this.isReminderCompleted(recordatorio)).length;
+  }
 
-    if (window.innerWidth <= 1100) {
-      return 2;
+  cambiarFiltro(filtro: FiltroPanel): void {
+    if (this.filtro === filtro) {
+      return;
     }
+    this.filtro = filtro;
+    this.aplicarFiltro();
+    this.cdr.markForCheck();
+  }
 
-    return 3;
+  private aplicarFiltro(): void {
+    this.tarjetasVisibles = this.filtro === 'todos'
+      ? this.tarjetas
+      : this.tarjetas.filter(tarjeta => tarjeta.tipo === this.filtro);
   }
 
   private completarAutores(avisos: Aviso[]) {
@@ -177,28 +190,6 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     return Number.isNaN(timestamp) ? 0 : timestamp;
   }
 
-  cambiarPagina(index: number): void {
-    this.currentPage = Math.max(0, Math.min(index, this.gruposTarjetas.length - 1));
-  }
-
-  onTouchStart(event: TouchEvent): void {
-    const touch = event.touches[0];
-    this.touchStartX = touch.clientX;
-    this.touchStartY = touch.clientY;
-  }
-
-  onTouchEnd(event: TouchEvent): void {
-    const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - this.touchStartX;
-    const deltaY = touch.clientY - this.touchStartY;
-
-    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY)) {
-      return;
-    }
-
-    this.cambiarPagina(deltaX < 0 ? this.currentPage + 1 : this.currentPage - 1);
-  }
-
   abrirModal(tarjeta: PanelCard): void {
     if (tarjeta.tipo === 'aviso' && tarjeta.aviso) {
       this.modalData = {
@@ -236,12 +227,8 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     }
   }
 
-  onModalPresent(): void {
-    this.cdr.markForCheck();
-  }
-
-  isPriorityImage(groupIndex: number, cardIndex: number): boolean {
-    return groupIndex === 0 && cardIndex < this.cardsPerPage;
+  isPriorityImage(index: number): boolean {
+    return index < 3;
   }
 
   isReminderCompleted(recordatorio: Recordatorio | undefined): boolean {
@@ -254,9 +241,4 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   trackByCardId(_: number, tarjeta: PanelCard): string {
     return tarjeta.id;
   }
-
-  trackByGroupIndex(index: number): number {
-    return index;
-  }
-
 }

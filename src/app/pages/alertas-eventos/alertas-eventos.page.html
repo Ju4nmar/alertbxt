@@ -1,64 +1,86 @@
-<ion-content>
-  <h2 class="page-title">Alertas y Eventos</h2>
+<ion-content class="feed-content">
+  <div class="feed-header">
+    <h2 class="page-title">Alertas y eventos</h2>
 
-  <!-- Carrusel de tarjetas -->
-  <div class="cards-container">
-    <div
-      class="cards-scroll"
-      [style.transform]="'translateX(-' + (currentPage * 100) + '%)'"
-      (touchstart)="onTouchStart($event)"
-      (touchend)="onTouchEnd($event)"
-    >
-      <div class="cards-group" *ngFor="let grupo of gruposTarjetas; let groupIndex = index; trackBy: trackByGroupIndex">
-        <div class="card" [class.reminder-card]="tarjeta.tipo === 'recordatorio'" *ngFor="let tarjeta of grupo; let cardIndex = index; trackBy: trackByCardId" (click)="abrirModal(tarjeta)">
-          <ng-container *ngIf="tarjeta.aviso as aviso; else reminderCard">
-            <h3 class="card-title">{{ aviso.tituloAviso }}</h3>
-            <div class="card-body">
-              <p class="card-date">{{ aviso.fechaPublicacion | date: 'short' }}</p>
-              <p class="card-description">{{ aviso.descripcionAviso | slice:0:120 }}</p>
-              <img
-                *ngIf="aviso.imagen"
-                [src]="aviso.imagen"
-                [alt]="aviso.tituloAviso"
-                class="card-image"
-                [attr.loading]="isPriorityImage(groupIndex, cardIndex) ? 'eager' : 'lazy'"
-                [attr.fetchpriority]="isPriorityImage(groupIndex, cardIndex) ? 'high' : 'auto'"
-                decoding="async"
-              />
-              <div *ngIf="!aviso.imagen" class="image-placeholder">Sin imagen</div>
-              <p class="card-author">{{ aviso.autorNombre || aviso.autorId || 'Autor no disponible' }}</p>
-            </div>
-          </ng-container>
-
-          <ng-template #reminderCard>
-            <ng-container *ngIf="tarjeta.recordatorio as recordatorio">
-              <h3 class="card-title reminder-title">Recordatorio</h3>
-              <div class="card-body reminder-body">
-                <p class="card-date">{{ recordatorio.fechaHora | date: 'medium' }}</p>
-                <h4 class="reminder-heading">{{ recordatorio.tituloRecordatorio }}</h4>
-                <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripción') | slice:0:140 }}</p>
-                <div class="reminder-mark" [class.completed]="isReminderCompleted(recordatorio)">
-                  {{ isReminderCompleted(recordatorio) ? 'Cumplido' : 'Pendiente' }}
-                </div>
-              </div>
-            </ng-container>
-          </ng-template>
-        </div>
+    <div class="status-strip">
+      <div class="status-pill status-pill--danger" *ngIf="totalEmergencias">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ totalEmergencias }} {{ totalEmergencias === 1 ? 'alerta activa' : 'alertas activas' }}
       </div>
+      <div class="status-pill status-pill--info">
+        <ion-icon name="time-outline"></ion-icon>
+        {{ totalPendientes }} {{ totalPendientes === 1 ? 'recordatorio pendiente' : 'recordatorios pendientes' }}
+      </div>
+    </div>
+
+    <div class="filter-tabs" role="tablist" aria-label="Filtrar publicaciones">
+      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'todos'" [class.active]="filtro === 'todos'" (click)="cambiarFiltro('todos')">Todo</button>
+      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'aviso'" [class.active]="filtro === 'aviso'" (click)="cambiarFiltro('aviso')">Avisos</button>
+      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'recordatorio'" [class.active]="filtro === 'recordatorio'" (click)="cambiarFiltro('recordatorio')">Recordatorios</button>
     </div>
   </div>
 
-  <!-- Botones inferiores -->
-  <div class="dots-container">
-    <button
-      *ngFor="let grupo of gruposTarjetas; let i = index; trackBy: trackByGroupIndex"
-      type="button"
-      class="dot"
-      [class.active]="i === currentPage"
-      [attr.aria-label]="'Ir al grupo de alertas ' + (i + 1)"
-      [attr.aria-current]="i === currentPage ? 'true' : null"
-      (click)="cambiarPagina(i)"
-    ></button>
+  <div class="cards-grid" *ngIf="tarjetasVisibles.length">
+    <div
+      class="card"
+      [ngClass]="tarjeta.tipo === 'recordatorio' ? 'reminder-card' : 'tipo-' + (tarjeta.aviso?.tipoAviso || 'informativo')"
+      *ngFor="let tarjeta of tarjetasVisibles; let i = index; trackBy: trackByCardId"
+      (click)="abrirModal(tarjeta)"
+    >
+      <ng-container *ngIf="tarjeta.aviso as aviso; else reminderCard">
+        <div class="card-header">
+          <span class="ab-badge" [ngClass]="'ab-badge--' + (aviso.tipoAviso || 'informativo')">{{ aviso.tipoAviso || 'informativo' }}</span>
+          <h3 class="card-title">{{ aviso.tituloAviso }}</h3>
+        </div>
+        <div class="card-body">
+          <p class="card-date">
+            <ion-icon name="time-outline"></ion-icon>
+            {{ aviso.fechaPublicacion | date: 'short' }}
+          </p>
+          <p class="card-description">{{ aviso.descripcionAviso | slice:0:120 }}</p>
+          <img
+            *ngIf="aviso.imagen"
+            [src]="aviso.imagen"
+            [alt]="aviso.tituloAviso"
+            class="card-image"
+            [attr.loading]="isPriorityImage(i) ? 'eager' : 'lazy'"
+            [attr.fetchpriority]="isPriorityImage(i) ? 'high' : 'auto'"
+            decoding="async"
+          />
+          <div *ngIf="!aviso.imagen" class="image-placeholder">Sin imagen</div>
+          <p class="card-author">
+            <ion-icon name="person-circle-outline"></ion-icon>
+            {{ aviso.autorNombre || aviso.autorId || 'Autor no disponible' }}
+          </p>
+        </div>
+      </ng-container>
+
+      <ng-template #reminderCard>
+        <ng-container *ngIf="tarjeta.recordatorio as recordatorio">
+          <div class="card-header reminder-header">
+            <span class="ab-badge ab-badge--recordatorio">Recordatorio</span>
+            <h3 class="card-title reminder-title">{{ recordatorio.tituloRecordatorio }}</h3>
+          </div>
+          <div class="card-body reminder-body">
+            <p class="card-date">
+              <ion-icon name="calendar-outline"></ion-icon>
+              {{ recordatorio.fechaHora | date: 'medium' }}
+            </p>
+            <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripción') | slice:0:140 }}</p>
+            <div class="reminder-mark" [class.completed]="isReminderCompleted(recordatorio)">
+              <ion-icon [name]="isReminderCompleted(recordatorio) ? 'checkmark-circle' : 'time-outline'"></ion-icon>
+              {{ isReminderCompleted(recordatorio) ? 'Cumplido' : 'Pendiente' }}
+            </div>
+          </div>
+        </ng-container>
+      </ng-template>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && !tarjetasVisibles.length" class="empty-state">
+    <ion-icon name="notifications-off-outline"></ion-icon>
+    <p *ngIf="filtro === 'todos'">Todavía no hay alertas, avisos o recordatorios para mostrar.</p>
+    <p *ngIf="filtro !== 'todos'">No hay resultados para este filtro por ahora.</p>
   </div>
 </ion-content>
 
@@ -70,7 +92,14 @@
   aria-modal="true"
   (click)="onModalBackdropClick($event)"
 >
-  <div *ngIf="modalData as modal" class="detail-modal" [class.reminder-modal-card]="modal.variant === 'recordatorio'">
+  <div
+    *ngIf="modalData as modal"
+    class="detail-modal"
+    [ngClass]="modal.variant === 'recordatorio' ? 'reminder-modal-card' : 'tipo-' + (modal.tipo || 'informativo')"
+  >
+    <span class="ab-badge" [ngClass]="modal.variant === 'recordatorio' ? 'ab-badge--recordatorio' : 'ab-badge--' + (modal.tipo || 'informativo')">
+      {{ modal.variant === 'recordatorio' ? 'Recordatorio' : (modal.tipo || 'informativo') }}
+    </span>
     <h2 class="modal-title">{{ modal.titulo }}</h2>
     <img
       *ngIf="modal.imagen"
@@ -82,11 +111,14 @@
     />
     <div class="modal-details">
       <p class="modal-text">{{ modal.descripcion }}</p>
-      <p *ngIf="modal.tipo"><strong>Tipo:</strong> {{ modal.tipo }}</p>
       <p *ngIf="modal.fecha">
+        <ion-icon name="calendar-outline"></ion-icon>
         <strong>Fecha:</strong> {{ modal.fecha | date: 'medium' }}
       </p>
-      <p *ngIf="modal.autor"><strong>Autor:</strong> {{ modal.autor }}</p>
+      <p *ngIf="modal.autor">
+        <ion-icon name="person-outline"></ion-icon>
+        <strong>Autor:</strong> {{ modal.autor }}
+      </p>
     </div>
     <ion-button expand="block" (click)="cerrarModal()">Cerrar</ion-button>
   </div>

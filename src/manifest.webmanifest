@@ -9,7 +9,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#0b2f78",
+  "theme_color": "#0e7c86",
   "icons": [
     {
       "src": "assets/icon/Alertlogo.png",
