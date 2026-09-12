@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { AppComponent } from './app.component';
 import { AuthService } from './services/auth.service';
 import { FirestoreService } from './services/firestore.service';
+import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
 
@@ -35,6 +36,7 @@ describe('AppComponent', () => {
           enableNotifications: () => Promise.resolve('unsupported'),
         },
       },
+      { provide: FcmService, useValue: { iniciarParaUsuario: () => Promise.resolve(), detener: () => undefined } },
       {
         provide: PwaInstallService,
         useValue: {

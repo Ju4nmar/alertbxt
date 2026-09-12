@@ -35,7 +35,12 @@
                 "output": "assets"
               },
               "src/manifest.webmanifest",
-              "src/robots.txt"
+              "src/robots.txt",
+              {
+                "glob": "firebase-messaging-sw.js",
+                "input": "public",
+                "output": "/"
+              }
             ],
             "styles": ["src/global.scss", "src/theme/variables.scss"],
             "scripts": [],
@@ -117,7 +122,12 @@
                 "output": "assets"
               },
               "src/manifest.webmanifest",
-              "src/robots.txt"
+              "src/robots.txt",
+              {
+                "glob": "firebase-messaging-sw.js",
+                "input": "public",
+                "output": "/"
+              }
             ],
             "styles": ["src/global.scss", "src/theme/variables.scss"],
             "scripts": []

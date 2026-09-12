@@ -15,7 +15,7 @@ import {
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Recordatorio, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Recordatorio, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -237,6 +237,22 @@ export class FirestoreService {
         return throwError(() => new Error('No se pudo registrar la solicitud de eliminación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  registrarDispositivo(idUsuario: string, dispositivo: Dispositivo): Observable<void> {
+    if (!idUsuario || !dispositivo.token || !dispositivo.fechaRegistro) {
+      return throwError(() => new Error('No se pudo registrar el dispositivo'));
+    }
+
+    const docRef = this.inContext(() => doc(this.firestore, `usuarios/${idUsuario}/dispositivos/${dispositivo.token}`));
+
+    return from(this.inContext(() => setDoc(docRef, dispositivo, { merge: true }))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error registrando dispositivo FCM:', error);
+        return throwError(() => new Error('No se pudo guardar el token del dispositivo'));
+      })
     );
   }
 
