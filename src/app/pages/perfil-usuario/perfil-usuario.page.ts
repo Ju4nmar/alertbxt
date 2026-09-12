@@ -6,6 +6,7 @@ import { firstValueFrom, of, Subject, filter, switchMap, takeUntil } from 'rxjs'
 import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
   selector: 'app-perfil-usuario',
@@ -112,8 +113,17 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.isValidEmail(correo) || !this.isValidPhone(telefono)) {
+    if (!isValidEmail(correo) || !isValidPhone(telefono)) {
       this.mensajeGuardado = 'Revisa el formato del correo o del teléfono.';
+      return;
+    }
+
+    // Las reglas de seguridad no permiten que un usuario cambie su propio
+    // rol (solo otro administrador puede hacerlo desde Gestión de usuarios).
+    // Sin este control, el intento fallaría en Firestore con un error
+    // genérico que no explica la causa real.
+    if (this.usuario.rol === 'admin' && this.rol !== this.usuario.rol) {
+      this.mensajeGuardado = 'No puedes cambiar tu propio rol. Pídele a otro administrador que lo haga desde Gestión de usuarios.';
       return;
     }
 
@@ -198,11 +208,4 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       });
   }
 
-  private isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  private isValidPhone(phone: string): boolean {
-    return /^[0-9+ ]{7,15}$/.test(phone);
-  }
 }

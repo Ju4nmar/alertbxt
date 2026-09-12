@@ -1,6 +1,7 @@
 <ion-content>
   <h2 class="page-title">Perfil de usuario</h2>
 
+  <div class="page-shell">
   <section class="perfil-panel">
     <h3>Datos personales</h3>
 
@@ -77,7 +78,7 @@
     </ng-template>
   </section>
 
-  <section class="perfil-panel elimination-panel" *ngIf="usuario">
+  <section class="perfil-panel elimination-panel full-span" *ngIf="usuario">
     <h3>Eliminación de cuenta</h3>
     <p>Solicita la eliminación de tus datos. La baja definitiva será realizada posteriormente por el equipo administrador.</p>
     <ion-button class="delete-account-btn" (click)="solicitarEliminacionCuenta()" [disabled]="usuario.pendienteEliminacion || isRequestingDeletion">
@@ -85,4 +86,5 @@
     </ion-button>
     <p *ngIf="mensajeEliminacion" class="copy-message" role="status">{{ mensajeEliminacion }}</p>
   </section>
+  </div>
 </ion-content>

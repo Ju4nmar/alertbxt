@@ -1,28 +1,59 @@
-.page-title {
-  padding-top: 10px;
-  margin: 1rem 0 0.5rem;
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 700;
+ion-content {
+  --background: var(--ion-background-color);
+}
+
+.page-shell {
+  display: grid;
+  gap: 1.2rem;
+  max-width: 1180px;
+  margin: 0.6rem auto 2rem;
+  padding: 0 1rem;
+}
+
+.lists-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .page-shell {
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .aviso-form {
+    position: sticky;
+    top: 12px;
+  }
 }
 
 .aviso-form,
 .lista-avisos {
-  max-width: 760px;
-  margin: 1rem auto;
-  padding: 1rem 1.3rem;
-  color: #111827;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  margin: 0;
+  padding: 1.4rem 1.5rem;
+  color: var(--ab-text-primary);
+  background: var(--ab-surface);
+  border-radius: var(--ab-radius-lg);
+  box-shadow: var(--ab-shadow-md);
+  border: 1px solid var(--ab-border);
+}
+
+/* El formulario es la acción principal de la página: un halo suave en
+   vez de un borde de color plano. */
+.aviso-form {
+  box-shadow: var(--ab-shadow-primary);
 }
 
 .aviso-form h3,
 .lista-avisos h3 {
-  margin: 0 0 1rem;
+  margin: 0 0 1.1rem;
   text-align: center;
-  font-size: 1rem;
+  font-family: var(--ab-font-heading);
+  font-size: 1.05rem;
   font-weight: 700;
+  color: var(--ab-text-primary);
 }
 
 .aviso-form ion-item {
@@ -32,7 +63,7 @@
 .aviso-form ion-input,
 .aviso-form ion-textarea,
 .aviso-form ion-select {
-  --color: #111827;
+  --color: var(--ab-text-primary);
 }
 
 .upload-container {
@@ -48,15 +79,18 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 12px 18px;
+  min-height: var(--ab-tap-target);
   color: #ffffff;
-  background: #0b2f78;
-  border-radius: 6px;
+  background: var(--ion-color-primary);
+  border-radius: var(--ab-radius-md);
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.18s ease;
 }
 
 .custom-file-upload:hover {
-  background: #153f9f;
+  background: var(--ion-color-primary-shade);
 }
 
 .custom-file-upload input {
@@ -68,7 +102,7 @@
   margin: 0;
   overflow: hidden;
   font-size: 0.9rem;
-  color: #444444;
+  color: var(--ab-text-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -77,42 +111,53 @@
   flex-basis: 100%;
   margin: 0;
   font-size: 0.85rem;
-  color: #0b2f78;
+  color: var(--ion-color-primary);
 }
 
 .guardar-aviso {
   margin-top: 0.9rem;
-  --background: #1e3a8a;
-  --color: #ffffff;
+  --background: var(--ion-color-primary);
+  --background-activated: var(--ion-color-primary-shade);
+  --color: var(--ion-color-primary-contrast);
+  font-weight: 700;
 }
 
+/* En columna siempre: la lista vive en una columna angosta junto al
+   formulario, así que título y acciones nunca compiten por el mismo
+   renglón (antes el título quedaba truncado a 1-2 letras). */
 .aviso-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   margin-bottom: 12px;
-  padding: 12px 16px;
-  border: 1px solid #9ca3af;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 5px 12px rgba(15, 23, 42, 0.08);
+  padding: 14px 16px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  box-shadow: var(--ab-shadow-sm);
+}
+
+.aviso-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
 .aviso-titulo {
-  flex: 1;
   min-width: 0;
   margin: 0;
   overflow: hidden;
   font-size: 1rem;
   font-weight: 700;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  color: var(--ab-text-primary);
 }
 
 .lista-alertas-sos {
-  box-shadow: 0 8px 16px rgba(220, 38, 38, 0.12), 
-              0 12px 28px rgba(15, 23, 42, 0.10);
+  box-shadow: var(--ab-shadow-danger);
   min-height: auto;
   display: flex;
   flex-direction: column;
@@ -124,8 +169,9 @@
 .section-description,
 .empty-list {
   margin: 0 0 14px;
-  color: #4b5563;
+  color: var(--ab-text-secondary);
   font-size: 0.9rem;
+  text-align: center;
 }
 
 .alerta-sos-item {
@@ -133,6 +179,7 @@
   flex-direction: column;
   gap: 1rem;
   padding: 1rem 1rem !important;
+  background: var(--ab-tipo-emergencia-bg);
 }
 
 .alerta-sos-content {
@@ -147,6 +194,11 @@
   white-space: pre-line;
   font-size: 0.95rem;
   line-height: 1.5;
+  color: var(--ab-text-primary);
+}
+
+.alerta-sos-content small {
+  color: var(--ab-text-secondary);
 }
 
 .alerta-sos-item .acciones {
@@ -175,12 +227,14 @@
 }
 
 .btn-editar-aviso {
-  --background: #3b82f6;
-  --color: #ffffff;
+  --background: var(--ion-color-tertiary);
+  --background-activated: var(--ion-color-tertiary-shade);
+  --color: var(--ion-color-tertiary-contrast);
 }
 
 .btn-eliminar-aviso {
-  --background: #ef4444;
+  --background: var(--ion-color-danger);
+  --background-activated: var(--ion-color-danger-shade);
   --color: #ffffff;
 }
 
@@ -208,14 +262,14 @@
 }
 
 @media (max-width: 768px) {
-  .page-title {
-    padding-top: 16px;
+  .page-shell {
+    padding: 0 0.6rem;
+    margin: 0.6rem auto 1.5rem;
   }
 
   .aviso-form,
   .lista-avisos {
-    margin: 0.8rem;
-    padding: 0.8rem;
+    padding: 1rem;
   }
 
   .lista-alertas-sos {
@@ -229,11 +283,14 @@
 
   .aviso-item {
     gap: 10px;
-    padding: 10px;
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .aviso-titulo {
     font-size: 0.95rem;
+    white-space: normal;
   }
 
   .alerta-sos-item {

@@ -1,86 +1,102 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>AlertBxt</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="auth-content" [fullscreen]="true">
+<div class="auth-shell">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <img src="assets/icon/Alertlogo.png" alt="" class="auth-logo" width="72" height="72" />
+      <p class="auth-eyebrow">Nuevo conjunto</p>
+      <h1 class="auth-hero-title">Organiza tu<br />conjunto desde hoy.</h1>
+      <p class="auth-hero-copy">
+        Crea el espacio digital de tu unidad residencial: tú quedas como administrador
+        y luego invitas a tus vecinos con un código único.
+      </p>
+      <ul class="auth-hero-points">
+        <li><span class="point-dot"></span>Publica avisos y emergencias</li>
+        <li><span class="point-dot"></span>Invita vecinos con un código</li>
+        <li><span class="point-dot"></span>Modera lo que se comparte</li>
+      </ul>
+    </div>
+  </aside>
 
-<ion-content class="ion-padding">
-  <div class="registro-container">
-    <h1 class="registro-title">Registrar vecindad</h1>
+  <section class="auth-panel">
+    <div class="auth-panel-inner">
+      <h2 class="auth-form-title">Registrar vecindad</h2>
+      <p class="auth-form-sub">Cuéntanos quién administrará esta vecindad.</p>
 
-    <form (ngSubmit)="createComunidad()" #registroForm="ngForm" class="registro-form" novalidate>
-      <ion-item>
-        <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" required minlength="3" maxlength="60" #nombreComunidadInput="ngModel" (ionInput)="registroError = ''"></ion-input>
-      </ion-item>
-      <div *ngIf="nombreComunidadInput.invalid && (nombreComunidadInput.dirty || nombreComunidadInput.touched)" class="field-error">
-        <span *ngIf="nombreComunidadInput.errors?.['required']">El nombre de la vecindad es requerido.</span>
-        <span *ngIf="nombreComunidadInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
-        <span *ngIf="nombreComunidadInput.errors?.['maxlength']">No debe superar 60 caracteres.</span>
-      </div>
+      <form (ngSubmit)="createComunidad()" #registroForm="ngForm" class="registro-form" novalidate>
+        <ion-item>
+          <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" required minlength="3" maxlength="60" #nombreComunidadInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="nombreComunidadInput.invalid && (nombreComunidadInput.dirty || nombreComunidadInput.touched)" class="field-error">
+          <span *ngIf="nombreComunidadInput.errors?.['required']">El nombre de la vecindad es requerido.</span>
+          <span *ngIf="nombreComunidadInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+          <span *ngIf="nombreComunidadInput.errors?.['maxlength']">No debe superar 60 caracteres.</span>
+        </div>
 
-      <ion-item>
-        <ion-input label="Nombre del Administrador" label-placement="floating" [(ngModel)]="administradorNombre" name="administradorNombre" required minlength="3" maxlength="80" #administradorNombreInput="ngModel" (ionInput)="registroError = ''"></ion-input>
-      </ion-item>
-      <div *ngIf="administradorNombreInput.invalid && (administradorNombreInput.dirty || administradorNombreInput.touched)" class="field-error">
-        <span *ngIf="administradorNombreInput.errors?.['required']">El nombre del administrador es requerido.</span>
-        <span *ngIf="administradorNombreInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
-        <span *ngIf="administradorNombreInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
-      </div>
+        <ion-item>
+          <ion-input label="Nombre del Administrador" label-placement="floating" [(ngModel)]="administradorNombre" name="administradorNombre" required minlength="3" maxlength="80" #administradorNombreInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="administradorNombreInput.invalid && (administradorNombreInput.dirty || administradorNombreInput.touched)" class="field-error">
+          <span *ngIf="administradorNombreInput.errors?.['required']">El nombre del administrador es requerido.</span>
+          <span *ngIf="administradorNombreInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
+          <span *ngIf="administradorNombreInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
+        </div>
 
-      <ion-item>
-        <ion-input label="Correo electrónico del administrador" label-placement="floating" type="email" [(ngModel)]="administradorCorreo" name="administradorCorreo" required email maxlength="120" #administradorCorreoInput="ngModel" (ionInput)="registroError = ''"></ion-input>
-      </ion-item>
-      <div *ngIf="administradorCorreoInput.invalid && (administradorCorreoInput.dirty || administradorCorreoInput.touched)" class="field-error">
-        <span *ngIf="administradorCorreoInput.errors?.['required']">El correo del administrador es requerido.</span>
-        <span *ngIf="administradorCorreoInput.errors?.['email']">Ingresa un correo válido.</span>
-        <span *ngIf="administradorCorreoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
-      </div>
+        <ion-item>
+          <ion-input label="Correo electrónico del administrador" label-placement="floating" type="email" [(ngModel)]="administradorCorreo" name="administradorCorreo" required email maxlength="120" #administradorCorreoInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="administradorCorreoInput.invalid && (administradorCorreoInput.dirty || administradorCorreoInput.touched)" class="field-error">
+          <span *ngIf="administradorCorreoInput.errors?.['required']">El correo del administrador es requerido.</span>
+          <span *ngIf="administradorCorreoInput.errors?.['email']">Ingresa un correo válido.</span>
+          <span *ngIf="administradorCorreoInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
+        </div>
 
-      <ion-item>
-        <ion-input label="Celular del Administrador" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="administradorCelular" name="administradorCelular" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #administradorCelularInput="ngModel" (ionInput)="registroError = ''"></ion-input>
-      </ion-item>
-      <div *ngIf="administradorCelularInput.invalid && (administradorCelularInput.dirty || administradorCelularInput.touched)" class="field-error">
-        <span *ngIf="administradorCelularInput.errors?.['required']">El celular del administrador es requerido.</span>
-        <span *ngIf="administradorCelularInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
-        <span *ngIf="administradorCelularInput.errors?.['pattern'] || administradorCelularInput.errors?.['maxlength']">Usa solo números, espacios o +; máximo 15 caracteres.</span>
-      </div>
+        <ion-item>
+          <ion-input label="Celular del Administrador" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="administradorCelular" name="administradorCelular" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #administradorCelularInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="administradorCelularInput.invalid && (administradorCelularInput.dirty || administradorCelularInput.touched)" class="field-error">
+          <span *ngIf="administradorCelularInput.errors?.['required']">El celular del administrador es requerido.</span>
+          <span *ngIf="administradorCelularInput.errors?.['minlength']">Debe tener al menos 7 caracteres.</span>
+          <span *ngIf="administradorCelularInput.errors?.['pattern'] || administradorCelularInput.errors?.['maxlength']">Usa solo números, espacios o +; máximo 15 caracteres.</span>
+        </div>
 
-      <ion-item>
-        <ion-input label="Contraseña" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="registroError = ''"></ion-input>
-      </ion-item>
-      <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">
-        <span *ngIf="passwordInput.errors?.['required']">La contraseña es obligatoria.</span>
-        <span *ngIf="passwordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
-        <span *ngIf="passwordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
-      </div>
+        <ion-item>
+          <ion-input label="Contraseña" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">
+          <span *ngIf="passwordInput.errors?.['required']">La contraseña es obligatoria.</span>
+          <span *ngIf="passwordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
+          <span *ngIf="passwordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+        </div>
 
-      <ion-item>
-        <ion-input label="Confirmar contraseña" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required minlength="8" maxlength="40" #confirmPasswordInput="ngModel" (ionInput)="registroError = ''"></ion-input>
-      </ion-item>
-      <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="field-error">
-        <span *ngIf="confirmPasswordInput.errors?.['required']">Confirma la contraseña.</span>
-        <span *ngIf="confirmPasswordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
-        <span *ngIf="confirmPasswordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
-      </div>
-      <div *ngIf="confirmPassword && password !== confirmPassword" class="field-error">
-        Las contraseñas no coinciden.
-      </div>
+        <ion-item>
+          <ion-input label="Confirmar contraseña" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required minlength="8" maxlength="40" #confirmPasswordInput="ngModel" (ionInput)="registroError = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="field-error">
+          <span *ngIf="confirmPasswordInput.errors?.['required']">Confirma la contraseña.</span>
+          <span *ngIf="confirmPasswordInput.errors?.['minlength']">Debe tener al menos 8 caracteres.</span>
+          <span *ngIf="confirmPasswordInput.errors?.['maxlength']">No debe superar 40 caracteres.</span>
+        </div>
+        <div *ngIf="confirmPassword && password !== confirmPassword" class="field-error">
+          Las contraseñas no coinciden.
+        </div>
 
-      <ion-item class="chekbox">
-        <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
-        <ion-label>Acepto los términos y condiciones del servicio.</ion-label>
-      </ion-item>
-      <div *ngIf="terminosInput.invalid && (terminosInput.dirty || terminosInput.touched)" class="field-error">
-        Debes aceptar los términos y condiciones.
-      </div>
+        <ion-item class="chekbox">
+          <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
+          <ion-label>Acepto los términos y condiciones del servicio.</ion-label>
+        </ion-item>
+        <div *ngIf="terminosInput.invalid && (terminosInput.dirty || terminosInput.touched)" class="field-error">
+          Debes aceptar los términos y condiciones.
+        </div>
 
-      <div *ngIf="registroError" class="error-message" role="alert">
-        {{ registroError }}
-      </div>
+        <div *ngIf="registroError" class="error-message" role="alert">
+          {{ registroError }}
+        </div>
 
-      <ion-button expand="block" type="submit" [disabled]="registroForm.invalid || password !== confirmPassword || isLoading" class="confirm-btn">
-        {{ isLoading ? 'Creando...' : 'Confirmar' }}
-      </ion-button>
-    </form>
-  </div>
+        <ion-button expand="block" type="submit" [disabled]="registroForm.invalid || password !== confirmPassword || isLoading" class="confirm-btn">
+          {{ isLoading ? 'Creando...' : 'Confirmar' }}
+        </ion-button>
+      </form>
+    </div>
+  </section>
+</div>
 </ion-content>

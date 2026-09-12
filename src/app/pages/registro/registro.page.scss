@@ -1,39 +1,133 @@
-ion-content {
-  --background: linear-gradient(180deg, #eef4ff 0%, #f8f9fa 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  color: #000000;
-  padding: 24px 0;
+.auth-content {
+  --background: var(--ion-background-color);
 }
 
-.registro-container {
-  width: min(100%, 440px);
-  padding: 0 16px;
+.auth-content::part(scroll) {
+  padding-bottom: 0;
+}
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  min-height: 100%;
+}
+
+/* -------- Panel izquierdo: relato de marca -------- */
+.auth-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: var(--ab-space-6);
+  background: linear-gradient(155deg, #241f34 0%, #5c5470 62%, #423a56 100%);
+  color: #fdfaf3;
+  overflow: hidden;
+}
+
+.auth-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+.auth-hero-inner {
+  position: relative;
+  max-width: 420px;
   margin: 0 auto;
+}
+
+.auth-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  padding: 10px;
+  margin-bottom: 22px;
+}
+
+.auth-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ion-color-tertiary-tint);
+}
+
+.auth-hero-title {
+  margin: 0 0 18px;
+  font-family: var(--ab-font-heading);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.08;
+}
+
+.auth-hero-copy {
+  margin: 0 0 26px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(253, 250, 243, 0.82);
+}
+
+.auth-hero-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-hero-points li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.point-dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ion-color-tertiary-tint);
+  box-shadow: 0 0 0 4px rgba(var(--ion-color-tertiary-rgb), 0.3);
+}
+
+/* -------- Panel derecho: formulario -------- */
+.auth-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ab-space-6) var(--ab-space-5);
+}
+
+.auth-panel-inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-form-title {
+  margin: 0 0 4px;
+  font-family: var(--ab-font-heading);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: var(--ab-text-primary);
+}
+
+.auth-form-sub {
+  margin: 0 0 22px;
+  color: var(--ab-text-secondary);
+  font-size: 0.94rem;
 }
 
 .registro-form {
   width: 100%;
-  min-width: 0;
-}
-
-.registro-title {
-  text-align: center;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20px;
-  font-family: sans-serif;
-}
-
-.registro-form {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 ion-item {
@@ -48,45 +142,63 @@ ion-input {
 .chekbox {
   display: flex;
   align-items: center;
-  margin-top: 12px;
+  margin-top: 8px;
+  --min-height: auto;
+  border: none !important;
+  background: transparent !important;
 }
 
 .chekbox ion-checkbox {
   margin-right: 12px;
-  max-width: 20px;
-  max-height: 20px;
+  --size: 22px;
+  --checkbox-background-checked: var(--ion-color-secondary);
+  --border-color-checked: var(--ion-color-secondary);
 }
 
 .chekbox ion-label {
   font-size: 14px;
-  color: #555;
-
+  color: var(--ab-text-secondary);
+  white-space: normal;
 }
 
 .confirm-btn {
-  min-height: 48px;
-  --background: #0b2f78; /* Azul oscuro */
-  --color: #ffffff;
-  --border-radius: 8px;
-  margin-top: 16px;
-  font-weight: bold;
+  min-height: 52px;
+  --background: var(--ion-color-secondary);
+  --background-activated: var(--ion-color-secondary-shade);
+  --color: var(--ion-color-secondary-contrast);
+  --border-radius: var(--ab-radius-md);
+  margin-top: 18px;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-
-/* Responsividad móvil */
-@media (max-width: 767px) {
-  .registro-container {
-    padding: 0;
+/* -------- Responsividad -------- */
+@media (max-width: 900px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
   }
 
-  .registro-form {
-    padding: 0.8rem;
-    margin: 0.8rem;
-    width: auto;
+  .auth-hero {
+    padding: 40px var(--ab-space-5) 34px;
   }
 
-  ion-item {
-    width: 100%;
+  .auth-hero-inner {
+    max-width: 100%;
+  }
+
+  .auth-hero-title {
+    font-size: 1.9rem;
+  }
+
+  .auth-hero-copy {
+    margin-bottom: 18px;
+  }
+
+  .auth-hero-points {
+    display: none;
+  }
+
+  .auth-panel {
+    padding: 30px var(--ab-space-5) 40px;
   }
 }
-

@@ -3,16 +3,17 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonTitle, IonToolbar } from '@ionic/angular/standalone';
-import { firstValueFrom } from 'rxjs';
+import { IonButton, IonContent, IonInput, IonItem } from '@ionic/angular/standalone';
+import { combineLatest, filter, firstValueFrom, take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
   selector: 'app-unirse-vecindad',
   templateUrl: './unirse-vecindad.page.html',
   styleUrls: ['./unirse-vecindad.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonHeader, IonToolbar, IonTitle],
+  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem],
 })
 export class UnirseVecindadPage implements OnInit {
   private readonly authService = inject(AuthService);
@@ -26,16 +27,27 @@ export class UnirseVecindadPage implements OnInit {
   confirmPassword = '';
   codigoInvitacion = '';
   isLoading = false;
+  isGoogleLoading = false;
   isLoggedIn = false;
   joinError = '';
 
   ngOnInit(): void {
-    const currentUser = this.authService.getCurrentUser();
-    this.isLoggedIn = !!currentUser;
-    this.nombre = currentUser?.nombre || '';
-    this.correo = currentUser?.correo || '';
-    this.telefono = currentUser?.telefono || '';
     this.codigoInvitacion = this.route.snapshot.queryParamMap.get('codigo') || '';
+
+    // Espera a que Firebase Auth resuelva la sesión antes de decidir si el
+    // usuario ya está autenticado: en una carga de página fresca,
+    // getCurrentUser() aún no tiene el usuario disponible de forma
+    // síncrona y esta pantalla mostraba el formulario público completo
+    // (con contraseña) aunque hubiera una sesión activa.
+    combineLatest([this.authService.authReady$, this.authService.currentUser$]).pipe(
+      filter(([ready]) => ready),
+      take(1)
+    ).subscribe(([, currentUser]) => {
+      this.isLoggedIn = !!currentUser;
+      this.nombre = currentUser?.nombre || '';
+      this.correo = currentUser?.correo || '';
+      this.telefono = currentUser?.telefono || '';
+    });
   }
 
   async joinComunidad(): Promise<void> {
@@ -77,6 +89,30 @@ export class UnirseVecindadPage implements OnInit {
     }
   }
 
+  async joinWithGoogle(): Promise<void> {
+    if (this.isLoading || this.isGoogleLoading) {
+      return;
+    }
+
+    this.joinError = '';
+    const codigoInvitacion = this.codigoInvitacion.trim().toUpperCase();
+    if (!/^[A-Z0-9]{8}$/.test(codigoInvitacion)) {
+      this.joinError = 'Ingresa un código de invitación válido antes de continuar con Google.';
+      return;
+    }
+
+    this.isGoogleLoading = true;
+    try {
+      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion));
+      this.router.navigate(['/alertas-eventos']);
+    } catch (error) {
+      console.error('Error uniéndose con Google:', error);
+      this.joinError = this.getGoogleErrorMessage(error);
+    } finally {
+      this.isGoogleLoading = false;
+    }
+  }
+
   goToLogin(): void {
     this.router.navigate(['/login']);
   }
@@ -101,7 +137,7 @@ export class UnirseVecindadPage implements OnInit {
       return false;
     }
 
-    if (!this.isValidEmail(correo) || !this.isValidPhone(telefono)) {
+    if (!isValidEmail(correo) || !isValidPhone(telefono)) {
       this.joinError = 'Revisa el formato del correo o del teléfono.';
       return false;
     }
@@ -115,9 +151,7 @@ export class UnirseVecindadPage implements OnInit {
   }
 
   private getJoinErrorMessage(error: unknown): string {
-    const code = typeof error === 'object' && error && 'code' in error
-      ? String((error as { code?: unknown }).code)
-      : '';
+    const code = getFirebaseErrorCode(error);
 
     if (code === 'auth/email-already-in-use') {
       return 'Este correo ya está registrado. Inicia sesión para unirte.';
@@ -139,11 +173,17 @@ export class UnirseVecindadPage implements OnInit {
     return 'No se pudo unir a la vecindad. Intenta nuevamente.';
   }
 
-  private isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
+  private getGoogleErrorMessage(error: unknown): string {
+    const code = getFirebaseErrorCode(error);
 
-  private isValidPhone(phone: string): boolean {
-    return /^[0-9+ ]{7,15}$/.test(phone);
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      return '';
+    }
+
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    return 'No se pudo unir con Google. Inténtalo de nuevo.';
   }
 }

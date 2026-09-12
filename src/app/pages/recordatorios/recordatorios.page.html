@@ -1,6 +1,7 @@
 <ion-content>
   <h2 class="page-title">Recordatorios</h2>
 
+  <div class="page-shell">
   <form class="recordatorio-form" (ngSubmit)="guardarRecordatorio()" #recordatorioForm="ngForm" novalidate>
     <h3>{{ idEditando ? 'Editar recordatorio' : 'Crear recordatorio' }}</h3>
 
@@ -67,5 +68,6 @@
         <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio.idRecordatorios)">Eliminar</button>
       </div>
     </div>
+  </div>
   </div>
 </ion-content>

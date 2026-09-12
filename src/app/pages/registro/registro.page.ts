@@ -2,16 +2,17 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonButton, IonCheckbox, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import { IonButton, IonCheckbox, IonContent, IonInput, IonItem, IonLabel } from '@ionic/angular/standalone';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './registro.page.html',
   styleUrls: ['./registro.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonHeader, IonToolbar, IonTitle, IonCheckbox, IonLabel],
+  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonCheckbox, IonLabel],
 })
 export class RegistroPage {
   private readonly authService = inject(AuthService);
@@ -55,7 +56,7 @@ export class RegistroPage {
       return;
     }
 
-    if (!this.isValidEmail(administradorCorreo) || !this.isValidPhone(administradorCelular)) {
+    if (!isValidEmail(administradorCorreo) || !isValidPhone(administradorCelular)) {
       this.registroError = 'Revisa el formato del correo o del celular.';
       return;
     }
@@ -90,9 +91,7 @@ export class RegistroPage {
   }
 
   private getRegisterErrorMessage(error: unknown): string {
-    const code = typeof error === 'object' && error && 'code' in error
-      ? String((error as { code?: unknown }).code)
-      : '';
+    const code = getFirebaseErrorCode(error);
 
     if (code === 'auth/email-already-in-use') {
       return 'Este correo ya está registrado.';
@@ -107,13 +106,5 @@ export class RegistroPage {
     }
 
     return 'No se pudo crear la vecindad. Intenta nuevamente.';
-  }
-
-  private isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  private isValidPhone(phone: string): boolean {
-    return /^[0-9+ ]{7,15}$/.test(phone);
   }
 }

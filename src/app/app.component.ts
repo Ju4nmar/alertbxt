@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, NgZone, OnDestroy, ViewEncapsulation, inject, isDevMode } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import {
   AlertController,
   IonApp,
@@ -13,14 +13,13 @@ import {
   IonLabel,
   IonList,
   IonMenu,
-  IonMenuButton,
   IonSplitPane,
   IonToolbar,
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person } from 'ionicons/icons';
-import { Subject, firstValueFrom, takeUntil } from 'rxjs';
+import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
 import { FirestoreService } from './services/firestore.service';
@@ -49,7 +48,6 @@ import { PwaInstallService } from './services/pwa-install.service';
     IonHeader,
     IonToolbar,
     IonButtons,
-    IonMenuButton,
   ],
 })
 export class AppComponent implements OnDestroy {
@@ -72,6 +70,7 @@ export class AppComponent implements OnDestroy {
   notificationsEnabled = false;
   isMobileDevice = this.getIsMobileDevice();
   showSplash = true;
+  currentUrl = this.router.url;
   private notificationStartHandle: number | null = null;
 
   @HostListener('window:resize')
@@ -115,6 +114,16 @@ export class AppComponent implements OnDestroy {
       .subscribe(enabled => {
         this.notificationsEnabled = enabled;
       });
+
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd), takeUntil(this.destroy$))
+      .subscribe(event => {
+        this.currentUrl = event.urlAfterRedirects;
+      });
+  }
+
+  isActive(path: string): boolean {
+    return this.currentUrl === path || this.currentUrl.startsWith(`${path}/`);
   }
 
   ngOnDestroy(): void {
