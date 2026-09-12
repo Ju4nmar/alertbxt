@@ -17,6 +17,9 @@ export interface Usuario {
   correo: string;
   telefono: string;
   rol: 'admin' | 'residente';
+  activo: boolean;
+  pendienteEliminacion?: boolean;
+  fechaSolicitudEliminacion?: string;
   comunidadId: string;
   fechaRegistro?: string;
   fotoPerfil?: string;
@@ -43,6 +46,11 @@ export interface Recordatorio {
   comunidadId: string;
   fechaCreacion?: string;
   estado?: 'pendiente' | 'completado';
+}
+
+export interface Dispositivo {
+  token: string;
+  fechaRegistro: string;
 }
 
 // Tipos alias para compatibilidad con código existente

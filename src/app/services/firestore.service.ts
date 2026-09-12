@@ -15,7 +15,8 @@ import {
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Recordatorio, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Recordatorio, Usuario } from '../models';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
@@ -100,7 +101,7 @@ export class FirestoreService {
     const col = this.inContext(() => collection(this.firestore, 'usuarios'));
 
     return this.inContext(() => collectionData(col)).pipe(
-      map(data => data as Usuario[]),
+      map(data => (data as Usuario[]).map(usuario => this.normalizeUsuario(usuario))),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
         console.error('Error obteniendo usuarios:', error);
@@ -120,7 +121,7 @@ export class FirestoreService {
     );
 
     return this.inContext(() => collectionData(col)).pipe(
-      map(data => data as Usuario[]),
+      map(data => (data as Usuario[]).map(usuario => this.normalizeUsuario(usuario))),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
         console.error('Error obteniendo usuarios por comunidad:', error);
@@ -137,7 +138,7 @@ export class FirestoreService {
       take(1),
       switchMap(data => {
         if (data) {
-          const usuario = data as Usuario;
+          const usuario = this.normalizeUsuario(data as Usuario);
           return of({ ...usuario, idUsuario: usuario.idUsuario || idUsuario });
         }
 
@@ -148,7 +149,7 @@ export class FirestoreService {
               return of(null);
             }
 
-            const usuarioNormalizado: Usuario = { ...usuario, idUsuario };
+            const usuarioNormalizado: Usuario = { ...this.normalizeUsuario(usuario), idUsuario };
             return this.addUsuario(usuarioNormalizado).pipe(
               map(() => usuarioNormalizado),
               catchError(() => of(usuarioNormalizado))
@@ -185,6 +186,73 @@ export class FirestoreService {
         return throwError(() => new Error('Error al agregar usuario'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  updateUsuarioEstado(
+    idUsuario: string,
+    cambios: Partial<Pick<Usuario, 'activo' | 'rol'>>
+  ): Observable<void> {
+    const campos = Object.keys(cambios);
+    const usuarioActual = this.injector.get(AuthService).getCurrentUser();
+
+    if (!usuarioActual || usuarioActual.rol !== 'admin') {
+      return throwError(() => new Error('Solo un administrador puede actualizar el estado de usuarios'));
+    }
+
+    if (!idUsuario || idUsuario === usuarioActual.idUsuario || !campos.length
+      || !campos.every(campo => campo === 'activo' || campo === 'rol')) {
+      return throwError(() => new Error('La actualización de usuario no es válida'));
+    }
+
+    this.isLoadingSubject.next(true);
+    const docRef = this.inContext(() => doc(this.firestore, `usuarios/${idUsuario}`));
+
+    return from(this.inContext(() => updateDoc(docRef, cambios))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error actualizando estado de usuario:', error);
+        return throwError(() => new Error('Error al actualizar el estado del usuario'));
+      }),
+      finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  solicitarEliminacionCuenta(idUsuario: string, fechaSolicitudEliminacion: string): Observable<void> {
+    if (!idUsuario || !fechaSolicitudEliminacion) {
+      return throwError(() => new Error('No se encontró la cuenta para solicitar su eliminación'));
+    }
+
+    this.isLoadingSubject.next(true);
+    const docRef = this.inContext(() => doc(this.firestore, `usuarios/${idUsuario}`));
+    const solicitud = {
+      pendienteEliminacion: true,
+      fechaSolicitudEliminacion,
+    };
+
+    return from(this.inContext(() => updateDoc(docRef, solicitud))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error solicitando eliminación de cuenta:', error);
+        return throwError(() => new Error('No se pudo registrar la solicitud de eliminación'));
+      }),
+      finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  registrarDispositivo(idUsuario: string, dispositivo: Dispositivo): Observable<void> {
+    if (!idUsuario || !dispositivo.token || !dispositivo.fechaRegistro) {
+      return throwError(() => new Error('No se pudo registrar el dispositivo'));
+    }
+
+    const docRef = this.inContext(() => doc(this.firestore, `usuarios/${idUsuario}/dispositivos/${dispositivo.token}`));
+
+    return from(this.inContext(() => setDoc(docRef, dispositivo, { merge: true }))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error registrando dispositivo FCM:', error);
+        return throwError(() => new Error('No se pudo guardar el token del dispositivo'));
+      })
     );
   }
 
@@ -365,6 +433,10 @@ export class FirestoreService {
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
       imagen: data.imagen || String(data['imagen'] || ''),
     };
+  }
+
+  private normalizeUsuario(usuario: Usuario): Usuario {
+    return { ...usuario, activo: usuario.activo !== false };
   }
 
   private normalizeRecordatorio(data: Recordatorio & Record<string, unknown>): Recordatorio {

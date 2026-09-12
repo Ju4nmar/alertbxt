@@ -60,4 +60,38 @@ describe('GestionAvisosPage', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('separa las alertas SOS para moderación y evita editarlas', () => {
+    const alertaSos = {
+      idAviso: 'sos-1',
+      tituloAviso: 'Alerta SOS',
+      descripcionAviso: 'Necesito ayuda',
+      tipoAviso: 'alerta',
+      fechaPublicacion: '2026-09-10T10:00:00.000Z',
+      autorId: 'residente-1',
+      comunidadId: 'comunidad-1',
+    };
+    const avisoAdministrativo = {
+      idAviso: 'aviso-1',
+      tituloAviso: 'Mantenimiento',
+      descripcionAviso: 'Mantenimiento programado',
+      tipoAviso: 'mantenimiento',
+      fechaPublicacion: '2026-09-10T09:00:00.000Z',
+      autorId: 'admin-1',
+      comunidadId: 'comunidad-1',
+    };
+    const alertaSosAnterior = {
+      ...alertaSos,
+      idAviso: 'sos-0',
+      fechaPublicacion: '2026-09-10T08:00:00.000Z',
+    };
+
+    component.organizarAvisos([alertaSosAnterior, avisoAdministrativo, alertaSos]);
+    component.editarAviso(alertaSos);
+
+    expect(component.avisosAdministrativos).toEqual([avisoAdministrativo]);
+    expect(component.alertasSos).toEqual([alertaSos, alertaSosAnterior]);
+    expect(component.idEditando).toBeNull();
+    expect(component.avisoError).toContain('no se pueden editar');
+  });
 });

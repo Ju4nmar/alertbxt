@@ -2,6 +2,7 @@ import { ApplicationConfig, isDevMode } from '@angular/core';
 import { browserLocalPersistence, getAuth, setPersistence, provideAuth } from '@angular/fire/auth';
 import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 import { provideServiceWorker } from '@angular/service-worker';
 import { provideRouter } from '@angular/router';
 import { provideIonicAngular } from '@ionic/angular/standalone';
@@ -14,6 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideIonicAngular(),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideFirestore(() => getFirestore(getApp())),
+    provideMessaging(() => getMessaging(getApp())),
     provideAuth(() => {
       const auth = getAuth();
       void setPersistence(auth, browserLocalPersistence);

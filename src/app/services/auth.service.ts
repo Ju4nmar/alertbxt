@@ -10,6 +10,7 @@ import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'r
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 import { Comunidad, Usuario } from '../models';
 import { FirestoreService } from './firestore.service';
+import { FcmService } from './fcm.service';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,7 @@ export class AuthService {
   private readonly injector = inject(Injector);
   private readonly auth = inject(Auth);
   private readonly firestoreService = inject(FirestoreService);
+  private readonly fcmService = inject(FcmService);
   private readonly ngZone = inject(NgZone);
   private readonly currentUserSubject = new BehaviorSubject<Usuario | null>(null);
   private readonly authReadySubject = new BehaviorSubject<boolean>(false);
@@ -44,6 +46,10 @@ export class AuthService {
 
           const userData = await this.loadUserData(firebaseUser.uid);
           this.currentUserSubject.next(userData);
+          if (userData) {
+            // FCM se inicia solo después de confirmar el perfil autenticado.
+            void this.fcmService.iniciarParaUsuario(userData);
+          }
         } catch (error) {
           console.error('Error resolviendo sesión:', error);
           this.currentUserSubject.next(null);
@@ -93,6 +99,7 @@ export class AuthService {
           correo: userData.email.trim(),
           telefono: userData.telefono.trim(),
           rol: 'residente',
+          activo: true,
           comunidadId: userData.comunidadId || '',
           fechaRegistro: new Date().toISOString(),
         };
@@ -140,6 +147,7 @@ export class AuthService {
           correo: data.administradorCorreo.trim(),
           telefono: data.administradorCelular.trim(),
           rol: 'admin',
+          activo: true,
           comunidadId,
           fechaRegistro: new Date().toISOString(),
         };
@@ -164,6 +172,7 @@ export class AuthService {
     return from(this.inContext(() => signOut(this.auth))).pipe(
       map(() => {
         this.currentUserSubject.next(null);
+        this.fcmService.detener();
         this.authReadySubject.next(true);
       }),
       catchError(error => {
@@ -179,6 +188,31 @@ export class AuthService {
 
   setCurrentUser(user: Usuario): void {
     this.currentUserSubject.next(user);
+  }
+
+  // La baja física de Authentication y Firestore debe ejecutarla un administrador
+  // o una Cloud Function/proceso administrativo posterior; nunca desde el cliente.
+  solicitarEliminacionCuenta(): Observable<void> {
+    const usuarioActual = this.getCurrentUser();
+
+    if (!usuarioActual?.idUsuario) {
+      return throwError(() => new Error('Usuario no autenticado'));
+    }
+
+    if (usuarioActual.pendienteEliminacion) {
+      return throwError(() => new Error('Ya existe una solicitud de eliminación para esta cuenta'));
+    }
+
+    const fechaSolicitudEliminacion = new Date().toISOString();
+    return this.firestoreService.solicitarEliminacionCuenta(usuarioActual.idUsuario, fechaSolicitudEliminacion).pipe(
+      map(() => {
+        this.currentUserSubject.next({
+          ...usuarioActual,
+          pendienteEliminacion: true,
+          fechaSolicitudEliminacion,
+        });
+      })
+    );
   }
 
   joinComunidad(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
@@ -242,6 +276,7 @@ export class AuthService {
               correo: data.correo.trim(),
               telefono: data.telefono.trim(),
               rol: 'residente',
+              activo: true,
               comunidadId: comunidad.idComunidad || '',
               fechaRegistro: new Date().toISOString(),
             };

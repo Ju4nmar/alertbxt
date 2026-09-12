@@ -24,6 +24,7 @@ import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
 import { FirestoreService } from './services/firestore.service';
+import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
 
@@ -59,6 +60,7 @@ export class AppComponent implements OnDestroy {
   private readonly alertCtrl = inject(AlertController);
   private readonly authService = inject(AuthService);
   private readonly localNotificationService = inject(LocalNotificationService);
+  private readonly fcmService = inject(FcmService);
   private readonly pwaInstallService = inject(PwaInstallService);
   private readonly destroy$ = new Subject<void>();
 
@@ -277,6 +279,7 @@ export class AppComponent implements OnDestroy {
 
     if (result === 'granted' && this.currentUser) {
       this.scheduleNotificationStart(this.currentUser);
+      void this.fcmService.iniciarParaUsuario(this.currentUser);
     }
 
     const message = result === 'granted'

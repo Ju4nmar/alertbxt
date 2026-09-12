@@ -59,9 +59,25 @@
             </span>
           </div>
 
+          <div class="detalle-fila">
+            <span class="detalle-label">Estado:</span>
+            <span class="detalle-valor" [class.estado-inactivo]="usuarioSeleccionado.activo === false">
+              {{ usuarioSeleccionado.activo === false ? 'Inactivo' : 'Activo' }}
+            </span>
+          </div>
+
           <div class="detalle-fila" *ngIf="usuarioSeleccionado.fechaRegistro">
             <span class="detalle-label">Registrado:</span>
             <span class="detalle-valor">{{ usuarioSeleccionado.fechaRegistro | date: 'medium' }}</span>
+          </div>
+
+          <div class="acciones-usuario" *ngIf="puedeGestionarUsuario(usuarioSeleccionado)">
+            <ion-button expand="block" [disabled]="actualizandoUsuario" (click)="alternarEstado(usuarioSeleccionado)">
+              {{ usuarioSeleccionado.activo === false ? 'Activar residente' : 'Desactivar residente' }}
+            </ion-button>
+            <ion-button expand="block" fill="outline" [disabled]="actualizandoUsuario" (click)="cambiarRol(usuarioSeleccionado)">
+              {{ usuarioSeleccionado.rol === 'admin' ? 'Convertir en residente' : 'Convertir en administrador' }}
+            </ion-button>
           </div>
         </div>
       </div>

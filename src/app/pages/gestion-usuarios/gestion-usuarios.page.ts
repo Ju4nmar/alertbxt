@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import {
   IonButton,
+  AlertController,
   IonContent,
   IonIcon,
   IonItem,
@@ -12,7 +13,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { close, personCircle } from 'ionicons/icons';
-import { Subject, distinctUntilChanged, filter, switchMap, takeUntil } from 'rxjs';
+import { Subject, distinctUntilChanged, filter, finalize, switchMap, take, takeUntil } from 'rxjs';
 import { Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
@@ -37,12 +38,14 @@ import { FirestoreService } from '../../services/firestore.service';
 export class GestionUsuariosPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
+  private readonly alertController = inject(AlertController);
   private readonly destroy$ = new Subject<void>();
 
   usuarios: Usuario[] = [];
   usuarioSeleccionado: Usuario | null = null;
   isLoading = false;
   modalAbierto = false;
+  actualizandoUsuario = false;
 
   constructor() {
     addIcons({ personCircle, close });
@@ -81,6 +84,55 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   cerrarModal(): void {
     this.modalAbierto = false;
     this.usuarioSeleccionado = null;
+  }
+
+  async alternarEstado(usuario: Usuario): Promise<void> {
+    if (!this.puedeGestionarUsuario(usuario)) {
+      return;
+    }
+
+    const activo = usuario.activo !== false;
+    if (activo) {
+      const alerta = await this.alertController.create({
+        header: 'Desactivar residente',
+        message: `¿Deseas desactivar a ${usuario.nombre}? No podrá acceder a los avisos ni recordatorios de la comunidad.`,
+        buttons: [
+          { text: 'Cancelar', role: 'cancel' },
+          { text: 'Desactivar', role: 'destructive', handler: () => this.actualizarUsuario(usuario, { activo: false }) },
+        ],
+      });
+      await alerta.present();
+      return;
+    }
+
+    this.actualizarUsuario(usuario, { activo: true });
+  }
+
+  cambiarRol(usuario: Usuario): void {
+    if (this.puedeGestionarUsuario(usuario)) {
+      this.actualizarUsuario(usuario, { rol: usuario.rol === 'admin' ? 'residente' : 'admin' });
+    }
+  }
+
+  puedeGestionarUsuario(usuario: Usuario): boolean {
+    const usuarioActual = this.authService.getCurrentUser();
+    return usuarioActual?.rol === 'admin'
+      && usuarioActual.comunidadId === usuario.comunidadId
+      && usuarioActual.idUsuario !== usuario.idUsuario;
+  }
+
+  private actualizarUsuario(usuario: Usuario, cambios: Partial<Pick<Usuario, 'activo' | 'rol'>>): void {
+    if (!usuario.idUsuario) {
+      return;
+    }
+
+    this.actualizandoUsuario = true;
+    this.firestoreService.updateUsuarioEstado(usuario.idUsuario, cambios)
+      .pipe(take(1), finalize(() => this.actualizandoUsuario = false), takeUntil(this.destroy$))
+      .subscribe({
+        next: () => this.usuarioSeleccionado = { ...usuario, ...cambios },
+        error: error => console.error('Error actualizando usuario:', error),
+      });
   }
 
   obtenerBadgeRol(rol?: string): { label: string; clase: string } {
