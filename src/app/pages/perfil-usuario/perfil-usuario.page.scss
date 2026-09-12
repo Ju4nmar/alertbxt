@@ -78,6 +78,20 @@ ion-button {
   margin: 1rem auto 0;
 }
 
+.elimination-panel {
+  border-left: 4px solid #dc2626;
+}
+
+.elimination-panel p {
+  color: #4b5563;
+  line-height: 1.45;
+}
+
+.delete-account-btn {
+  display: block;
+  margin: 1rem auto 0;
+}
+
 @media (max-width: 768px) {
   .page-title { padding-top: 16px; }
   .perfil-panel { margin: 0.8rem; }

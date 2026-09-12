@@ -18,6 +18,8 @@ export interface Usuario {
   telefono: string;
   rol: 'admin' | 'residente';
   activo: boolean;
+  pendienteEliminacion?: boolean;
+  fechaSolicitudEliminacion?: string;
   comunidadId: string;
   fechaRegistro?: string;
   fotoPerfil?: string;

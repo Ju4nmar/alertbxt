@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonInput, IonItem, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
+import { AlertController, IonButton, IonContent, IonInput, IonItem, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { firstValueFrom, of, Subject, filter, switchMap, takeUntil } from 'rxjs';
 import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -17,6 +17,7 @@ import { FirestoreService } from '../../services/firestore.service';
 export class PerfilUsuarioPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
+  private readonly alertController = inject(AlertController);
   private readonly destroy$ = new Subject<void>();
 
   usuario: Usuario | null = null;
@@ -25,6 +26,8 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   mensajeCopiado = '';
   mensajeGuardado = '';
   isSaving = false;
+  isRequestingDeletion = false;
+  mensajeEliminacion = '';
 
   nombre = '';
   correo = '';
@@ -155,6 +158,44 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       console.error('Error copiando texto:', error);
       this.mensajeCopiado = 'No se pudo copiar';
     }
+  }
+
+  async solicitarEliminacionCuenta(): Promise<void> {
+    if (!this.usuario || this.usuario.pendienteEliminacion || this.isRequestingDeletion) {
+      return;
+    }
+
+    const alerta = await this.alertController.create({
+      header: 'Solicitar eliminación de cuenta',
+      message: 'La solicitud quedará registrada para revisión. La eliminación definitiva de tus datos será realizada posteriormente por el equipo administrador.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Confirmar solicitud', role: 'destructive', handler: () => this.enviarSolicitudEliminacion() },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private enviarSolicitudEliminacion(): void {
+    this.isRequestingDeletion = true;
+    this.mensajeEliminacion = '';
+
+    this.authService.solicitarEliminacionCuenta()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          if (this.usuario) {
+            this.usuario = { ...this.usuario, pendienteEliminacion: true };
+          }
+          this.mensajeEliminacion = 'Solicitud registrada. El equipo administrador realizará la baja definitiva.';
+          this.isRequestingDeletion = false;
+        },
+        error: error => {
+          console.error('Error solicitando eliminación de cuenta:', error);
+          this.mensajeEliminacion = 'No se pudo registrar la solicitud. Intenta nuevamente.';
+          this.isRequestingDeletion = false;
+        },
+      });
   }
 
   private isValidEmail(email: string): boolean {

@@ -48,6 +48,7 @@ service cloud.firestore {
         && request.resource.data.idUsuario == uid
         && request.resource.data.correo == request.auth.token.email
         && request.resource.data.activo == true
+        && request.resource.data.get('pendienteEliminacion', false) == false
         && (
           request.resource.data.rol == 'residente'
           || (
@@ -74,6 +75,14 @@ service cloud.firestore {
             && isValidCommunity(request.resource.data.comunidadId)
           )
         );
+
+      // La solicitud solo puede avanzar a pendiente; la baja física la procesa el backend o un administrador.
+      allow update: if isSelf(uid)
+        && resource.data.get('pendienteEliminacion', false) == false
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['pendienteEliminacion', 'fechaSolicitudEliminacion'])
+        && request.resource.data.pendienteEliminacion == true
+        && request.resource.data.fechaSolicitudEliminacion is string;
 
       allow update: if !isSelf(uid)
         && isAdminForCommunity(resource.data.comunidadId)
