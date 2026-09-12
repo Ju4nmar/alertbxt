@@ -3,14 +3,15 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Auth, sendPasswordResetEmail } from '@angular/fire/auth';
 import { Router } from '@angular/router';
-import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import { IonButton, IonContent, IonInput, IonItem } from '@ionic/angular/standalone';
+import { getFirebaseErrorCode, isValidEmail } from '../../utils/auth-form.utils';
 
 @Component({
   selector: 'app-forgot-password',
   templateUrl: './forgot-password.page.html',
   styleUrls: ['./forgot-password.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonHeader, IonToolbar, IonTitle],
+  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem],
 })
 export class ForgotPasswordPage {
   private readonly auth = inject(Auth);
@@ -35,7 +36,7 @@ export class ForgotPasswordPage {
       return;
     }
 
-    if (!this.isValidEmail(email) || email.length > 120) {
+    if (!isValidEmail(email) || email.length > 120) {
       this.resetError = 'Ingresa un correo válido.';
       return;
     }
@@ -57,9 +58,7 @@ export class ForgotPasswordPage {
   }
 
   private getResetErrorMessage(error: unknown): string {
-    const code = typeof error === 'object' && error && 'code' in error
-      ? String((error as { code?: unknown }).code)
-      : '';
+    const code = getFirebaseErrorCode(error);
 
     if (code === 'auth/invalid-email') {
       return 'El correo no tiene un formato válido.';
@@ -70,9 +69,5 @@ export class ForgotPasswordPage {
     }
 
     return 'No se pudo enviar el enlace. Intenta nuevamente.';
-  }
-
-  private isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 }

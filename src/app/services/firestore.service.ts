@@ -96,21 +96,6 @@ export class FirestoreService {
     );
   }
 
-  getUsuarios(): Observable<Usuario[]> {
-    this.isLoadingSubject.next(true);
-    const col = this.inContext(() => collection(this.firestore, 'usuarios'));
-
-    return this.inContext(() => collectionData(col)).pipe(
-      map(data => (data as Usuario[]).map(usuario => this.normalizeUsuario(usuario))),
-      tap(() => this.isLoadingSubject.next(false)),
-      catchError(error => {
-        console.error('Error obteniendo usuarios:', error);
-        this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar usuarios'));
-      })
-    );
-  }
-
   getUsuariosByComunidad(comunidadId: string): Observable<Usuario[]> {
     this.isLoadingSubject.next(true);
     const col = this.inContext(() =>
@@ -395,30 +380,6 @@ export class FirestoreService {
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
-  }
-
-  getAvisosByNeighborhood(neighborhoodId: string): Observable<Aviso[]> {
-    return this.getAvisosByComunidad(neighborhoodId);
-  }
-
-  getUsers(): Observable<Usuario[]> {
-    return this.getUsuarios();
-  }
-
-  addUser(usuario: Usuario): Observable<void> {
-    return this.addUsuario(usuario);
-  }
-
-  getNeighborhoods(): Observable<Comunidad[]> {
-    return this.getComunidades();
-  }
-
-  addNeighborhood(comunidad: Omit<Comunidad, 'idComunidad'>): Observable<string> {
-    return this.addComunidad(comunidad);
-  }
-
-  getNeighborhoodByInviteCode(inviteCode: string): Observable<Comunidad | null> {
-    return this.getComunidadByCodigoInvitacion(inviteCode);
   }
 
   private normalizeAviso(data: Aviso & Record<string, unknown>): Aviso {

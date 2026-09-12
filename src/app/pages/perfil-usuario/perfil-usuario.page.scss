@@ -1,32 +1,49 @@
-.page-title {
-  padding-top: 1rem;
-  margin: 0 0 1rem;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.3rem;
-  color: #111827;
+ion-content {
+  --background: var(--ion-background-color);
+}
+
+.page-shell {
+  display: grid;
+  gap: 1.2rem;
+  max-width: 1180px;
+  margin: 0.6rem auto 2rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 900px) {
+  .page-shell {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .full-span {
+    grid-column: 1 / -1;
+  }
 }
 
 .perfil-panel {
-  max-width: 760px;
-  margin: 1rem auto;
-  padding: 1.3rem;
-  color: #111827;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  margin: 0;
+  padding: 1.4rem 1.5rem;
+  color: var(--ab-text-primary);
+  background: var(--ab-surface);
+  border-radius: var(--ab-radius-lg);
+  box-shadow: var(--ab-shadow-md);
+  border: 1px solid var(--ab-border);
 }
 
-.perfil-panel:last-of-type {
-  margin-bottom: 2rem;  /* ← Espaciado final para ver el cierre completo */
+/* Único panel con acento de color: es la única acción irreversible de
+   la página, así que merece destacarse — el resto queda neutro. */
+.perfil-panel.elimination-panel {
+  box-shadow: var(--ab-shadow-danger);
 }
 
 .perfil-panel h3 {
   margin: 0 0 1.2rem;
   text-align: center;
-  font-size: 1rem;
+  font-family: var(--ab-font-heading);
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--ab-text-primary);
 }
 
 ion-item {
@@ -37,7 +54,7 @@ ion-item {
 
 ion-input,
 ion-select {
-  --color: #111827;
+  --color: var(--ab-text-primary);
 }
 
 .perfil-grid {
@@ -47,17 +64,9 @@ ion-select {
   margin-bottom: 0.5rem;
 }
 
-.field-error {
-  color: #dc2626;
-  font-size: 0.85rem;
-  margin-top: 0.4rem;
-  margin-bottom: 0.6rem;
-  padding: 0 0.5rem;
-}
-
 .field-hint {
   margin: 0.4rem 0 0.8rem;
-  color: #6b7280;
+  color: var(--ab-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -65,7 +74,7 @@ ion-select {
   margin: 1rem 0 0.6rem;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #111827;
+  color: var(--ab-text-primary);
 }
 
 .codigo-row,
@@ -74,10 +83,10 @@ ion-select {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: #f9fafb;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface-muted);
   word-break: break-all;
 }
 
@@ -87,16 +96,18 @@ ion-select {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--ab-text-primary);
 }
 
 .codigo-row ion-button,
 .link-row ion-button {
   flex-shrink: 0;
-  --padding-start: 10px;
-  --padding-end: 10px;
+  --background: var(--ion-color-tertiary);
+  --color: var(--ion-color-tertiary-contrast);
+  --padding-start: 12px;
+  --padding-end: 12px;
 }
 
 .copy-message,
@@ -104,17 +115,17 @@ ion-select {
   margin: 1rem 0 0;
   text-align: center;
   font-size: 0.9rem;
-  font-weight: 600;
-  color: #0b2f78;
+  font-weight: 700;
+  color: var(--ion-color-success);
 }
 
 .empty-text {
-  color: #6b7280;
+  color: var(--ab-text-secondary);
   font-weight: 400;
 }
 
 .elimination-panel p {
-  color: #4b5563;
+  color: var(--ab-text-secondary);
   line-height: 1.5;
   margin: 0 0 1rem;
   font-size: 0.95rem;
@@ -125,51 +136,39 @@ ion-select {
 }
 
 ion-button {
-  --background: #0b2f78;
-  --color: #ffffff;
+  --background: var(--ion-color-primary);
+  --background-activated: var(--ion-color-primary-shade);
+  --color: var(--ion-color-primary-contrast);
   text-transform: none;
-  font-weight: 600;
-}
-
-ion-button:hover {
-  --background: #1e3a8a;
+  font-weight: 700;
 }
 
 .save-btn,
 .delete-account-btn {
   display: block;
-  max-width: 240px;
+  max-width: 260px;
   margin: 1.5rem auto 0;
 }
 
 .delete-account-btn {
-  --background: #dc2626;
-}
-
-.delete-account-btn:hover {
-  --background: #b91c1c;
+  --background: var(--ion-color-danger);
+  --background-activated: var(--ion-color-danger-shade);
 }
 
 .delete-account-btn[disabled] {
-  --background: #9ca3af;
+  --background: var(--ion-color-medium);
   --color: #f3f4f6;
 }
 
 /* ================== MEDIA QUERY MOBILE ================== */
 @media (max-width: 768px) {
-  .page-title {
-    padding-top: 1rem;
-    margin: 0 0 0.8rem;
-    font-size: 1.1rem;
+  .page-shell {
+    padding: 0 0.6rem;
+    margin: 0.6rem auto 1.5rem;
   }
 
   .perfil-panel {
-    margin: 0.8rem;
-    padding: 1rem;
-  }
-
-  .perfil-panel:last-of-type {
-    margin-bottom: 1.5rem;
+    padding: 1.1rem;
   }
 
   .perfil-panel h3 {
@@ -180,17 +179,6 @@ ion-button:hover {
   .perfil-grid {
     grid-template-columns: 1fr;
     gap: 0.8rem;
-  }
-
-  .field-error {
-    font-size: 0.8rem;
-    margin-top: 0.3rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .field-hint {
-    margin: 0.3rem 0 0.6rem;
-    font-size: 0.8rem;
   }
 
   .invite-label {
@@ -240,10 +228,6 @@ ion-button:hover {
 
 /* ================== MEDIA QUERY TABLET ================== */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .perfil-panel {
-    margin: 1rem 1.5rem;
-  }
-
   .perfil-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.8rem;

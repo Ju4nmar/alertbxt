@@ -1,8 +1,216 @@
+/* ============================================================
+   ALERTBXT · SISTEMA DE DISEÑO "FAROL"
+   Rediseño UX/UI — feature/rediseno-ux-ui
+   ------------------------------------------------------------
+   Concepto: el "farol de barrio" — la luz que una vecindad
+   deja encendida para cuidarse entre todos. Paleta fría y
+   serena (añil/pizarra) para la marca, con un acento cálido
+   de "latón" para lo distintivo, dejando el rojo/ámbar/verde
+   EXCLUSIVAMENTE para semántica de alerta.
+
+   Teoría del color aplicada:
+   - Primario  (Añil #2F5D8A, ~208°): confianza y calma, fuera
+     por completo del rango 0°-140° reservado a los semáforos
+     de alerta. No es el "teal" ni el "morado degradado" típico
+     de interfaces generadas por IA.
+   - Secundario (Violeta pizarra #5C5470, ~262° pero muy
+     desaturado ~18%): acento frío-neutro, análogo lejano del
+     primario. Al ir desaturado se lee como "marca", nunca como
+     alerta, incluso para daltónicos.
+   - Terciario (Latón #A9773F, ~35° pero desaturado ~45% y con
+     valor bajo): el único acento cálido de marca; se diferencia
+     de "advertencia" por ser mate/oscuro en vez de brillante.
+   - Semánticos: saturados y luminosos a propósito (más "vivos"
+     que la marca) para que un adulto mayor detecte una alerta
+     por contraste de intensidad, no solo por matiz.
+   ============================================================ */
+
 :root {
-  --ion-color-primary: #0b2f78;
-  --ion-color-primary-rgb: 11, 47, 120;
+  /* ---------- PRIMARIO: Añil (Denim) ---------- */
+  --ion-color-primary: #2f5d8a;
+  --ion-color-primary-rgb: 47, 93, 138;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #0a296a;
-  --ion-color-primary-tint: #26468b;
+  --ion-color-primary-shade: #284f76;
+  --ion-color-primary-tint: #4573a0;
+
+  /* ---------- SECUNDARIO: Violeta pizarra (desaturado) ---------- */
+  --ion-color-secondary: #5c5470;
+  --ion-color-secondary-rgb: 92, 84, 112;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #4a435c;
+  --ion-color-secondary-tint: #6f6685;
+
+  /* ---------- TERCIARIO: Latón (acento cálido mate) ---------- */
+  --ion-color-tertiary: #a9773f;
+  --ion-color-tertiary-rgb: 169, 119, 63;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #8f6535;
+  --ion-color-tertiary-tint: #b98a56;
+
+  /* ---------- ÉXITO: Musgo (vivo, no genérico) ---------- */
+  --ion-color-success: #4f8850;
+  --ion-color-success-rgb: 79, 136, 80;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #43723f;
+  --ion-color-success-tint: #63985f;
+
+  /* ---------- ADVERTENCIA: Ámbar vivo ---------- */
+  --ion-color-warning: #e08a1e;
+  --ion-color-warning-rgb: 224, 138, 30;
+  --ion-color-warning-contrast: #2b1c00;
+  --ion-color-warning-contrast-rgb: 43, 28, 0;
+  --ion-color-warning-shade: #c37812;
+  --ion-color-warning-tint: #e79a3c;
+
+  /* ---------- PELIGRO / EMERGENCIA ---------- */
+  --ion-color-danger: #c0392b;
+  --ion-color-danger-rgb: 192, 57, 43;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #a93125;
+  --ion-color-danger-tint: #c84c40;
+
+  /* ---------- NEUTROS ---------- */
+  --ion-color-medium: #6b7280;
+  --ion-color-medium-rgb: 107, 114, 128;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #5c6270;
+  --ion-color-medium-tint: #7c8391;
+
+  --ion-color-light: #f4f1ea;
+  --ion-color-light-rgb: 244, 241, 234;
+  --ion-color-light-contrast: #2a2723;
+  --ion-color-light-contrast-rgb: 42, 39, 35;
+  --ion-color-light-shade: #d7d4ce;
+  --ion-color-light-tint: #f5f3ed;
+
+  --ion-color-dark: #21262e;
+  --ion-color-dark-rgb: 33, 38, 46;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #1d2128;
+  --ion-color-dark-tint: #373c43;
+
+  /* ---------- FONDO / TEXTO BASE ----------
+     Ligero cálido "papel" (no blanco frío de plantilla) */
+  --ion-background-color: #f6f3ec;
+  --ion-background-color-rgb: 246, 243, 236;
+  --ion-text-color: #26262b;
+  --ion-text-color-rgb: 38, 38, 43;
+
+  --ion-toolbar-background: linear-gradient(115deg, #26496e 0%, #2f5d8a 55%, #3c4f78 100%);
+  --ion-toolbar-color: #ffffff;
+
+  /* ============================================================
+     TOKENS PROPIOS DE ALERTBXT (usados en global.scss y páginas)
+     ============================================================ */
+
+  /* Tipografía — serif con carácter para títulos + humanista para cuerpo,
+     una pareja poco habitual en interfaces "genéricas" de IA. */
+  --ab-font-heading: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --ab-font-body: "Work Sans", "Segoe UI", system-ui, sans-serif;
+  --ab-font-size-base: 16px;
+
+  /* Colores por tipo de aviso/alerta (semántica consistente en toda la app) */
+  --ab-tipo-emergencia: var(--ion-color-danger);
+  --ab-tipo-emergencia-bg: #fbe9e6;
+  --ab-tipo-mantenimiento: var(--ion-color-warning);
+  --ab-tipo-mantenimiento-bg: #fbeedc;
+  --ab-tipo-informativo: var(--ion-color-primary);
+  --ab-tipo-informativo-bg: #e3ebf3;
+  --ab-tipo-recordatorio: var(--ion-color-success);
+  --ab-tipo-recordatorio-bg: #e6efe2;
+
+  /* Superficies y bordes */
+  --ab-surface: #fffdf9;
+  --ab-surface-muted: #efeadf;
+  --ab-border: #e2dccb;
+  --ab-text-primary: #26262b;
+  --ab-text-secondary: #625f56;
+
+  /* Radios — más contenidos que un "blob" de plantilla, con esquina
+     recortada en piezas clave para dar una firma propia (ver .ab-notch) */
+  --ab-radius-sm: 6px;
+  --ab-radius-md: 10px;
+  --ab-radius-lg: 14px;
+  --ab-radius-pill: 999px;
+  --ab-notch: 22px;
+
+  /* Sombras — casi todas las tarjetas usan solo la neutra (sm/md/lg).
+     Las tintadas de color se reservan para 1-2 elementos destacados por
+     vista (nunca para listas repetidas) en vez de bordes de color, que
+     saturan la interfaz y se ven "genéricos de IA". */
+  --ab-shadow-sm: 0 2px 8px rgba(38, 30, 15, 0.08);
+  --ab-shadow-md: 0 10px 22px rgba(38, 30, 15, 0.1);
+  --ab-shadow-lg: 0 18px 40px rgba(29, 33, 41, 0.14);
+  --ab-shadow-primary: 0 14px 30px rgba(47, 93, 138, 0.22);
+  --ab-shadow-secondary: 0 14px 30px rgba(92, 84, 112, 0.22);
+  --ab-shadow-tertiary: 0 14px 30px rgba(169, 119, 63, 0.22);
+  --ab-shadow-success: 0 14px 30px rgba(79, 136, 80, 0.22);
+  --ab-shadow-danger: 0 14px 30px rgba(192, 57, 43, 0.24);
+
+  /* Espaciado */
+  --ab-space-1: 4px;
+  --ab-space-2: 8px;
+  --ab-space-3: 12px;
+  --ab-space-4: 16px;
+  --ab-space-5: 24px;
+  --ab-space-6: 32px;
+  --ab-space-7: 48px;
+
+  /* Altura mínima táctil accesible (jóvenes y adultos mayores) */
+  --ab-tap-target: 48px;
+}
+
+/* ============================================================
+   MODO OSCURO — "noche de barrio": pizarra profunda, el latón
+   y el ámbar hacen de luz de farol.
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-color-primary: #7ca6d6;
+    --ion-color-primary-rgb: 124, 166, 214;
+    --ion-color-primary-contrast: #0d1b28;
+    --ion-color-primary-contrast-rgb: 13, 27, 40;
+    --ion-color-primary-shade: #6d92bd;
+    --ion-color-primary-tint: #89aedb;
+
+    --ion-color-secondary: #ada2c4;
+    --ion-color-secondary-contrast: #1d1a26;
+
+    --ion-color-tertiary: #d3a565;
+    --ion-color-tertiary-contrast: #241a08;
+
+    --ion-background-color: #14181f;
+    --ion-background-color-rgb: 20, 24, 31;
+    --ion-text-color: #f1eee6;
+    --ion-text-color-rgb: 241, 238, 230;
+
+    --ion-toolbar-background: linear-gradient(115deg, #0f2135 0%, #17283b 55%, #241d30 100%);
+    --ion-toolbar-color: #f1eee6;
+
+    --ab-surface: #1b2029;
+    --ab-surface-muted: #151920;
+    --ab-border: #2c323c;
+    --ab-text-primary: #f1eee6;
+    --ab-text-secondary: #a9aeb8;
+
+    --ab-tipo-emergencia-bg: rgba(192, 57, 43, 0.16);
+    --ab-tipo-mantenimiento-bg: rgba(224, 138, 30, 0.16);
+    --ab-tipo-informativo-bg: rgba(124, 166, 214, 0.14);
+    --ab-tipo-recordatorio-bg: rgba(79, 136, 80, 0.16);
+
+    --ab-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --ab-shadow-md: 0 10px 26px rgba(0, 0, 0, 0.4);
+    --ab-shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  ion-item {
+    --background: var(--ab-surface);
+  }
 }

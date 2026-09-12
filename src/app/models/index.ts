@@ -53,7 +53,3 @@ export interface Dispositivo {
   fechaRegistro: string;
 }
 
-// Tipos alias para compatibilidad con código existente
-export type Neighborhood = Comunidad;
-export type User = Usuario;
-
