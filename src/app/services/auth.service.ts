@@ -183,6 +183,31 @@ export class AuthService {
     this.currentUserSubject.next(user);
   }
 
+  // La baja física de Authentication y Firestore debe ejecutarla un administrador
+  // o una Cloud Function/proceso administrativo posterior; nunca desde el cliente.
+  solicitarEliminacionCuenta(): Observable<void> {
+    const usuarioActual = this.getCurrentUser();
+
+    if (!usuarioActual?.idUsuario) {
+      return throwError(() => new Error('Usuario no autenticado'));
+    }
+
+    if (usuarioActual.pendienteEliminacion) {
+      return throwError(() => new Error('Ya existe una solicitud de eliminación para esta cuenta'));
+    }
+
+    const fechaSolicitudEliminacion = new Date().toISOString();
+    return this.firestoreService.solicitarEliminacionCuenta(usuarioActual.idUsuario, fechaSolicitudEliminacion).pipe(
+      map(() => {
+        this.currentUserSubject.next({
+          ...usuarioActual,
+          pendienteEliminacion: true,
+          fechaSolicitudEliminacion,
+        });
+      })
+    );
+  }
+
   joinComunidad(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
     return this.firestoreService.getComunidadByCodigoInvitacion(codigoInvitacion.trim().toUpperCase()).pipe(
       take(1),

@@ -76,4 +76,13 @@
       <p class="empty-text">Aún no perteneces a una vecindad.</p>
     </ng-template>
   </section>
+
+  <section class="perfil-panel elimination-panel" *ngIf="usuario">
+    <h3>Eliminación de cuenta</h3>
+    <p>Solicita la eliminación de tus datos. La baja definitiva será realizada posteriormente por el equipo administrador.</p>
+    <ion-button class="delete-account-btn" color="danger" (click)="solicitarEliminacionCuenta()" [disabled]="usuario.pendienteEliminacion || isRequestingDeletion">
+      {{ usuario.pendienteEliminacion ? 'Solicitud de eliminación registrada' : (isRequestingDeletion ? 'Registrando solicitud...' : 'Solicitar eliminación de mi cuenta') }}
+    </ion-button>
+    <p *ngIf="mensajeEliminacion" class="copy-message" role="status">{{ mensajeEliminacion }}</p>
+  </section>
 </ion-content>

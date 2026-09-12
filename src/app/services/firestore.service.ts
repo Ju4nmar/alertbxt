@@ -218,6 +218,28 @@ export class FirestoreService {
     );
   }
 
+  solicitarEliminacionCuenta(idUsuario: string, fechaSolicitudEliminacion: string): Observable<void> {
+    if (!idUsuario || !fechaSolicitudEliminacion) {
+      return throwError(() => new Error('No se encontró la cuenta para solicitar su eliminación'));
+    }
+
+    this.isLoadingSubject.next(true);
+    const docRef = this.inContext(() => doc(this.firestore, `usuarios/${idUsuario}`));
+    const solicitud = {
+      pendienteEliminacion: true,
+      fechaSolicitudEliminacion,
+    };
+
+    return from(this.inContext(() => updateDoc(docRef, solicitud))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error solicitando eliminación de cuenta:', error);
+        return throwError(() => new Error('No se pudo registrar la solicitud de eliminación'));
+      }),
+      finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
   getComunidades(): Observable<Comunidad[]> {
     this.isLoadingSubject.next(true);
     const col = this.inContext(() => collection(this.firestore, 'comunidades'));
