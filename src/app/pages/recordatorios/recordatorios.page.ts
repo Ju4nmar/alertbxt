@@ -82,8 +82,8 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       return;
     }
 
-    const fechaHora = `${this.fechaRecordatorio}T${this.horaRecordatorio}`;
-    if (Number.isNaN(new Date(fechaHora).getTime())) {
+    const fechaHoraLocal = new Date(`${this.fechaRecordatorio}T${this.horaRecordatorio}`);
+    if (Number.isNaN(fechaHoraLocal.getTime())) {
       this.recordatorioError = 'Selecciona una fecha y hora válidas.';
       return;
     }
@@ -103,7 +103,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     const recordatorio: Omit<Recordatorio, 'idRecordatorios'> = {
       tituloRecordatorio: titulo,
       descripcionRecordatorio: descripcion,
-      fechaHora,
+      fechaHora: fechaHoraLocal.toISOString(),
       idUsuario: currentUser.idUsuario,
       comunidadId: currentUser.comunidadId,
       fechaCreacion: new Date().toISOString(),
@@ -134,9 +134,9 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     this.recordatorioError = '';
     this.tituloRecordatorio = recordatorio.tituloRecordatorio;
     this.descripcionRecordatorio = recordatorio.descripcionRecordatorio;
-    const [fecha, hora = ''] = recordatorio.fechaHora.split('T');
-    this.fechaRecordatorio = fecha;
-    this.horaRecordatorio = hora.slice(0, 5);
+    const fechaHora = new Date(recordatorio.fechaHora);
+    this.fechaRecordatorio = this.toLocalDateInputValue(fechaHora);
+    this.horaRecordatorio = this.toLocalTimeInputValue(fechaHora);
     this.idEditando = recordatorio.idRecordatorios || null;
   }
 
@@ -158,6 +158,19 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
   trackByRecordatorioId(_: number, recordatorio: Recordatorio): string {
     return recordatorio.idRecordatorios || recordatorio.fechaHora || recordatorio.tituloRecordatorio;
+  }
+
+  private toLocalDateInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private toLocalTimeInputValue(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
   }
 
   private resetForm(): void {
