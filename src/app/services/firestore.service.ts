@@ -121,42 +121,18 @@ export class FirestoreService {
 
     return this.inContext(() => docData(docRef)).pipe(
       take(1),
-      switchMap(data => {
-        if (data) {
-          const usuario = this.normalizeUsuario(data as Usuario);
-          return of({ ...usuario, idUsuario: usuario.idUsuario || idUsuario });
+      map(data => {
+        if (!data) {
+          return null;
         }
 
-        return this.getUsuarioByCampoId(idUsuario).pipe(
-          take(1),
-          switchMap(usuario => {
-            if (!usuario) {
-              return of(null);
-            }
-
-            const usuarioNormalizado: Usuario = { ...this.normalizeUsuario(usuario), idUsuario };
-            return this.addUsuario(usuarioNormalizado).pipe(
-              map(() => usuarioNormalizado),
-              catchError(() => of(usuarioNormalizado))
-            );
-          })
-        );
+        const usuario = this.normalizeUsuario(data as Usuario);
+        return { ...usuario, idUsuario: usuario.idUsuario || idUsuario };
       }),
       catchError(error => {
         console.error('Error obteniendo usuario:', error);
         return throwError(() => new Error('Error al cargar usuario'));
       })
-    );
-  }
-
-  private getUsuarioByCampoId(idUsuario: string): Observable<Usuario | null> {
-    const q = this.inContext(() => {
-      const col = collection(this.firestore, 'usuarios');
-      return query(col, where('idUsuario', '==', idUsuario), limit(1));
-    });
-
-    return this.inContext(() => collectionData(q)).pipe(
-      map(data => data.length ? data[0] as Usuario : null)
     );
   }
 
@@ -315,13 +291,21 @@ export class FirestoreService {
     );
   }
 
-  getRecordatoriosByUsuario(idUsuario: string): Observable<Recordatorio[]> {
+  getRecordatoriosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
       const col = collection(this.firestore, 'recordatorios');
+      // La regla de seguridad de "recordatorios" exige idUsuario Y comunidadId
+      // (isMemberOfCommunity). Firestore solo puede validar una consulta de
+      // lista cuando TODOS los campos que la regla revisa también están en
+      // los filtros de la consulta; si comunidadId no se filtra aquí,
+      // Firestore rechaza la lista completa con "Missing or insufficient
+      // permissions" aunque los documentos individuales sí cumplirían la
+      // regla.
       return query(
         col,
         where('idUsuario', '==', idUsuario),
+        where('comunidadId', '==', comunidadId),
         limit(100)
       );
     });

@@ -35,7 +35,7 @@
         </div>
 
         <ion-item>
-          <ion-select label="Rol" label-placement="floating" [(ngModel)]="rol" name="rol" [disabled]="usuario.rol !== 'admin'" (ionChange)="mensajeGuardado = ''">
+          <ion-select label="Rol" label-placement="floating" [(ngModel)]="rol" name="rol" [disabled]="true">
             <ion-select-option value="admin">admin</ion-select-option>
             <ion-select-option value="residente">residente</ion-select-option>
           </ion-select>

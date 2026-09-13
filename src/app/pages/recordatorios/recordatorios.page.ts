@@ -38,9 +38,11 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
-      filter(user => !!user?.idUsuario),
-      distinctUntilChanged((previous, current) => previous?.idUsuario === current?.idUsuario),
-      switchMap(user => this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '')),
+      filter(user => !!user?.idUsuario && !!user?.comunidadId),
+      distinctUntilChanged((previous, current) =>
+        previous?.idUsuario === current?.idUsuario && previous?.comunidadId === current?.comunidadId
+      ),
+      switchMap(user => this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '', user!.comunidadId)),
       takeUntil(this.destroy$)
     ).subscribe({
       next: data => {

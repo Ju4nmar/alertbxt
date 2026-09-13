@@ -32,7 +32,7 @@ export class LocalNotificationService {
           return of([]);
         })
       ),
-      this.firestoreService.getRecordatoriosByUsuario(user.idUsuario).pipe(
+      this.firestoreService.getRecordatoriosByUsuario(user.idUsuario, user.comunidadId).pipe(
         catchError(error => {
           console.error('Error leyendo recordatorios para notificaciones:', error);
           return of([]);

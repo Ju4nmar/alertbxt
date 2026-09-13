@@ -436,6 +436,33 @@ form input:not([type="file"]):focus {
   background: var(--ab-tipo-recordatorio-bg);
 }
 
+/* ============================================================
+   ALERT DE ion-select (interfaz "alert") — igual que los inputs, este
+   overlay no usa Shadow DOM en este build de Ionic. El título y los
+   botones sí heredan el tema correctamente, pero Ionic fija un color
+   oscuro literal para las opciones de radio/checkbox que no se adapta
+   al modo oscuro: texto casi invisible sobre fondo oscuro.
+   ============================================================ */
+ion-alert .alert-radio-label,
+ion-alert .alert-checkbox-label {
+  color: var(--ion-text-color) !important;
+}
+
+ion-alert .alert-radio-icon,
+ion-alert .alert-checkbox-icon {
+  border-color: var(--ab-text-secondary);
+}
+
+ion-alert [aria-checked="true"] .alert-radio-label {
+  color: var(--ion-color-primary) !important;
+  font-weight: 600;
+}
+
+ion-alert [aria-checked="true"] .alert-radio-icon {
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-primary);
+}
+
 /* Scrollbars sutiles */
 ::-webkit-scrollbar {
   width: 8px;

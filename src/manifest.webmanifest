@@ -8,8 +8,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#0e7c86",
+  "background_color": "#17263a",
+  "theme_color": "#2f5d8a",
   "icons": [
     {
       "src": "assets/icon/Alertlogo.png",
