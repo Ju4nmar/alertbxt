@@ -71,7 +71,9 @@ ion-content.feed-content {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  /* El tope de 380px evita que una sola tarjeta (o una fila incompleta) se
+     estire a todo el ancho del contenedor y deforme la imagen. */
+  grid-template-columns: repeat(auto-fit, minmax(270px, min(380px, 100%)));
   gap: 1.2rem;
   padding: 6px var(--ab-space-4) 40px;
   max-width: 1200px;

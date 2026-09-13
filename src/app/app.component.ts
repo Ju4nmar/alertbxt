@@ -150,6 +150,11 @@ export class AppComponent implements OnDestroy {
         {
           text: 'Continuar',
           handler: async () => {
+            // Ionic no cierra este alert hasta que el handler termine, así
+            // que sin este dismiss explícito el segundo diálogo se dibuja
+            // encima del primero (ambos visibles y superpuestos a la vez).
+            await confirm.dismiss();
+
             const form = await this.alertCtrl.create({
               header: 'Detalles de la emergencia',
               inputs: [
