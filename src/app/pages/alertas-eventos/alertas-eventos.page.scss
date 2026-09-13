@@ -3,17 +3,20 @@ ion-content.feed-content {
 }
 
 .feed-header {
+  max-width: 1200px;
+  margin: 0 auto;
   padding: var(--ab-space-5) var(--ab-space-4) var(--ab-space-2);
 }
 
 .feed-header .page-title {
   padding: 0 0 var(--ab-space-3);
-  text-align: left;
+  text-align: center;
 }
 
 .status-strip {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -44,6 +47,7 @@ ion-content.feed-content {
 
 .filter-tabs {
   display: flex;
+  justify-content: center;
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
@@ -75,8 +79,10 @@ ion-content.feed-content {
      estire a todo el ancho del contenedor y deforme la imagen. */
   grid-template-columns: repeat(auto-fit, minmax(270px, min(380px, 100%)));
   gap: 1.2rem;
-  padding: 6px var(--ab-space-4) 40px;
   max-width: 1200px;
+  margin: 0 auto;
+  padding: 6px var(--ab-space-4) 40px;
+  justify-content: center;
 }
 
 .card {
