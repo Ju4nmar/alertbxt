@@ -1,0 +1,178 @@
+<ion-content>
+  <h2 class="page-title">Estadísticas</h2>
+
+  <div class="page-shell">
+    <div *ngIf="isLoading" class="loading-spinner">
+      Cargando estadísticas...
+    </div>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">
+      {{ cargaError }}
+    </div>
+
+    <ng-container *ngIf="!isLoading && !cargaError">
+      <section class="stats-section">
+        <h3>Vecinos</h3>
+        <div class="chart-row">
+          <div class="headline-stack">
+            <div class="stat-card stat-card--wide">
+              <span class="stat-value">{{ resumen.usuarios.total }}</span>
+              <span class="stat-label">Total registrados</span>
+            </div>
+            <div class="stat-card stat-card--wide stat-card--success">
+              <span class="stat-value">{{ resumen.usuarios.activos }}</span>
+              <span class="stat-label">Activos</span>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutVecinos.length; else donutVecinosVacio">
+                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                <circle
+                  *ngFor="let seg of donutVecinos"
+                  class="donut-segment"
+                  cx="50" cy="50" [attr.r]="donutRadio"
+                  [attr.stroke]="seg.color"
+                  [attr.stroke-dasharray]="seg.dasharray"
+                  [attr.stroke-dashoffset]="seg.dashoffset"
+                ></circle>
+              </svg>
+              <ng-template #donutVecinosVacio>
+                <svg viewBox="0 0 100 100" class="donut-svg">
+                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                </svg>
+              </ng-template>
+              <div class="donut-center">
+                <span class="donut-center-value">{{ resumen.usuarios.total }}</span>
+                <span class="donut-center-label">vecinos</span>
+              </div>
+            </div>
+
+            <ul class="chart-legend" *ngIf="donutVecinos.length; else legendVecinosVacia">
+              <li *ngFor="let seg of donutVecinos">
+                <span class="legend-dot" [style.background]="seg.color"></span>
+                {{ seg.etiqueta }}
+                <span class="legend-value">{{ seg.valor }}</span>
+              </li>
+            </ul>
+            <ng-template #legendVecinosVacia>
+              <p class="chart-empty">Aún no hay vecinos registrados.</p>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="stats-grid stats-grid--compact">
+          <div class="stat-card stat-card--tertiary">
+            <span class="stat-value">{{ resumen.usuarios.admins }}</span>
+            <span class="stat-label">Administradores</span>
+          </div>
+          <div class="stat-card stat-card--primary">
+            <span class="stat-value">{{ resumen.usuarios.residentes }}</span>
+            <span class="stat-label">Residentes</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <h3>Avisos y alertas</h3>
+        <div class="chart-row">
+          <div class="headline-stack">
+            <div class="stat-card stat-card--wide">
+              <span class="stat-value">{{ resumen.avisos.total }}</span>
+              <span class="stat-label">Total publicados</span>
+            </div>
+            <div class="stat-card stat-card--wide stat-card--secondary">
+              <span class="stat-value">{{ resumen.avisos.alertaSos }}</span>
+              <span class="stat-label">Alertas SOS</span>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutAvisos.length; else donutAvisosVacio">
+                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                <circle
+                  *ngFor="let seg of donutAvisos"
+                  class="donut-segment"
+                  cx="50" cy="50" [attr.r]="donutRadio"
+                  [attr.stroke]="seg.color"
+                  [attr.stroke-dasharray]="seg.dasharray"
+                  [attr.stroke-dashoffset]="seg.dashoffset"
+                ></circle>
+              </svg>
+              <ng-template #donutAvisosVacio>
+                <svg viewBox="0 0 100 100" class="donut-svg">
+                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                </svg>
+              </ng-template>
+              <div class="donut-center">
+                <span class="donut-center-value">{{ resumen.avisos.total }}</span>
+                <span class="donut-center-label">avisos</span>
+              </div>
+            </div>
+
+            <ul class="chart-legend" *ngIf="donutAvisos.length; else legendAvisosVacia">
+              <li *ngFor="let seg of donutAvisos">
+                <span class="legend-dot" [style.background]="seg.color"></span>
+                {{ seg.etiqueta }}
+                <span class="legend-value">{{ seg.valor }}</span>
+              </li>
+            </ul>
+            <ng-template #legendAvisosVacia>
+              <p class="chart-empty">Aún no hay avisos publicados.</p>
+            </ng-template>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <h3>Recordatorios</h3>
+        <div class="chart-row">
+          <div class="headline-stack">
+            <div class="stat-card stat-card--wide">
+              <span class="stat-value">{{ resumen.recordatorios.total }}</span>
+              <span class="stat-label">Total creados</span>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutRecordatorios.length; else donutRecordatoriosVacio">
+                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                <circle
+                  *ngFor="let seg of donutRecordatorios"
+                  class="donut-segment"
+                  cx="50" cy="50" [attr.r]="donutRadio"
+                  [attr.stroke]="seg.color"
+                  [attr.stroke-dasharray]="seg.dasharray"
+                  [attr.stroke-dashoffset]="seg.dashoffset"
+                ></circle>
+              </svg>
+              <ng-template #donutRecordatoriosVacio>
+                <svg viewBox="0 0 100 100" class="donut-svg">
+                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                </svg>
+              </ng-template>
+              <div class="donut-center">
+                <span class="donut-center-value">{{ resumen.recordatorios.total }}</span>
+                <span class="donut-center-label">total</span>
+              </div>
+            </div>
+
+            <ul class="chart-legend" *ngIf="donutRecordatorios.length; else legendRecordatoriosVacia">
+              <li *ngFor="let seg of donutRecordatorios">
+                <span class="legend-dot" [style.background]="seg.color"></span>
+                {{ seg.etiqueta }}
+                <span class="legend-value">{{ seg.valor }}</span>
+              </li>
+            </ul>
+            <ng-template #legendRecordatoriosVacia>
+              <p class="chart-empty">Aún no hay recordatorios creados.</p>
+            </ng-template>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</ion-content>

@@ -7,6 +7,7 @@ import {
   alertCircleOutline,
   calendarOutline,
   checkmarkCircle,
+  locationOutline,
   notificationsOffOutline,
   personCircleOutline,
   personOutline,
@@ -30,6 +31,7 @@ interface ModalData {
   titulo: string;
   descripcion: string;
   fecha?: string;
+  ubicacion?: string;
   tipo?: string;
   autor?: string;
   imagen?: string;
@@ -56,6 +58,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       alertCircleOutline,
       calendarOutline,
       checkmarkCircle,
+      locationOutline,
       notificationsOffOutline,
       personCircleOutline,
       personOutline,
@@ -71,6 +74,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   modalAbierto = false;
   modalData: ModalData | null = null;
   isLoading = false;
+  cargaError = '';
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -83,12 +87,14 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
           switchMap(avisos => this.completarAutores(avisos)),
           catchError(error => {
             console.error('Error cargando avisos:', error);
+            this.cargaError = 'No se pudieron cargar los avisos. Revisa tu conexión e intenta de nuevo.';
             return of([]);
           })
         ),
-        this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '').pipe(
+        this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '', user!.comunidadId).pipe(
           catchError(error => {
             console.error('Error cargando recordatorios:', error);
+            this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
             return of([]);
           })
         ),
@@ -104,6 +110,8 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       },
       error: error => {
         console.error('Error cargando avisos:', error);
+        this.cargaError = 'No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.';
+        this.cdr.markForCheck();
       },
     });
 
@@ -197,6 +205,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
         titulo: tarjeta.aviso.tituloAviso || 'Sin título',
         descripcion: tarjeta.aviso.descripcionAviso || 'Sin descripción',
         fecha: tarjeta.aviso.fechaPublicacion,
+        ubicacion: tarjeta.aviso.ubicacionAviso,
         tipo: tarjeta.aviso.tipoAviso,
         autor: tarjeta.aviso.autorNombre || tarjeta.aviso.autorId || 'Autor no disponible',
         imagen: tarjeta.aviso.imagen,

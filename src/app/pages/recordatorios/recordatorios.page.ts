@@ -1,9 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonIcon, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
-import { calendarOutline, timeOutline } from 'ionicons/icons';
+import { IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Recordatorio } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -15,7 +13,7 @@ import { LocalNotificationService } from '../../services/local-notification.serv
   templateUrl: './recordatorios.page.html',
   styleUrls: ['./recordatorios.page.scss'],
   standalone: true,
-  imports: [IonButton, IonIcon, IonInput, IonItem, IonTextarea, IonContent, CommonModule, FormsModule],
+  imports: [IonButton, IonInput, IonItem, IonTextarea, IonContent, CommonModule, FormsModule],
 })
 export class RecordatoriosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
@@ -31,16 +29,15 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   idEditando: string | null = null;
   isLoading = false;
   recordatorioError = '';
-
-  constructor() {
-    addIcons({ calendarOutline, timeOutline });
-  }
+  cargaError = '';
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
-      filter(user => !!user?.idUsuario),
-      distinctUntilChanged((previous, current) => previous?.idUsuario === current?.idUsuario),
-      switchMap(user => this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '')),
+      filter(user => !!user?.idUsuario && !!user?.comunidadId),
+      distinctUntilChanged((previous, current) =>
+        previous?.idUsuario === current?.idUsuario && previous?.comunidadId === current?.comunidadId
+      ),
+      switchMap(user => this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '', user!.comunidadId)),
       takeUntil(this.destroy$)
     ).subscribe({
       next: data => {
@@ -50,6 +47,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       error: error => {
         console.error('Error cargando recordatorios:', error);
         this.isLoading = false;
+        this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
       },
     });
   }
@@ -78,8 +76,8 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       return;
     }
 
-    const fechaHora = `${this.fechaRecordatorio}T${this.horaRecordatorio}`;
-    if (Number.isNaN(new Date(fechaHora).getTime())) {
+    const fechaHoraLocal = new Date(`${this.fechaRecordatorio}T${this.horaRecordatorio}`);
+    if (Number.isNaN(fechaHoraLocal.getTime())) {
       this.recordatorioError = 'Selecciona una fecha y hora válidas.';
       return;
     }
@@ -99,7 +97,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     const recordatorio: Omit<Recordatorio, 'idRecordatorios'> = {
       tituloRecordatorio: titulo,
       descripcionRecordatorio: descripcion,
-      fechaHora,
+      fechaHora: fechaHoraLocal.toISOString(),
       idUsuario: currentUser.idUsuario,
       comunidadId: currentUser.comunidadId,
       fechaCreacion: new Date().toISOString(),
@@ -130,9 +128,9 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     this.recordatorioError = '';
     this.tituloRecordatorio = recordatorio.tituloRecordatorio;
     this.descripcionRecordatorio = recordatorio.descripcionRecordatorio;
-    const [fecha, hora = ''] = recordatorio.fechaHora.split('T');
-    this.fechaRecordatorio = fecha;
-    this.horaRecordatorio = hora.slice(0, 5);
+    const fechaHora = new Date(recordatorio.fechaHora);
+    this.fechaRecordatorio = this.toLocalDateInputValue(fechaHora);
+    this.horaRecordatorio = this.toLocalTimeInputValue(fechaHora);
     this.idEditando = recordatorio.idRecordatorios || null;
   }
 
@@ -154,6 +152,19 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
   trackByRecordatorioId(_: number, recordatorio: Recordatorio): string {
     return recordatorio.idRecordatorios || recordatorio.fechaHora || recordatorio.tituloRecordatorio;
+  }
+
+  private toLocalDateInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private toLocalTimeInputValue(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
   }
 
   private resetForm(): void {

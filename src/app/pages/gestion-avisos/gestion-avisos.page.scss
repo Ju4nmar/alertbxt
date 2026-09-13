@@ -156,6 +156,12 @@ ion-content {
   color: var(--ab-text-primary);
 }
 
+.aviso-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ab-text-secondary);
+}
+
 .lista-alertas-sos {
   box-shadow: var(--ab-shadow-danger);
   min-height: auto;

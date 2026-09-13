@@ -34,6 +34,21 @@
       <span *ngIf="descripcionInput.errors?.['maxlength']">No debe superar 500 caracteres.</span>
     </div>
 
+    <div class="native-input-group">
+      <label class="native-label" for="fechaAviso">Fecha del aviso</label>
+      <input id="fechaAviso" type="date" [(ngModel)]="fechaAviso" name="fechaAviso" required #fechaInput="ngModel" (input)="avisoError = ''" />
+    </div>
+    <div *ngIf="fechaInput.invalid && (fechaInput.dirty || fechaInput.touched)" class="field-error">
+      La fecha del aviso es obligatoria.
+    </div>
+
+    <ion-item>
+      <ion-input label="Ubicación (opcional)" label-placement="floating" [(ngModel)]="ubicacion" name="ubicacion" maxlength="120" #ubicacionInput="ngModel" (ionInput)="avisoError = ''"></ion-input>
+    </ion-item>
+    <div *ngIf="ubicacionInput.invalid && (ubicacionInput.dirty || ubicacionInput.touched)" class="field-error">
+      <span *ngIf="ubicacionInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
+    </div>
+
     <div class="upload-container">
       <label class="custom-file-upload">
         <input type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" />
@@ -54,12 +69,17 @@
   </form>
 
   <div class="lists-col">
+    <div *ngIf="cargaError" class="error-message" role="alert">
+      {{ cargaError }}
+    </div>
+
     <div class="lista-avisos">
       <h3>Avisos existentes</h3>
       <div *ngFor="let aviso of avisosAdministrativos; trackBy: trackByAvisoId" class="aviso-item" [ngClass]="'tipo-' + (aviso.tipoAviso || 'informativo')">
         <div class="aviso-info">
           <span class="ab-badge" [ngClass]="'ab-badge--' + (aviso.tipoAviso || 'informativo')">{{ aviso.tipoAviso || 'informativo' }}</span>
           <h4 class="aviso-titulo">{{ aviso.tituloAviso }}</h4>
+          <p class="aviso-meta">{{ aviso.fechaPublicacion | date: 'mediumDate' }}<ng-container *ngIf="aviso.ubicacionAviso"> · {{ aviso.ubicacionAviso }}</ng-container></p>
         </div>
         <div class="acciones">
           <ion-button class="btn-editar-aviso" (click)="editarAviso(aviso)">Editar</ion-button>

@@ -23,6 +23,7 @@ export class UnirseVecindadPage implements OnInit {
   nombre = '';
   correo = '';
   telefono = '';
+  numeroApartamento = '';
   password = '';
   confirmPassword = '';
   codigoInvitacion = '';
@@ -47,6 +48,7 @@ export class UnirseVecindadPage implements OnInit {
       this.nombre = currentUser?.nombre || '';
       this.correo = currentUser?.correo || '';
       this.telefono = currentUser?.telefono || '';
+      this.numeroApartamento = currentUser?.numeroApartamento || '';
     });
   }
 
@@ -75,6 +77,7 @@ export class UnirseVecindadPage implements OnInit {
           nombre: this.nombre.trim(),
           correo: this.correo.trim(),
           telefono: this.telefono.trim(),
+          numeroApartamento: this.numeroApartamento.trim(),
           password: this.password,
           codigoInvitacion,
         }));
@@ -121,8 +124,9 @@ export class UnirseVecindadPage implements OnInit {
     const nombre = this.nombre.trim();
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
+    const numeroApartamento = this.numeroApartamento.trim();
 
-    if (!nombre || !correo || !telefono || !this.password || !this.confirmPassword) {
+    if (!nombre || !correo || !telefono || !numeroApartamento || !this.password || !this.confirmPassword) {
       this.joinError = 'Completa todos los campos requeridos.';
       return false;
     }
@@ -131,6 +135,7 @@ export class UnirseVecindadPage implements OnInit {
       nombre.length < 3 || nombre.length > 80 ||
       correo.length > 120 ||
       telefono.length < 7 || telefono.length > 15 ||
+      numeroApartamento.length > 20 ||
       this.password.length < 8 || this.password.length > 40
     ) {
       this.joinError = 'Revisa la longitud de los campos del formulario.';

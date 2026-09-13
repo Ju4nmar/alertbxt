@@ -337,7 +337,12 @@ ion-menu.ab-sidebar {
     background: var(--ab-surface);
     border-top: 1px solid var(--ab-border);
     box-shadow: 0 -6px 20px rgba(20, 24, 31, 0.1);
-    padding-bottom: env(safe-area-inset-bottom);
+    /* env(safe-area-inset-bottom) reporta 0 en una pestaña normal del
+       navegador (el navegador ya reserva su propio espacio para la barra
+       de gestos), a diferencia de cuando la PWA corre instalada en modo
+       standalone. Sin un mínimo garantizado, el último tramo de la barra
+       queda debajo de la zona de gestos del sistema solo en el navegador. */
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
   .tab-btn {
@@ -373,7 +378,7 @@ ion-menu.ab-sidebar {
   }
 
   .main-content {
-    padding-bottom: calc(58px + env(safe-area-inset-bottom));
+    padding-bottom: calc(58px + max(14px, env(safe-area-inset-bottom)));
   }
 }
 
@@ -408,7 +413,7 @@ ion-menu.ab-sidebar {
 @media (max-width: 991px) {
   .sos-fab {
     right: 18px;
-    bottom: calc(70px + env(safe-area-inset-bottom));
+    bottom: calc(70px + max(14px, env(safe-area-inset-bottom)));
     width: 56px;
     height: 56px;
     font-size: 0.9rem;

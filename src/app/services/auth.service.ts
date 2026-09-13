@@ -66,6 +66,18 @@ export class AuthService {
     return firstValueFrom(this.firestoreService.getUsuarioById(uid).pipe(take(1)));
   }
 
+  // Una cuenta desactivada puede autenticarse en Firebase Auth (eso no lo
+  // bloquean las reglas), pero luego no puede leer avisos ni recordatorios
+  // porque isMemberOfCommunity() exige activo == true. Sin este chequeo
+  // explícito, el usuario entraba y solo veía listas vacías con errores de
+  // permisos silenciosos en la consola, sin ninguna explicación.
+  private async rechazarSiCuentaDesactivada(userData: Usuario): Promise<void> {
+    if (userData.activo === false) {
+      await this.inContext(() => signOut(this.auth));
+      throw new Error('cuenta-desactivada');
+    }
+  }
+
   login(email: string, password: string): Observable<Usuario> {
     return from(this.inContext(() => signInWithEmailAndPassword(this.auth, email.trim(), password))).pipe(
       switchMap(async result => {
@@ -75,6 +87,7 @@ export class AuthService {
           throw new Error('Usuario no encontrado en la base de datos');
         }
 
+        await this.rechazarSiCuentaDesactivada(userData);
         this.currentUserSubject.next(userData);
         this.authReadySubject.next(true);
         return userData;
@@ -179,6 +192,7 @@ export class AuthService {
           throw new Error('No existe una cuenta con este usuario de Google. Regístrate o únete con un código de invitación.');
         }
 
+        await this.rechazarSiCuentaDesactivada(userData);
         this.currentUserSubject.next(userData);
         this.authReadySubject.next(true);
         return userData;
@@ -329,6 +343,7 @@ export class AuthService {
     nombre: string;
     correo: string;
     telefono: string;
+    numeroApartamento: string;
     password: string;
     codigoInvitacion: string;
   }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
@@ -348,6 +363,7 @@ export class AuthService {
               nombre: data.nombre.trim(),
               correo: data.correo.trim(),
               telefono: data.telefono.trim(),
+              numeroApartamento: data.numeroApartamento.trim(),
               rol: 'residente',
               activo: true,
               comunidadId: comunidad.idComunidad || '',

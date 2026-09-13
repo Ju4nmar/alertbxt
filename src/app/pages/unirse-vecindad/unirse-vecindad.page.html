@@ -74,6 +74,14 @@
           </div>
 
           <ion-item>
+            <ion-input label="Número de apartamento" label-placement="floating" [(ngModel)]="numeroApartamento" name="numeroApartamento" required maxlength="20" #apartamentoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+          </ion-item>
+          <div *ngIf="apartamentoInput.invalid && (apartamentoInput.dirty || apartamentoInput.touched)" class="field-error">
+            <span *ngIf="apartamentoInput.errors?.['required']">El número de apartamento es obligatorio.</span>
+            <span *ngIf="apartamentoInput.errors?.['maxlength']">No debe superar 20 caracteres.</span>
+          </div>
+
+          <ion-item>
             <ion-input label="Contraseña" label-placement="floating" type="password" [(ngModel)]="password" name="password" required minlength="8" maxlength="40" #passwordInput="ngModel" (ionInput)="joinError = ''"></ion-input>
           </ion-item>
           <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="field-error">

@@ -5,6 +5,7 @@ export interface Aviso {
   descripcionAviso: string;
   tipoAviso: string;
   fechaPublicacion?: string;
+  ubicacionAviso?: string;
   autorId: string;
   autorNombre?: string;
   comunidadId: string;
@@ -16,6 +17,7 @@ export interface Usuario {
   nombre: string;
   correo: string;
   telefono: string;
+  numeroApartamento?: string;
   rol: 'admin' | 'residente';
   activo: boolean;
   pendienteEliminacion?: boolean;

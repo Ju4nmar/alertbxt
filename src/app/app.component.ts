@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person } from 'ionicons/icons';
+import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -71,7 +71,6 @@ export class AppComponent implements OnDestroy {
   isMobileDevice = this.getIsMobileDevice();
   showSplash = true;
   currentUrl = this.router.url;
-  private notificationStartHandle: number | null = null;
 
   @HostListener('window:resize')
   onWindowResize(): void {
@@ -80,7 +79,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,logOut,download});
+    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,logOut,download,statsChart});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -92,13 +91,6 @@ export class AppComponent implements OnDestroy {
         this.currentUser = user;
         this.isLoggedIn = !!user;
         this.nombreUsuario = user?.nombre || null;
-
-        if (user && this.hasNotificationPermission()) {
-          this.scheduleNotificationStart(user);
-        } else {
-          this.cancelScheduledNotificationStart();
-          this.localNotificationService.stop();
-        }
       });
 
     this.pwaInstallService.canInstall$
@@ -127,7 +119,6 @@ export class AppComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.cancelScheduledNotificationStart();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -143,13 +134,19 @@ export class AppComponent implements OnDestroy {
 
   async generarAlerta(): Promise<void> {
     const confirm = await this.alertCtrl.create({
-      header: 'Generar Alerta SOS',
-      message: '¿Deseas generar una alerta de emergencia?',
+      header: 'Generar alerta de emergencia',
+      message: '¿Estás seguro de que deseas enviar una alerta SOS a los administradores y residentes de tu conjunto?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Continuar',
+          text: 'Enviar alerta SOS',
+          role: 'destructive',
           handler: async () => {
+            // Ionic no cierra este alert hasta que el handler termine, así
+            // que sin este dismiss explícito el segundo diálogo se dibuja
+            // encima del primero (ambos visibles y superpuestos a la vez).
+            await confirm.dismiss();
+
             const form = await this.alertCtrl.create({
               header: 'Detalles de la emergencia',
               inputs: [
@@ -219,8 +216,8 @@ export class AppComponent implements OnDestroy {
       await firstValueFrom(this.firestoreService.addAviso(avisoData));
 
       const ok = await this.alertCtrl.create({
-        header: 'Alerta enviada',
-        message: 'La alerta SOS ha sido registrada correctamente.',
+        header: 'Alerta SOS enviada correctamente.',
+        message: 'Los usuarios correspondientes han sido notificados.',
         buttons: ['OK'],
       });
       await ok.present();
@@ -260,7 +257,11 @@ export class AppComponent implements OnDestroy {
     goToGestionUsuarios(){
     this.navigateTo('/gestion-usuarios');
   }
-  
+
+  goToEstadisticas(){
+    this.navigateTo('/estadisticas');
+  }
+
   async installPwa(): Promise<void> {
     if (this.showIosInstallHelp) {
       const alert = await this.alertCtrl.create({
@@ -287,7 +288,6 @@ export class AppComponent implements OnDestroy {
     const result = await this.localNotificationService.enableNotifications();
 
     if (result === 'granted' && this.currentUser) {
-      this.scheduleNotificationStart(this.currentUser);
       void this.fcmService.iniciarParaUsuario(this.currentUser);
     }
 
@@ -308,44 +308,6 @@ export class AppComponent implements OnDestroy {
   private async navigateTo(path: string): Promise<void> {
     await this.menuController.close('main-menu').catch(() => undefined);
     await this.ngZone.run(() => this.router.navigateByUrl(path));
-  }
-
-  private scheduleNotificationStart(user: Usuario): void {
-    this.cancelScheduledNotificationStart();
-    const start = () => {
-      this.notificationStartHandle = null;
-      void this.localNotificationService.start(user);
-    };
-
-    const idleWindow = window as Window & {
-      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-    };
-
-    this.notificationStartHandle = idleWindow.requestIdleCallback
-      ? idleWindow.requestIdleCallback(start, { timeout: 5000 })
-      : window.setTimeout(start, 3000);
-  }
-
-  private cancelScheduledNotificationStart(): void {
-    if (this.notificationStartHandle === null) {
-      return;
-    }
-
-    const idleWindow = window as Window & {
-      cancelIdleCallback?: (handle: number) => void;
-    };
-
-    if (idleWindow.cancelIdleCallback) {
-      idleWindow.cancelIdleCallback(this.notificationStartHandle);
-    } else {
-      window.clearTimeout(this.notificationStartHandle);
-    }
-
-    this.notificationStartHandle = null;
-  }
-
-  private hasNotificationPermission(): boolean {
-    return 'Notification' in window && Notification.permission === 'granted';
   }
 
   private async clearDevelopmentServiceWorkers(): Promise<void> {
