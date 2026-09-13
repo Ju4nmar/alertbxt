@@ -61,6 +61,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
   readonly donutCircunferencia = DONUT_CIRCUNFERENCIA;
 
   resumen: EstadisticasResumen = RESUMEN_VACIO;
+  donutVecinos: DonutSegmento[] = [];
   donutAvisos: DonutSegmento[] = [];
   donutRecordatorios: DonutSegmento[] = [];
   isLoading = true;
@@ -88,6 +89,10 @@ export class EstadisticasPage implements OnInit, OnDestroy {
 
       const [usuarios, avisos, recordatorios] = datos;
       this.resumen = this.calcularResumen(usuarios, avisos, recordatorios);
+      this.donutVecinos = this.construirDona([
+        { etiqueta: 'Activos', valor: this.resumen.usuarios.activos, color: 'var(--ion-color-success)' },
+        { etiqueta: 'Inactivos', valor: this.resumen.usuarios.inactivos, color: 'var(--ion-color-medium)' },
+      ]);
       this.donutAvisos = this.construirDona([
         { etiqueta: 'Alertas SOS', valor: this.resumen.avisos.alertaSos, color: 'var(--ion-color-secondary)' },
         { etiqueta: 'Emergencia', valor: this.resumen.avisos.emergencia, color: 'var(--ion-color-danger)' },

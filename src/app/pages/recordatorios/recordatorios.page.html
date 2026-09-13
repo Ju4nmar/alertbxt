@@ -63,7 +63,15 @@
     </div>
 
     <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
-      <h4>{{ recordatorio.tituloRecordatorio }}</h4>
+      <div class="recordatorio-info">
+        <h4>{{ recordatorio.tituloRecordatorio }}</h4>
+        <div class="recordatorio-meta">
+          <span class="recordatorio-fecha">{{ recordatorio.fechaHora | date: 'medium' }}</span>
+          <span class="estado-pill" [class.estado-pill--completado]="recordatorio.estado === 'completado'">
+            {{ recordatorio.estado === 'completado' ? 'Completado' : 'Pendiente' }}
+          </span>
+        </div>
+      </div>
 
       <div class="acciones">
         <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>

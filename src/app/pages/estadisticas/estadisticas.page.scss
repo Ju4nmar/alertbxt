@@ -77,7 +77,19 @@ ion-content {
 .stat-card--secondary { box-shadow: var(--ab-shadow-secondary); }
 .stat-card--primary:hover { box-shadow: var(--ab-shadow-primary); }
 .stat-card--tertiary:hover { box-shadow: var(--ab-shadow-tertiary); }
-.stat-card--muted:hover { box-shadow: var(--ab-shadow-md); }
+
+.stats-grid--compact {
+  margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.stats-grid--compact .stat-card {
+  padding: 12px 16px;
+}
+
+.stats-grid--compact .stat-value {
+  font-size: 1.4rem;
+}
 
 /* ============== Fila de tarjetas resumen + gráfico ============== */
 .chart-row {

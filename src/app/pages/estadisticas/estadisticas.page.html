@@ -13,19 +13,56 @@
     <ng-container *ngIf="!isLoading && !cargaError">
       <section class="stats-section">
         <h3>Vecinos</h3>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-value">{{ resumen.usuarios.total }}</span>
-            <span class="stat-label">Total registrados</span>
+        <div class="chart-row">
+          <div class="headline-stack">
+            <div class="stat-card stat-card--wide">
+              <span class="stat-value">{{ resumen.usuarios.total }}</span>
+              <span class="stat-label">Total registrados</span>
+            </div>
+            <div class="stat-card stat-card--wide stat-card--success">
+              <span class="stat-value">{{ resumen.usuarios.activos }}</span>
+              <span class="stat-label">Activos</span>
+            </div>
           </div>
-          <div class="stat-card stat-card--success">
-            <span class="stat-value">{{ resumen.usuarios.activos }}</span>
-            <span class="stat-label">Activos</span>
+
+          <div class="chart-card">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutVecinos.length; else donutVecinosVacio">
+                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                <circle
+                  *ngFor="let seg of donutVecinos"
+                  class="donut-segment"
+                  cx="50" cy="50" [attr.r]="donutRadio"
+                  [attr.stroke]="seg.color"
+                  [attr.stroke-dasharray]="seg.dasharray"
+                  [attr.stroke-dashoffset]="seg.dashoffset"
+                ></circle>
+              </svg>
+              <ng-template #donutVecinosVacio>
+                <svg viewBox="0 0 100 100" class="donut-svg">
+                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+                </svg>
+              </ng-template>
+              <div class="donut-center">
+                <span class="donut-center-value">{{ resumen.usuarios.total }}</span>
+                <span class="donut-center-label">vecinos</span>
+              </div>
+            </div>
+
+            <ul class="chart-legend" *ngIf="donutVecinos.length; else legendVecinosVacia">
+              <li *ngFor="let seg of donutVecinos">
+                <span class="legend-dot" [style.background]="seg.color"></span>
+                {{ seg.etiqueta }}
+                <span class="legend-value">{{ seg.valor }}</span>
+              </li>
+            </ul>
+            <ng-template #legendVecinosVacia>
+              <p class="chart-empty">Aún no hay vecinos registrados.</p>
+            </ng-template>
           </div>
-          <div class="stat-card stat-card--muted">
-            <span class="stat-value">{{ resumen.usuarios.inactivos }}</span>
-            <span class="stat-label">Inactivos</span>
-          </div>
+        </div>
+
+        <div class="stats-grid stats-grid--compact">
           <div class="stat-card stat-card--tertiary">
             <span class="stat-value">{{ resumen.usuarios.admins }}</span>
             <span class="stat-label">Administradores</span>
