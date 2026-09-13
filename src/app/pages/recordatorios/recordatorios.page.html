@@ -32,7 +32,6 @@
       <div class="date-field native-input-group">
         <label class="native-label" for="fechaRecordatorio">Fecha</label>
         <input id="fechaRecordatorio" type="date" [(ngModel)]="fechaRecordatorio" name="fechaRecordatorio" required #fechaInput="ngModel" (input)="recordatorioError = ''" />
-        <ion-icon name="calendar-outline"></ion-icon>
       </div>
       <div *ngIf="fechaInput.invalid && (fechaInput.dirty || fechaInput.touched)" class="field-error">
         La fecha es requerida.
@@ -41,7 +40,6 @@
       <div class="date-field native-input-group">
         <label class="native-label" for="horaRecordatorio">Hora</label>
         <input id="horaRecordatorio" type="time" [(ngModel)]="horaRecordatorio" name="horaRecordatorio" required #horaInput="ngModel" (input)="recordatorioError = ''" />
-        <ion-icon name="time-outline"></ion-icon>
       </div>
       <div *ngIf="horaInput.invalid && (horaInput.dirty || horaInput.touched)" class="field-error">
         La hora es requerida.
@@ -65,7 +63,15 @@
     </div>
 
     <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
-      <h4>{{ recordatorio.tituloRecordatorio }}</h4>
+      <div class="recordatorio-info">
+        <h4>{{ recordatorio.tituloRecordatorio }}</h4>
+        <div class="recordatorio-meta">
+          <span class="recordatorio-fecha">{{ recordatorio.fechaHora | date: 'medium' }}</span>
+          <span class="estado-pill" [class.estado-pill--completado]="recordatorio.estado === 'completado'">
+            {{ recordatorio.estado === 'completado' ? 'Completado' : 'Pendiente' }}
+          </span>
+        </div>
+      </div>
 
       <div class="acciones">
         <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>

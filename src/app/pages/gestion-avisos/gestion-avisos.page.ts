@@ -5,15 +5,12 @@ import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage
 import {
   IonButton,
   IonContent,
-  IonIcon,
   IonInput,
   IonItem,
   IonSelect,
   IonSelectOption,
   IonTextarea,
 } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
-import { calendarOutline } from 'ionicons/icons';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Aviso } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -33,7 +30,6 @@ const ALLOWED_AVISO_TYPES = ['emergencia', 'mantenimiento', 'informativo'];
   standalone: true,
   imports: [
     IonButton,
-    IonIcon,
     IonInput,
     IonSelect,
     IonTextarea,
@@ -51,10 +47,6 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   private readonly imageOptimizer = inject(ImageOptimizerService);
   private readonly localNotificationService = inject(LocalNotificationService);
   private readonly destroy$ = new Subject<void>();
-
-  constructor() {
-    addIcons({ calendarOutline });
-  }
 
   avisos: Aviso[] = [];
   avisosAdministrativos: Aviso[] = [];

@@ -28,11 +28,22 @@ interface EstadisticasResumen {
   };
 }
 
+interface DonutSegmento {
+  etiqueta: string;
+  valor: number;
+  color: string;
+  dasharray: string;
+  dashoffset: string;
+}
+
 const RESUMEN_VACIO: EstadisticasResumen = {
   usuarios: { total: 0, activos: 0, inactivos: 0, admins: 0, residentes: 0 },
   avisos: { total: 0, emergencia: 0, mantenimiento: 0, informativo: 0, alertaSos: 0 },
   recordatorios: { total: 0, completados: 0, pendientes: 0 },
 };
+
+const DONUT_RADIO = 42;
+const DONUT_CIRCUNFERENCIA = 2 * Math.PI * DONUT_RADIO;
 
 @Component({
   selector: 'app-estadisticas',
@@ -46,7 +57,13 @@ export class EstadisticasPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
   private readonly destroy$ = new Subject<void>();
 
+  readonly donutRadio = DONUT_RADIO;
+  readonly donutCircunferencia = DONUT_CIRCUNFERENCIA;
+
   resumen: EstadisticasResumen = RESUMEN_VACIO;
+  donutVecinos: DonutSegmento[] = [];
+  donutAvisos: DonutSegmento[] = [];
+  donutRecordatorios: DonutSegmento[] = [];
   isLoading = true;
   cargaError = '';
 
@@ -72,6 +89,20 @@ export class EstadisticasPage implements OnInit, OnDestroy {
 
       const [usuarios, avisos, recordatorios] = datos;
       this.resumen = this.calcularResumen(usuarios, avisos, recordatorios);
+      this.donutVecinos = this.construirDona([
+        { etiqueta: 'Activos', valor: this.resumen.usuarios.activos, color: 'var(--ion-color-success)' },
+        { etiqueta: 'Inactivos', valor: this.resumen.usuarios.inactivos, color: 'var(--ion-color-medium)' },
+      ]);
+      this.donutAvisos = this.construirDona([
+        { etiqueta: 'Alertas SOS', valor: this.resumen.avisos.alertaSos, color: 'var(--ion-color-secondary)' },
+        { etiqueta: 'Emergencia', valor: this.resumen.avisos.emergencia, color: 'var(--ion-color-danger)' },
+        { etiqueta: 'Mantenimiento', valor: this.resumen.avisos.mantenimiento, color: 'var(--ion-color-warning)' },
+        { etiqueta: 'Informativo', valor: this.resumen.avisos.informativo, color: 'var(--ion-color-primary)' },
+      ]);
+      this.donutRecordatorios = this.construirDona([
+        { etiqueta: 'Completados', valor: this.resumen.recordatorios.completados, color: 'var(--ion-color-success)' },
+        { etiqueta: 'Pendientes', valor: this.resumen.recordatorios.pendientes, color: 'var(--ion-color-medium)' },
+      ]);
       this.isLoading = false;
     });
   }
@@ -103,5 +134,29 @@ export class EstadisticasPage implements OnInit, OnDestroy {
         pendientes: recordatorios.filter(r => r.estado !== 'completado').length,
       },
     };
+  }
+
+  private construirDona(valores: { etiqueta: string; valor: number; color: string }[]): DonutSegmento[] {
+    const total = valores.reduce((suma, v) => suma + v.valor, 0);
+    if (total === 0) {
+      return [];
+    }
+
+    let acumulado = 0;
+    return valores
+      .filter(v => v.valor > 0)
+      .map(v => {
+        const fraccion = v.valor / total;
+        const largo = fraccion * DONUT_CIRCUNFERENCIA;
+        const segmento: DonutSegmento = {
+          etiqueta: v.etiqueta,
+          valor: v.valor,
+          color: v.color,
+          dasharray: `${largo} ${DONUT_CIRCUNFERENCIA - largo}`,
+          dashoffset: `${-acumulado * DONUT_CIRCUNFERENCIA}`,
+        };
+        acumulado += fraccion;
+        return segmento;
+      });
   }
 }
