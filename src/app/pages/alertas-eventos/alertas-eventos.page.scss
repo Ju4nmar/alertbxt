@@ -10,12 +10,13 @@ ion-content.feed-content {
 
 .feed-header .page-title {
   padding: 0 0 var(--ab-space-3);
-  text-align: left;
+  text-align: center;
 }
 
 .status-strip {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -46,6 +47,7 @@ ion-content.feed-content {
 
 .filter-tabs {
   display: flex;
+  justify-content: center;
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
