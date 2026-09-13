@@ -100,15 +100,6 @@ ion-textarea {
   border-radius: var(--ab-radius-md);
 }
 
-.date-field ion-icon {
-  position: absolute;
-  right: 14px;
-  flex-shrink: 0;
-  color: var(--ion-color-primary);
-  font-size: 1.2rem;
-  pointer-events: none;
-}
-
 .date-group-label {
   align-self: center;
 }

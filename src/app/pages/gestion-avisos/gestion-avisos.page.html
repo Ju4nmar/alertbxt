@@ -37,7 +37,6 @@
     <div class="native-input-group">
       <label class="native-label" for="fechaAviso">Fecha del aviso</label>
       <input id="fechaAviso" type="date" [(ngModel)]="fechaAviso" name="fechaAviso" required #fechaInput="ngModel" (input)="avisoError = ''" />
-      <ion-icon name="calendar-outline"></ion-icon>
     </div>
     <div *ngIf="fechaInput.invalid && (fechaInput.dirty || fechaInput.touched)" class="field-error">
       La fecha del aviso es obligatoria.

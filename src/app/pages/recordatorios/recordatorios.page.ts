@@ -1,9 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonIcon, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
-import { calendarOutline, timeOutline } from 'ionicons/icons';
+import { IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Recordatorio } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -15,7 +13,7 @@ import { LocalNotificationService } from '../../services/local-notification.serv
   templateUrl: './recordatorios.page.html',
   styleUrls: ['./recordatorios.page.scss'],
   standalone: true,
-  imports: [IonButton, IonIcon, IonInput, IonItem, IonTextarea, IonContent, CommonModule, FormsModule],
+  imports: [IonButton, IonInput, IonItem, IonTextarea, IonContent, CommonModule, FormsModule],
 })
 export class RecordatoriosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
@@ -32,10 +30,6 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   isLoading = false;
   recordatorioError = '';
   cargaError = '';
-
-  constructor() {
-    addIcons({ calendarOutline, timeOutline });
-  }
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
