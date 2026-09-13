@@ -71,7 +71,6 @@ export class AppComponent implements OnDestroy {
   isMobileDevice = this.getIsMobileDevice();
   showSplash = true;
   currentUrl = this.router.url;
-  private notificationStartHandle: number | null = null;
 
   @HostListener('window:resize')
   onWindowResize(): void {
@@ -92,13 +91,6 @@ export class AppComponent implements OnDestroy {
         this.currentUser = user;
         this.isLoggedIn = !!user;
         this.nombreUsuario = user?.nombre || null;
-
-        if (user && this.hasNotificationPermission()) {
-          this.scheduleNotificationStart(user);
-        } else {
-          this.cancelScheduledNotificationStart();
-          this.localNotificationService.stop();
-        }
       });
 
     this.pwaInstallService.canInstall$
@@ -127,7 +119,6 @@ export class AppComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.cancelScheduledNotificationStart();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -293,7 +284,6 @@ export class AppComponent implements OnDestroy {
     const result = await this.localNotificationService.enableNotifications();
 
     if (result === 'granted' && this.currentUser) {
-      this.scheduleNotificationStart(this.currentUser);
       void this.fcmService.iniciarParaUsuario(this.currentUser);
     }
 
@@ -314,44 +304,6 @@ export class AppComponent implements OnDestroy {
   private async navigateTo(path: string): Promise<void> {
     await this.menuController.close('main-menu').catch(() => undefined);
     await this.ngZone.run(() => this.router.navigateByUrl(path));
-  }
-
-  private scheduleNotificationStart(user: Usuario): void {
-    this.cancelScheduledNotificationStart();
-    const start = () => {
-      this.notificationStartHandle = null;
-      void this.localNotificationService.start(user);
-    };
-
-    const idleWindow = window as Window & {
-      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-    };
-
-    this.notificationStartHandle = idleWindow.requestIdleCallback
-      ? idleWindow.requestIdleCallback(start, { timeout: 5000 })
-      : window.setTimeout(start, 3000);
-  }
-
-  private cancelScheduledNotificationStart(): void {
-    if (this.notificationStartHandle === null) {
-      return;
-    }
-
-    const idleWindow = window as Window & {
-      cancelIdleCallback?: (handle: number) => void;
-    };
-
-    if (idleWindow.cancelIdleCallback) {
-      idleWindow.cancelIdleCallback(this.notificationStartHandle);
-    } else {
-      window.clearTimeout(this.notificationStartHandle);
-    }
-
-    this.notificationStartHandle = null;
-  }
-
-  private hasNotificationPermission(): boolean {
-    return 'Notification' in window && Notification.permission === 'granted';
   }
 
   private async clearDevelopmentServiceWorkers(): Promise<void> {

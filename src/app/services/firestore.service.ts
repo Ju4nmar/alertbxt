@@ -394,6 +394,7 @@ export class FirestoreService {
       idUsuario: data.idUsuario || String(data['idUsuario'] || ''),
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
       fechaCreacion: data.fechaCreacion || String(data['fechaCreacion'] || ''),
+      estado: data.estado,
     };
   }
 }
