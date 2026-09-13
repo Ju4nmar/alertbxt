@@ -324,6 +324,26 @@ export class FirestoreService {
     );
   }
 
+  getRecordatoriosByComunidad(comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, 'recordatorios');
+      return query(col, where('comunidadId', '==', comunidadId), limit(500));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios de la comunidad:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios'));
+      })
+    );
+  }
+
   addRecordatorio(recordatorio: Omit<Recordatorio, 'idRecordatorios'>): Observable<string> {
     this.isLoadingSubject.next(true);
     const col = this.inContext(() => collection(this.firestore, 'recordatorios'));

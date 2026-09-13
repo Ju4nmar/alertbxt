@@ -137,7 +137,12 @@ service cloud.firestore {
     }
 
     match /recordatorios/{recordatorioId} {
-      allow read, delete: if isMemberOfCommunity(resource.data.comunidadId)
+      allow read: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.idUsuario == request.auth.uid
+          || isAdminForCommunity(resource.data.comunidadId)
+        );
+      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
         && resource.data.idUsuario == request.auth.uid;
       allow update: if isMemberOfCommunity(resource.data.comunidadId)
         && resource.data.idUsuario == request.auth.uid

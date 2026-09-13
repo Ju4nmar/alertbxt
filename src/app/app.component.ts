@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person } from 'ionicons/icons';
+import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -79,7 +79,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,logOut,download});
+    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,logOut,download,statsChart});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -257,7 +257,11 @@ export class AppComponent implements OnDestroy {
     goToGestionUsuarios(){
     this.navigateTo('/gestion-usuarios');
   }
-  
+
+  goToEstadisticas(){
+    this.navigateTo('/estadisticas');
+  }
+
   async installPwa(): Promise<void> {
     if (this.showIosInstallHelp) {
       const alert = await this.alertCtrl.create({
