@@ -51,6 +51,19 @@ ion-content {
   color: var(--ab-text-primary);
 }
 
+.usuario-apartamento {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ab-text-secondary);
+}
+
+.usuario-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .usuario-rol {
   font-size: 0.78rem;
   padding: 4px 10px;
@@ -59,6 +72,31 @@ ion-content {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+}
+
+.usuario-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ion-color-success);
+}
+
+.usuario-estado::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ion-color-success);
+}
+
+.usuario-estado--inactivo {
+  color: var(--ab-text-secondary);
+}
+
+.usuario-estado--inactivo::before {
+  background: var(--ab-text-secondary);
 }
 
 .badge-admin {

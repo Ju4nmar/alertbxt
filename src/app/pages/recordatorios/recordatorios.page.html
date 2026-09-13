@@ -60,6 +60,10 @@
   <div class="lista-recordatorios">
     <h3>Lista de recordatorios</h3>
 
+    <div *ngIf="cargaError" class="error-message" role="alert">
+      {{ cargaError }}
+    </div>
+
     <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
       <h4>{{ recordatorio.tituloRecordatorio }}</h4>
 

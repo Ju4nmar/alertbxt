@@ -33,6 +33,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   nombre = '';
   correo = '';
   telefono = '';
+  numeroApartamento = '';
   rol: 'admin' | 'residente' = 'residente';
   nombreComunidad = '';
 
@@ -44,6 +45,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
         this.nombre = user!.nombre;
         this.correo = user!.correo;
         this.telefono = user!.telefono;
+        this.numeroApartamento = user!.numeroApartamento || '';
         this.rol = user!.rol;
         if (!user!.comunidadId) {
           this.comunidad = null;
@@ -96,6 +98,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     const nombre = this.nombre.trim();
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
+    const numeroApartamento = this.numeroApartamento.trim();
     const nombreComunidad = this.nombreComunidad.trim();
 
     if (!this.usuario || !nombre || !correo || !telefono) {
@@ -107,6 +110,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       nombre.length < 3 || nombre.length > 80 ||
       correo.length > 120 ||
       telefono.length < 7 || telefono.length > 15 ||
+      numeroApartamento.length > 20 ||
       nombreComunidad.length > 60
     ) {
       this.mensajeGuardado = 'Revisa la longitud de los campos';
@@ -134,6 +138,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       nombre,
       correo,
       telefono,
+      numeroApartamento,
       rol: this.usuario.rol === 'admin' ? this.rol : this.usuario.rol,
     };
 

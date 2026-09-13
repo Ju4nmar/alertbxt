@@ -46,6 +46,7 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   isLoading = false;
   modalAbierto = false;
   actualizandoUsuario = false;
+  cargaError = '';
 
   constructor() {
     addIcons({ personCircle, close });
@@ -67,6 +68,7 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
         error: error => {
           console.error('Error cargando usuarios:', error);
           this.isLoading = false;
+          this.cargaError = 'No se pudieron cargar los usuarios. Revisa tu conexión e intenta de nuevo.';
         },
       });
   }

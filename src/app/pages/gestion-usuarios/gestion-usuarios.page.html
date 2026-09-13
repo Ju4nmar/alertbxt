@@ -5,14 +5,24 @@
     Cargando usuarios...
   </div>
 
+  <div *ngIf="cargaError" class="error-message" role="alert">
+    {{ cargaError }}
+  </div>
+
   <ion-list *ngIf="!isLoading && usuarios.length" class="usuarios-list">
     <ion-item *ngFor="let usuario of usuarios; trackBy: trackByUsuarioId" button (click)="abrirDetalle(usuario)" class="usuario-item">
       <ion-icon slot="start" name="person-circle" class="usuario-icon"></ion-icon>
       <div class="usuario-info">
         <ion-label class="usuario-nombre">{{ usuario.nombre }}</ion-label>
-        <span class="usuario-rol" [ngClass]="obtenerBadgeRol(usuario.rol).clase">
-          {{ obtenerBadgeRol(usuario.rol).label }}
-        </span>
+        <p class="usuario-apartamento" *ngIf="usuario.numeroApartamento">Apartamento {{ usuario.numeroApartamento }}</p>
+        <div class="usuario-tags">
+          <span class="usuario-rol" [ngClass]="obtenerBadgeRol(usuario.rol).clase">
+            {{ obtenerBadgeRol(usuario.rol).label }}
+          </span>
+          <span class="usuario-estado" [class.usuario-estado--inactivo]="usuario.activo === false">
+            {{ usuario.activo === false ? 'Inactivo' : 'Activo' }}
+          </span>
+        </div>
       </div>
     </ion-item>
   </ion-list>
@@ -50,6 +60,11 @@
           <div class="detalle-fila">
             <span class="detalle-label">Teléfono:</span>
             <span class="detalle-valor">{{ usuarioSeleccionado.telefono || 'No disponible' }}</span>
+          </div>
+
+          <div class="detalle-fila">
+            <span class="detalle-label">Apartamento:</span>
+            <span class="detalle-valor">{{ usuarioSeleccionado.numeroApartamento || 'No disponible' }}</span>
           </div>
 
           <div class="detalle-fila">

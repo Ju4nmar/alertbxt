@@ -18,6 +18,10 @@
       <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'aviso'" [class.active]="filtro === 'aviso'" (click)="cambiarFiltro('aviso')">Avisos</button>
       <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'recordatorio'" [class.active]="filtro === 'recordatorio'" (click)="cambiarFiltro('recordatorio')">Recordatorios</button>
     </div>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">
+      {{ cargaError }}
+    </div>
   </div>
 
   <div class="cards-grid" *ngIf="tarjetasVisibles.length">
@@ -36,6 +40,10 @@
           <p class="card-date">
             <ion-icon name="time-outline"></ion-icon>
             {{ aviso.fechaPublicacion | date: 'short' }}
+          </p>
+          <p class="card-date" *ngIf="aviso.ubicacionAviso">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ aviso.ubicacionAviso }}
           </p>
           <p class="card-description">{{ aviso.descripcionAviso | slice:0:120 }}</p>
           <img
@@ -114,6 +122,10 @@
       <p *ngIf="modal.fecha">
         <ion-icon name="calendar-outline"></ion-icon>
         <strong>Fecha:</strong> {{ modal.fecha | date: 'medium' }}
+      </p>
+      <p *ngIf="modal.ubicacion">
+        <ion-icon name="location-outline"></ion-icon>
+        <strong>Ubicación:</strong> {{ modal.ubicacion }}
       </p>
       <p *ngIf="modal.autor">
         <ion-icon name="person-outline"></ion-icon>

@@ -31,6 +31,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   idEditando: string | null = null;
   isLoading = false;
   recordatorioError = '';
+  cargaError = '';
 
   constructor() {
     addIcons({ calendarOutline, timeOutline });
@@ -52,6 +53,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       error: error => {
         console.error('Error cargando recordatorios:', error);
         this.isLoading = false;
+        this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
       },
     });
   }

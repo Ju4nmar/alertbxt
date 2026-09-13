@@ -373,6 +373,7 @@ export class FirestoreService {
       descripcionAviso: data.descripcionAviso || String(data['descripcion'] || ''),
       tipoAviso: data.tipoAviso || String(data['tipo'] || 'informativo'),
       fechaPublicacion: data.fechaPublicacion || String(data['fecha'] || ''),
+      ubicacionAviso: data.ubicacionAviso || undefined,
       autorId: data.autorId || String(data['autorId'] || ''),
       autorNombre: data.autorNombre || String(data['autorNombre'] || ''),
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
