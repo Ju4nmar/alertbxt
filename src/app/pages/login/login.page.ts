@@ -85,6 +85,10 @@ export class LoginPage {
   }
 
   private getLoginErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message === 'cuenta-desactivada') {
+      return 'Tu cuenta ha sido desactivada. Contacta a un administrador de tu conjunto.';
+    }
+
     const code = getFirebaseErrorCode(error);
 
     if (
@@ -107,6 +111,10 @@ export class LoginPage {
   }
 
   private getGoogleErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message === 'cuenta-desactivada') {
+      return 'Tu cuenta ha sido desactivada. Contacta a un administrador de tu conjunto.';
+    }
+
     const code = getFirebaseErrorCode(error);
 
     if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {

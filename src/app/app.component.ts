@@ -143,12 +143,13 @@ export class AppComponent implements OnDestroy {
 
   async generarAlerta(): Promise<void> {
     const confirm = await this.alertCtrl.create({
-      header: 'Generar Alerta SOS',
-      message: '¿Deseas generar una alerta de emergencia?',
+      header: 'Generar alerta de emergencia',
+      message: '¿Estás seguro de que deseas enviar una alerta SOS a los administradores y residentes de tu conjunto?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Continuar',
+          text: 'Enviar alerta SOS',
+          role: 'destructive',
           handler: async () => {
             // Ionic no cierra este alert hasta que el handler termine, así
             // que sin este dismiss explícito el segundo diálogo se dibuja
@@ -224,8 +225,8 @@ export class AppComponent implements OnDestroy {
       await firstValueFrom(this.firestoreService.addAviso(avisoData));
 
       const ok = await this.alertCtrl.create({
-        header: 'Alerta enviada',
-        message: 'La alerta SOS ha sido registrada correctamente.',
+        header: 'Alerta SOS enviada correctamente.',
+        message: 'Los usuarios correspondientes han sido notificados.',
         buttons: ['OK'],
       });
       await ok.present();

@@ -5,12 +5,15 @@ import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage
 import {
   IonButton,
   IonContent,
+  IonIcon,
   IonInput,
   IonItem,
   IonSelect,
   IonSelectOption,
   IonTextarea,
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { calendarOutline } from 'ionicons/icons';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Aviso } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -30,6 +33,7 @@ const ALLOWED_AVISO_TYPES = ['emergencia', 'mantenimiento', 'informativo'];
   standalone: true,
   imports: [
     IonButton,
+    IonIcon,
     IonInput,
     IonSelect,
     IonTextarea,
@@ -48,6 +52,10 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   private readonly localNotificationService = inject(LocalNotificationService);
   private readonly destroy$ = new Subject<void>();
 
+  constructor() {
+    addIcons({ calendarOutline });
+  }
+
   avisos: Aviso[] = [];
   avisosAdministrativos: Aviso[] = [];
   alertasSos: Aviso[] = [];
@@ -55,11 +63,14 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   titulo = '';
   tipo = '';
   descripcion = '';
+  fechaAviso = this.todayDateString();
+  ubicacion = '';
   archivo: File | null = null;
   compressionInfo = '';
   imagenExistente: string | null = null;
   isLoading = false;
   avisoError = '';
+  cargaError = '';
   private currentComunidadId = '';
 
   ngOnInit(): void {
@@ -77,6 +88,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       },
       error: error => {
         console.error('Error cargando avisos:', error);
+        this.cargaError = 'No se pudieron cargar los avisos. Revisa tu conexión e intenta de nuevo.';
       },
     });
 
@@ -126,9 +138,10 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     this.avisoError = '';
     const titulo = this.titulo.trim();
     const descripcion = this.descripcion.trim();
+    const ubicacion = this.ubicacion.trim();
 
-    if (!titulo || !this.tipo || !descripcion) {
-      this.avisoError = 'Completa título, tipo y descripción.';
+    if (!titulo || !this.tipo || !descripcion || !this.fechaAviso) {
+      this.avisoError = 'Completa título, tipo, descripción y fecha.';
       return;
     }
 
@@ -137,8 +150,14 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       return;
     }
 
-    if (titulo.length < 3 || titulo.length > 80 || descripcion.length < 10 || descripcion.length > 500) {
-      this.avisoError = 'Revisa la longitud del título o la descripción.';
+    if (titulo.length < 3 || titulo.length > 80 || descripcion.length < 10 || descripcion.length > 500 || ubicacion.length > 120) {
+      this.avisoError = 'Revisa la longitud del título, la descripción o la ubicación.';
+      return;
+    }
+
+    const fechaSeleccionada = new Date(this.fechaAviso);
+    if (Number.isNaN(fechaSeleccionada.getTime())) {
+      this.avisoError = 'Selecciona una fecha válida.';
       return;
     }
 
@@ -174,16 +193,28 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
         urlImagen = await getDownloadURL(storageRef);
       }
 
+      // Conserva la hora actual sobre la fecha elegida, así los avisos del
+      // mismo día siguen ordenándose por momento de guardado.
+      const horaActual = new Date().toTimeString().slice(0, 8);
+      const fechaPublicacion = new Date(`${this.fechaAviso}T${horaActual}`).toISOString();
+
       const avisoData: Omit<Aviso, 'idAviso'> = {
         tituloAviso: titulo,
         tipoAviso: this.tipo,
         descripcionAviso: descripcion,
-        fechaPublicacion: new Date().toISOString(),
-        imagen: urlImagen || undefined,
+        fechaPublicacion,
         autorId: currentUser.idUsuario || '',
         autorNombre: currentUser.nombre,
         comunidadId: this.currentComunidadId,
       };
+
+      if (ubicacion) {
+        avisoData.ubicacionAviso = ubicacion;
+      }
+
+      if (urlImagen) {
+        avisoData.imagen = urlImagen;
+      }
 
       if (this.idEditando) {
         await firstValueFrom(this.firestoreService.updateAviso(this.idEditando, avisoData));
@@ -212,6 +243,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     this.titulo = '';
     this.tipo = '';
     this.descripcion = '';
+    this.fechaAviso = this.todayDateString();
+    this.ubicacion = '';
     this.archivo = null;
     this.compressionInfo = '';
     this.imagenExistente = null;
@@ -242,6 +275,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     this.titulo = aviso.tituloAviso;
     this.tipo = aviso.tipoAviso;
     this.descripcion = aviso.descripcionAviso;
+    this.fechaAviso = aviso.fechaPublicacion ? aviso.fechaPublicacion.slice(0, 10) : this.todayDateString();
+    this.ubicacion = aviso.ubicacionAviso || '';
     this.imagenExistente = aviso.imagen || null;
   }
 
@@ -263,6 +298,10 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
 
   trackByAvisoId(_: number, aviso: Aviso): string {
     return aviso.idAviso || aviso.fechaPublicacion || aviso.tituloAviso;
+  }
+
+  private todayDateString(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private formatBytes(bytes: number): string {

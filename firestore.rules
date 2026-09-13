@@ -61,7 +61,7 @@ service cloud.firestore {
       allow update: if isSelf(uid)
         && request.resource.data.idUsuario == uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['nombre', 'correo', 'telefono', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
+          .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
         && request.resource.data.rol == resource.data.rol
         && request.resource.data.rol in ['admin', 'residente']
         && (

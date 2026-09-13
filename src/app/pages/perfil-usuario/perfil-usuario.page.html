@@ -35,6 +35,13 @@
         </div>
 
         <ion-item>
+          <ion-input label="Número de apartamento" label-placement="floating" [(ngModel)]="numeroApartamento" name="numeroApartamento" maxlength="20" #apartamentoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+        </ion-item>
+        <div *ngIf="apartamentoInput.invalid && (apartamentoInput.dirty || apartamentoInput.touched)" class="field-error">
+          <span *ngIf="apartamentoInput.errors?.['maxlength']">No debe superar 20 caracteres.</span>
+        </div>
+
+        <ion-item>
           <ion-select label="Rol" label-placement="floating" [(ngModel)]="rol" name="rol" [disabled]="true">
             <ion-select-option value="admin">admin</ion-select-option>
             <ion-select-option value="residente">residente</ion-select-option>
