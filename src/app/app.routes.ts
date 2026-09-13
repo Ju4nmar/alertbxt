@@ -27,6 +27,12 @@ export const routes: Routes = [
     data: { role: 'admin' },
   },
   {
+    path: 'estadisticas',
+    loadComponent: () => import('./pages/estadisticas/estadisticas.page').then(m => m.EstadisticasPage),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: 'admin' },
+  },
+  {
     path: 'recordatorios',
     loadComponent: () => import('./pages/recordatorios/recordatorios.page').then(m => m.RecordatoriosPage),
     canActivate: [AuthGuard],

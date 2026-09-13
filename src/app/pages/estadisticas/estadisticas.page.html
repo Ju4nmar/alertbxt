@@ -1,0 +1,85 @@
+<ion-content>
+  <h2 class="page-title">Estadísticas</h2>
+
+  <div class="page-shell">
+    <div *ngIf="isLoading" class="loading-spinner">
+      Cargando estadísticas...
+    </div>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">
+      {{ cargaError }}
+    </div>
+
+    <ng-container *ngIf="!isLoading && !cargaError">
+      <section class="stats-section">
+        <h3>Vecinos</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value">{{ resumen.usuarios.total }}</span>
+            <span class="stat-label">Total registrados</span>
+          </div>
+          <div class="stat-card stat-card--success">
+            <span class="stat-value">{{ resumen.usuarios.activos }}</span>
+            <span class="stat-label">Activos</span>
+          </div>
+          <div class="stat-card stat-card--muted">
+            <span class="stat-value">{{ resumen.usuarios.inactivos }}</span>
+            <span class="stat-label">Inactivos</span>
+          </div>
+          <div class="stat-card stat-card--tertiary">
+            <span class="stat-value">{{ resumen.usuarios.admins }}</span>
+            <span class="stat-label">Administradores</span>
+          </div>
+          <div class="stat-card stat-card--primary">
+            <span class="stat-value">{{ resumen.usuarios.residentes }}</span>
+            <span class="stat-label">Residentes</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <h3>Avisos y alertas</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value">{{ resumen.avisos.total }}</span>
+            <span class="stat-label">Total publicados</span>
+          </div>
+          <div class="stat-card stat-card--danger">
+            <span class="stat-value">{{ resumen.avisos.alertaSos }}</span>
+            <span class="stat-label">Alertas SOS</span>
+          </div>
+          <div class="stat-card stat-card--emergencia">
+            <span class="stat-value">{{ resumen.avisos.emergencia }}</span>
+            <span class="stat-label">Emergencia</span>
+          </div>
+          <div class="stat-card stat-card--mantenimiento">
+            <span class="stat-value">{{ resumen.avisos.mantenimiento }}</span>
+            <span class="stat-label">Mantenimiento</span>
+          </div>
+          <div class="stat-card stat-card--informativo">
+            <span class="stat-value">{{ resumen.avisos.informativo }}</span>
+            <span class="stat-label">Informativo</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <h3>Recordatorios</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value">{{ resumen.recordatorios.total }}</span>
+            <span class="stat-label">Total creados</span>
+          </div>
+          <div class="stat-card stat-card--success">
+            <span class="stat-value">{{ resumen.recordatorios.completados }}</span>
+            <span class="stat-label">Completados</span>
+          </div>
+          <div class="stat-card stat-card--muted">
+            <span class="stat-value">{{ resumen.recordatorios.pendientes }}</span>
+            <span class="stat-label">Pendientes</span>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</ion-content>
