@@ -398,6 +398,7 @@ export class FirestoreService {
       autorNombre: data.autorNombre || String(data['autorNombre'] || ''),
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
       imagen: data.imagen || String(data['imagen'] || ''),
+      estado: data.estado,
     };
   }
 

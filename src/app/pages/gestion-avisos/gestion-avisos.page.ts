@@ -280,12 +280,25 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''));
   }
 
-  async descartarAlertaSos(alerta: Aviso): Promise<void> {
-    if (alerta.tipoAviso !== 'alerta') {
+  async validarAlertaSos(alerta: Aviso): Promise<void> {
+    await this.cambiarEstadoAlertaSos(alerta, 'validado');
+  }
+
+  async rechazarAlertaSos(alerta: Aviso): Promise<void> {
+    await this.cambiarEstadoAlertaSos(alerta, 'rechazado');
+  }
+
+  private async cambiarEstadoAlertaSos(alerta: Aviso, estado: 'validado' | 'rechazado'): Promise<void> {
+    if (alerta.tipoAviso !== 'alerta' || !alerta.idAviso || this.authService.getCurrentUser()?.rol !== 'admin') {
       return;
     }
 
-    await this.eliminarAviso(alerta.idAviso);
+    try {
+      await firstValueFrom(this.firestoreService.updateAviso(alerta.idAviso, { estado }));
+    } catch (error) {
+      console.error('Error actualizando estado de la alerta SOS:', error);
+      this.avisoError = 'No se pudo actualizar el estado de la alerta.';
+    }
   }
 
   trackByAvisoId(_: number, aviso: Aviso): string {
