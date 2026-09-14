@@ -3,7 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { IonButton, IonContent, IonInput, IonItem } from '@ionic/angular/standalone';
+import { IonButton, IonCheckbox, IonContent, IonInput, IonItem, IonLabel } from '@ionic/angular/standalone';
 import { combineLatest, filter, firstValueFrom, take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
@@ -13,7 +13,7 @@ import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/au
   templateUrl: './unirse-vecindad.page.html',
   styleUrls: ['./unirse-vecindad.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem],
+  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonCheckbox, IonLabel],
 })
 export class UnirseVecindadPage implements OnInit {
   private readonly authService = inject(AuthService);
@@ -27,6 +27,7 @@ export class UnirseVecindadPage implements OnInit {
   password = '';
   confirmPassword = '';
   codigoInvitacion = '';
+  aceptaTerminos = false;
   isLoading = false;
   isGoogleLoading = false;
   isLoggedIn = false;
@@ -80,6 +81,7 @@ export class UnirseVecindadPage implements OnInit {
           numeroApartamento: this.numeroApartamento.trim(),
           password: this.password,
           codigoInvitacion,
+          aceptaTerminos: this.aceptaTerminos,
         }));
       }
 
@@ -104,9 +106,14 @@ export class UnirseVecindadPage implements OnInit {
       return;
     }
 
+    if (!this.aceptaTerminos) {
+      this.joinError = 'Debes aceptar el tratamiento de tus datos personales.';
+      return;
+    }
+
     this.isGoogleLoading = true;
     try {
-      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion));
+      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion, this.aceptaTerminos));
       this.router.navigate(['/alertas-eventos']);
     } catch (error) {
       console.error('Error uniéndose con Google:', error);
@@ -149,6 +156,11 @@ export class UnirseVecindadPage implements OnInit {
 
     if (this.password !== this.confirmPassword) {
       this.joinError = 'Las contraseñas no coinciden.';
+      return false;
+    }
+
+    if (!this.aceptaTerminos) {
+      this.joinError = 'Debes aceptar el tratamiento de tus datos personales.';
       return false;
     }
 

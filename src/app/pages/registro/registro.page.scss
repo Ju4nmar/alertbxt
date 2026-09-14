@@ -161,6 +161,11 @@ ion-input {
   white-space: normal;
 }
 
+.chekbox ion-label a {
+  color: var(--ion-color-secondary);
+  font-weight: 600;
+}
+
 .confirm-btn {
   min-height: 52px;
   --background: var(--ion-color-secondary);

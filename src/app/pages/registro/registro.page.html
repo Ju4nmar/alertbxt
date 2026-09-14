@@ -82,10 +82,12 @@
 
         <ion-item class="chekbox">
           <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
-          <ion-label>Acepto los términos y condiciones del servicio.</ion-label>
+          <ion-label>
+            Acepto el <a href="/privacidad" target="_blank" rel="noopener">tratamiento de mis datos personales</a> conforme a la Ley 1581 de 2012.
+          </ion-label>
         </ion-item>
         <div *ngIf="terminosInput.invalid && (terminosInput.dirty || terminosInput.touched)" class="field-error">
-          Debes aceptar los términos y condiciones.
+          Debes aceptar el tratamiento de tus datos personales.
         </div>
 
         <div *ngIf="registroError" class="error-message" role="alert">

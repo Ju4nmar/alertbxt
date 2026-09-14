@@ -108,7 +108,7 @@ export class AuthService {
     aceptaTerminos: boolean;
   }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
     if (!data.aceptaTerminos) {
-      return throwError(() => new Error('Debe aceptar los términos y condiciones'));
+      return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
     }
 
     return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.administradorCorreo.trim(), data.contrasena))).pipe(
@@ -172,7 +172,11 @@ export class AuthService {
     );
   }
 
-  joinComunidadWithGoogle(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+  joinComunidadWithGoogle(codigoInvitacion: string, aceptaTerminos: boolean): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+    if (!aceptaTerminos) {
+      return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
+    }
+
     const codigo = codigoInvitacion.trim().toUpperCase();
 
     return this.firestoreService.getComunidadByCodigoInvitacion(codigo).pipe(
@@ -314,7 +318,12 @@ export class AuthService {
     numeroApartamento: string;
     password: string;
     codigoInvitacion: string;
+    aceptaTerminos: boolean;
   }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+    if (!data.aceptaTerminos) {
+      return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
+    }
+
     const codigoInvitacion = data.codigoInvitacion.trim().toUpperCase();
 
     return this.firestoreService.getComunidadByCodigoInvitacion(codigoInvitacion).pipe(
