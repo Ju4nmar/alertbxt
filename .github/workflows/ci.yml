@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+      - develop
 
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
   build:
@@ -27,6 +29,12 @@ jobs:
 
       - name: Instalar dependencias
         run: npm ci
+
+      - name: Analizar código (lint)
+        run: npm run lint
+
+      - name: Ejecutar pruebas unitarias
+        run: npm run test -- --watch=false --browsers=ChromeHeadless
 
       - name: Compilar aplicación
         run: npm run build
