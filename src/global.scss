@@ -76,6 +76,20 @@ ion-content::part(scroll) {
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
+/* En móvil, ion-content vive detrás de la barra de navegación inferior fija
+   (.bottom-tabs) y del botón SOS flotante (.sos-fab): ambos son
+   position:fixed y no participan en el flujo, así que el padding-bottom del
+   wrapper .main-content (ver app.component.scss) nunca llega al scroll
+   interno real de ion-content (vive dentro de su Shadow DOM). Sin este
+   ajuste, el último tramo de cada página queda tapado por la barra inferior
+   y el SOS. Los valores replican el bottom del SOS (70px + safe-area) más
+   su alto (56px) y un margen de aire (16px). */
+@media (max-width: 991px) {
+  ion-content::part(scroll) {
+    padding-bottom: calc(70px + max(14px, env(safe-area-inset-bottom)) + 56px + 16px);
+  }
+}
+
 img {
   max-width: 100%;
 }
