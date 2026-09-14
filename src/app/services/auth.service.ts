@@ -66,6 +66,20 @@ export class AuthService {
     return firstValueFrom(this.firestoreService.getUsuarioById(uid).pipe(take(1)));
   }
 
+  // signOut() puede fallar con un error transitorio del propio SDK de
+  // Firebase Auth (p. ej. auth/the-service-is-currently-unavailable) cuando
+  // coincide con el listener de onAuthStateChanged reaccionando al mismo
+  // inicio de sesión. Si eso ocurre, ese error de Firebase reemplazaba al
+  // error específico que queríamos lanzar (p. ej. "cuenta-desactivada"),
+  // y el usuario veía el mensaje crudo de Firebase en vez del nuestro.
+  private async signOutSilenciosamente(): Promise<void> {
+    try {
+      await this.inContext(() => signOut(this.auth));
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
+    }
+  }
+
   // Una cuenta desactivada puede autenticarse en Firebase Auth (eso no lo
   // bloquean las reglas), pero luego no puede leer avisos ni recordatorios
   // porque isMemberOfCommunity() exige activo == true. Sin este chequeo
@@ -73,7 +87,7 @@ export class AuthService {
   // permisos silenciosos en la consola, sin ninguna explicación.
   private async rechazarSiCuentaDesactivada(userData: Usuario): Promise<void> {
     if (userData.activo === false) {
-      await this.inContext(() => signOut(this.auth));
+      await this.signOutSilenciosamente();
       throw new Error('cuenta-desactivada');
     }
   }
@@ -83,7 +97,7 @@ export class AuthService {
       switchMap(async result => {
         const userData = await this.loadUserData(result.user.uid);
         if (!userData) {
-          await this.inContext(() => signOut(this.auth));
+          await this.signOutSilenciosamente();
           throw new Error('Usuario no encontrado en la base de datos');
         }
 
@@ -156,7 +170,7 @@ export class AuthService {
       switchMap(async result => {
         const userData = await this.loadUserData(result.user.uid);
         if (!userData) {
-          await this.inContext(() => signOut(this.auth));
+          await this.signOutSilenciosamente();
           throw new Error('No existe una cuenta con este usuario de Google. Regístrate o únete con un código de invitación.');
         }
 
