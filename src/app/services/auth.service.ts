@@ -99,38 +99,6 @@ export class AuthService {
     );
   }
 
-  register(userData: {
-    email: string;
-    password: string;
-    nombre: string;
-    comunidadId?: string;
-    telefono: string;
-  }): Observable<Usuario> {
-    return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, userData.email.trim(), userData.password))).pipe(
-      switchMap(async result => {
-        const newUser: Usuario = {
-          idUsuario: result.user.uid,
-          nombre: userData.nombre.trim(),
-          correo: userData.email.trim(),
-          telefono: userData.telefono.trim(),
-          rol: 'residente',
-          activo: true,
-          comunidadId: userData.comunidadId || '',
-          fechaRegistro: new Date().toISOString(),
-        };
-
-        await firstValueFrom(this.firestoreService.addUsuario(newUser));
-        this.currentUserSubject.next(newUser);
-        this.authReadySubject.next(true);
-        return newUser;
-      }),
-      catchError(error => {
-        console.error('Error en registro:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
   registerAdminAndCreateComunidad(data: {
     nombreComunidad: string;
     administradorNombre: string;

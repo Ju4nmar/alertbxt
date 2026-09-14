@@ -217,21 +217,6 @@ export class FirestoreService {
     );
   }
 
-  getComunidades(): Observable<Comunidad[]> {
-    this.isLoadingSubject.next(true);
-    const col = this.inContext(() => collection(this.firestore, 'comunidades'));
-
-    return this.inContext(() => collectionData(col, { idField: 'idComunidad' })).pipe(
-      map(data => data as Comunidad[]),
-      tap(() => this.isLoadingSubject.next(false)),
-      catchError(error => {
-        console.error('Error obteniendo comunidades:', error);
-        this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar comunidades'));
-      })
-    );
-  }
-
   getComunidadById(idComunidad: string): Observable<Comunidad | null> {
     const docRef = this.inContext(() => doc(this.firestore, `comunidades/${idComunidad}`));
 
