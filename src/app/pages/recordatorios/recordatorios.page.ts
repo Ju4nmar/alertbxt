@@ -82,6 +82,11 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       return;
     }
 
+    if (fechaHoraLocal.getTime() < Date.now()) {
+      this.recordatorioError = 'La fecha y hora del recordatorio deben ser futuras.';
+      return;
+    }
+
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser?.idUsuario) {
       this.recordatorioError = 'No se pudo identificar el usuario actual.';
