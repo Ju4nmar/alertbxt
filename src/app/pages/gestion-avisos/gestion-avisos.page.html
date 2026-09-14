@@ -95,12 +95,18 @@
 
       <div *ngFor="let alerta of alertasSos; trackBy: trackByAvisoId" class="aviso-item alerta-sos-item">
         <div class="alerta-sos-content">
-          <h4 class="aviso-titulo">{{ alerta.tituloAviso }}</h4>
+          <div class="alerta-sos-header">
+            <h4 class="aviso-titulo">{{ alerta.tituloAviso }}</h4>
+            <span class="estado-pill" [ngClass]="'estado-pill--' + (alerta.estado || 'pendiente')">
+              {{ alerta.estado === 'validado' ? 'Validada' : alerta.estado === 'rechazado' ? 'Rechazada' : 'Pendiente' }}
+            </span>
+          </div>
           <p class="alerta-sos-description">{{ alerta.descripcionAviso }}</p>
           <small>{{ alerta.autorNombre || 'Residente' }} · {{ alerta.fechaPublicacion | date: 'medium' }}</small>
         </div>
         <div class="acciones">
-          <ion-button class="btn-eliminar-aviso" (click)="descartarAlertaSos(alerta)">Descartar</ion-button>
+          <ion-button class="btn-validar-aviso" *ngIf="alerta.estado !== 'validado'" (click)="validarAlertaSos(alerta)">Validar</ion-button>
+          <ion-button class="btn-eliminar-aviso" *ngIf="alerta.estado !== 'rechazado'" (click)="rechazarAlertaSos(alerta)">Rechazar</ion-button>
         </div>
       </div>
 

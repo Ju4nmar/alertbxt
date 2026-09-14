@@ -211,6 +211,7 @@ export class AppComponent implements OnDestroy {
         autorId: currentUser.idUsuario || '',
         autorNombre: currentUser.nombre,
         comunidadId: currentUser.comunidadId,
+        estado: 'pendiente',
       };
 
       await firstValueFrom(this.firestoreService.addAviso(avisoData));

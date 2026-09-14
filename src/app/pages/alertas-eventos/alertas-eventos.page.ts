@@ -102,9 +102,12 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: ([avisos, recordatorios]) => {
-        this.avisos = avisos;
+        // Una alerta SOS rechazada por un administrador (falsa alarma) deja de
+        // mostrarse a los vecinos; pendiente y validada sí, para no retrasar
+        // el aviso mientras se confirma.
+        this.avisos = avisos.filter(aviso => !(aviso.tipoAviso === 'alerta' && aviso.estado === 'rechazado'));
         this.recordatorios = recordatorios;
-        this.tarjetas = this.crearTarjetas(avisos, recordatorios);
+        this.tarjetas = this.crearTarjetas(this.avisos, recordatorios);
         this.aplicarFiltro();
         this.cdr.markForCheck();
       },

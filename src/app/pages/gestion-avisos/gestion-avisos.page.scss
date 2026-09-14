@@ -195,6 +195,40 @@ ion-content {
   word-break: break-word;
 }
 
+.alerta-sos-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.estado-pill {
+  padding: 3px 10px;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-surface-muted);
+  color: var(--ab-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.estado-pill--pendiente {
+  background: rgba(var(--ion-color-warning-rgb), 0.18);
+  color: var(--ion-color-warning-shade);
+}
+
+.estado-pill--validado {
+  background: var(--ab-tipo-recordatorio-bg);
+  color: var(--ab-tipo-recordatorio);
+}
+
+.estado-pill--rechazado {
+  background: var(--ab-tipo-emergencia-bg);
+  color: var(--ab-tipo-emergencia);
+}
+
 .alerta-sos-description {
   margin: 0.5rem 0;
   white-space: pre-line;
@@ -241,6 +275,12 @@ ion-content {
 .btn-eliminar-aviso {
   --background: var(--ion-color-danger);
   --background-activated: var(--ion-color-danger-shade);
+  --color: #ffffff;
+}
+
+.btn-validar-aviso {
+  --background: var(--ion-color-success);
+  --background-activated: var(--ion-color-success-shade);
   --color: #ffffff;
 }
 

@@ -10,6 +10,7 @@ export interface Aviso {
   autorNombre?: string;
   comunidadId: string;
   imagen?: string;
+  estado?: 'pendiente' | 'validado' | 'rechazado';
 }
 
 export interface Usuario {
