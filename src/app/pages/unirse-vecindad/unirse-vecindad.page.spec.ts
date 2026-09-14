@@ -57,6 +57,22 @@ describe('UnirseVecindadPage', () => {
     expect(authServiceSpy.joinComunidad).not.toHaveBeenCalled();
   });
 
+  it('exige aceptar el tratamiento de datos personales antes de registrarse', async () => {
+    component.codigoInvitacion = 'ABCD1234';
+    component.nombre = 'Vecino de prueba';
+    component.correo = 'vecino@alertbxt.test';
+    component.telefono = '3000000000';
+    component.numeroApartamento = '101';
+    component.password = 'password123';
+    component.confirmPassword = 'password123';
+    component.aceptaTerminos = false;
+
+    await component.joinComunidad();
+
+    expect(component.joinError).toBe('Debes aceptar el tratamiento de tus datos personales.');
+    expect(authServiceSpy.registerResidentAndJoinComunidad).not.toHaveBeenCalled();
+  });
+
   it('muestra un error claro cuando el código tiene el formato correcto pero no existe', async () => {
     authServiceSpy.registerResidentAndJoinComunidad.and.returnValue(
       throwError(() => new Error('Código de invitación inválido'))
@@ -69,6 +85,7 @@ describe('UnirseVecindadPage', () => {
     component.numeroApartamento = '101';
     component.password = 'password123';
     component.confirmPassword = 'password123';
+    component.aceptaTerminos = true;
 
     await component.joinComunidad();
 

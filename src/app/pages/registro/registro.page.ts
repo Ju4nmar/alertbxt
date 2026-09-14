@@ -67,7 +67,7 @@ export class RegistroPage {
     }
 
     if (!this.aceptaTerminos) {
-      this.registroError = 'Debes aceptar los términos y condiciones.';
+      this.registroError = 'Debes aceptar el tratamiento de tus datos personales.';
       return;
     }
 

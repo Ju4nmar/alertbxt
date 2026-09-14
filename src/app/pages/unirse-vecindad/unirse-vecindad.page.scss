@@ -152,6 +152,33 @@ ion-input {
   --highlight-color-focused: var(--ion-color-tertiary) !important;
 }
 
+.chekbox {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  --min-height: auto;
+  border: none !important;
+  background: transparent !important;
+}
+
+.chekbox ion-checkbox {
+  margin-right: 12px;
+  --size: 22px;
+  --checkbox-background-checked: var(--ion-color-tertiary);
+  --border-color-checked: var(--ion-color-tertiary);
+}
+
+.chekbox ion-label {
+  font-size: 14px;
+  color: var(--ab-text-secondary);
+  white-space: normal;
+}
+
+.chekbox ion-label a {
+  color: var(--ion-color-tertiary);
+  font-weight: 600;
+}
+
 .confirm-btn {
   min-height: 52px;
   --background: var(--ion-color-tertiary);
