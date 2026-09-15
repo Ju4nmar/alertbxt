@@ -8,7 +8,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "cypress:open": "cypress open",
+    "e2e:test": "start-server-and-test \"ng serve --configuration=e2e\" http://localhost:4200 \"cypress run\"",
+    "e2e": "firebase emulators:exec --only auth,firestore \"npm run e2e:test\""
   },
   "private": true,
   "dependencies": {
@@ -49,6 +52,7 @@
     "@types/jasmine": "~5.1.0",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
+    "cypress": "^16.0.0",
     "eslint": "^9.16.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsdoc": "^48.2.1",

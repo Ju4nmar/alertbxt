@@ -38,3 +38,30 @@ jobs:
 
       - name: Compilar aplicación
         run: npm run build
+
+  e2e:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configurar Java (requerido por los emuladores de Firebase)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar pruebas E2E contra los emuladores de Firebase
+        run: npm run e2e

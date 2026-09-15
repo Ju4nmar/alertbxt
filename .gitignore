@@ -75,7 +75,13 @@ Thumbs.db
 
 # Firebase local emulator
 firebase-debug.log
+firestore-debug.log
 ui-debug.log
+
+# Cypress
+/cypress/videos
+/cypress/screenshots
+/cypress/downloads
 
 # Environment files
 .env

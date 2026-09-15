@@ -3,8 +3,8 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { RouteReuseStrategy, provideRouter } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
 import { getApp, provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { browserLocalPersistence, getAuth, provideAuth, setPersistence } from '@angular/fire/auth';
+import { connectFirestoreEmulator, provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { browserLocalPersistence, connectAuthEmulator, getAuth, provideAuth, setPersistence } from '@angular/fire/auth';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { provideServiceWorker } from '@angular/service-worker';
 
@@ -24,11 +24,21 @@ bootstrapApplication(AppComponent, {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
-    provideFirestore(() => getFirestore(getApp())),
+    provideFirestore(() => {
+      const firestore = getFirestore(getApp());
+      if (environment.useEmulators) {
+        connectFirestoreEmulator(firestore, 'localhost', 8080);
+      }
+      return firestore;
+    }),
     provideMessaging(() => getMessaging(getApp())),
     provideAuth(() => {
       const auth = getAuth();
-      void setPersistence(auth, browserLocalPersistence);
+      if (environment.useEmulators) {
+        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+      } else {
+        void setPersistence(auth, browserLocalPersistence);
+      }
       return auth;
     }),
     provideServiceWorker('ngsw-worker.js', {
