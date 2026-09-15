@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  useEmulators: false,
   firebaseConfig : {
   apiKey: "AIzaSyAgcluXkKPlYonfQSBDFqZUotBcyU-tpBA",
   authDomain: "alertbxt.firebaseapp.com",

@@ -4,6 +4,11 @@
 
 export const environment = {
   production: false,
+  // Cuando es true, main.ts conecta Auth y Firestore a los emuladores
+  // locales de Firebase en vez del proyecto real (ver environment.e2e.ts,
+  // usado por la configuración "e2e" de angular.json para las pruebas
+  // Cypress).
+  useEmulators: false,
   firebaseConfig : {
   apiKey: "AIzaSyAgcluXkKPlYonfQSBDFqZUotBcyU-tpBA",
   authDomain: "alertbxt.firebaseapp.com",

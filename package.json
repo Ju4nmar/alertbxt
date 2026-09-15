@@ -8,7 +8,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "cypress:open": "cypress open",
+    "e2e:test": "start-server-and-test \"ng serve --configuration=e2e\" http://localhost:4200 \"cypress run\"",
+    "e2e": "firebase emulators:exec --only auth,firestore \"npm run e2e:test\""
   },
   "private": true,
   "dependencies": {
@@ -49,10 +52,12 @@
     "@types/jasmine": "~5.1.0",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
+    "cypress": "^16.0.0",
     "eslint": "^9.16.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsdoc": "^48.2.1",
     "eslint-plugin-prefer-arrow": "1.2.2",
+    "firebase-tools": "^14.27.0",
     "jasmine-core": "~5.1.0",
     "jasmine-spec-reporter": "~5.0.0",
     "karma": "~6.4.0",
@@ -60,6 +65,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "start-server-and-test": "^3.0.12",
     "typescript": "~5.8.0"
   },
   "description": "Aplicación web progresiva para la gestión de alertas comunitarias, avisos y recordatorios en conjuntos residenciales, desarrollada con Angular, Ionic y Firebase."
