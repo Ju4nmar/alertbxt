@@ -6,12 +6,15 @@ describe('Inicio de sesión', () => {
   it('muestra los errores de validación cuando se envía el formulario vacío', () => {
     cy.visit('/login');
 
+    // Con los campos requeridos vacíos, el formulario ya es inválido apenas
+    // carga la página, sin necesidad de tocar los campos.
+    cy.get('.confirm-btn').should('be.disabled');
+
     cy.get('ion-input[name="email"] input').click().blur();
     cy.get('ion-input[name="password"] input').click().blur();
 
     cy.contains('El correo es requerido.').should('be.visible');
     cy.contains('La contraseña es obligatoria.').should('be.visible');
-    cy.get('.confirm-btn').should('be.disabled');
   });
 
   it('inicia sesión con credenciales válidas y redirige al feed de alertas', () => {
