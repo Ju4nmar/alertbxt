@@ -152,5 +152,18 @@ service cloud.firestore {
         && request.resource.data.idUsuario == request.auth.uid
         && request.resource.data.comunidadId == currentUser().comunidadId;
     }
+
+    // Registro de errores no controlados del cliente (ver GlobalErrorHandler).
+    // Solo escritura: nadie puede leer, modificar ni borrar desde el cliente;
+    // se consultan desde la consola de Firebase, que usa credenciales de
+    // proyecto y no pasa por estas reglas.
+    match /logs_errores/{logId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.mensaje is string
+        && request.resource.data.timestamp is string;
+
+      allow read, update, delete: if false;
+    }
   }
 }
