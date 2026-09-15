@@ -1,16 +1,8 @@
-import { Injectable, Injector, NgZone, inject, runInInjectionContext } from '@angular/core';
-import {
-  Auth,
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-} from '@angular/fire/auth';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 import { Comunidad, Usuario } from '../models';
+import { AuthClientService } from './auth-client.service';
 import { FirestoreService } from './firestore.service';
 import { FcmService } from './fcm.service';
 
@@ -18,8 +10,7 @@ import { FcmService } from './fcm.service';
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly injector = inject(Injector);
-  private readonly auth = inject(Auth);
+  private readonly authClient = inject(AuthClientService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly fcmService = inject(FcmService);
   private readonly ngZone = inject(NgZone);
@@ -33,12 +24,8 @@ export class AuthService {
     this.setupAuthState();
   }
 
-  private inContext<T>(callback: () => T): T {
-    return runInInjectionContext(this.injector, callback);
-  }
-
   private setupAuthState(): void {
-    this.inContext(() => onAuthStateChanged(this.auth, firebaseUser => {
+    this.authClient.onAuthStateChanged(firebaseUser => {
       this.ngZone.run(async () => {
         try {
           if (!firebaseUser) {
@@ -59,7 +46,7 @@ export class AuthService {
           this.authReadySubject.next(true);
         }
       });
-    }));
+    });
   }
 
   private loadUserData(uid: string): Promise<Usuario | null> {
@@ -74,7 +61,7 @@ export class AuthService {
   // y el usuario veía el mensaje crudo de Firebase en vez del nuestro.
   private async signOutSilenciosamente(): Promise<void> {
     try {
-      await this.inContext(() => signOut(this.auth));
+      await this.authClient.signOut();
     } catch (error) {
       console.error('Error cerrando sesión:', error);
     }
@@ -93,7 +80,7 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<Usuario> {
-    return from(this.inContext(() => signInWithEmailAndPassword(this.auth, email.trim(), password))).pipe(
+    return from(this.authClient.signInWithEmailAndPassword(email.trim(), password)).pipe(
       switchMap(async result => {
         const userData = await this.loadUserData(result.user.uid);
         if (!userData) {
@@ -125,7 +112,7 @@ export class AuthService {
       return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
     }
 
-    return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.administradorCorreo.trim(), data.contrasena))).pipe(
+    return from(this.authClient.createUserWithEmailAndPassword(data.administradorCorreo.trim(), data.contrasena)).pipe(
       switchMap(async result => {
         const codigoInvitacion = this.generateCodigoInvitacion();
         const comunidadData: Omit<Comunidad, 'idComunidad'> = {
@@ -166,7 +153,7 @@ export class AuthService {
   }
 
   loginWithGoogle(): Observable<Usuario> {
-    return from(this.inContext(() => signInWithPopup(this.auth, new GoogleAuthProvider()))).pipe(
+    return from(this.authClient.signInWithGoogle()).pipe(
       switchMap(async result => {
         const userData = await this.loadUserData(result.user.uid);
         if (!userData) {
@@ -200,7 +187,7 @@ export class AuthService {
           throw new Error('Código de invitación inválido');
         }
 
-        return from(this.inContext(() => signInWithPopup(this.auth, new GoogleAuthProvider()))).pipe(
+        return from(this.authClient.signInWithGoogle()).pipe(
           switchMap(async result => {
             const existente = await this.loadUserData(result.user.uid);
 
@@ -242,7 +229,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return from(this.inContext(() => signOut(this.auth))).pipe(
+    return from(this.authClient.signOut()).pipe(
       map(() => {
         this.currentUserSubject.next(null);
         this.fcmService.detener();
@@ -347,7 +334,7 @@ export class AuthService {
           throw new Error('Código de invitación inválido');
         }
 
-        return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.correo.trim(), data.password))).pipe(
+        return from(this.authClient.createUserWithEmailAndPassword(data.correo.trim(), data.password)).pipe(
           switchMap(async result => {
             const newUser: Usuario = {
               idUsuario: result.user.uid,
