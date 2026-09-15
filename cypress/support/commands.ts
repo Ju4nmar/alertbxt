@@ -81,18 +81,23 @@ Cypress.Commands.add('seedUsuario', (datos: UsuarioSembrado) => {
       ...(datos.numeroApartamento ? { numeroApartamento: datos.numeroApartamento } : {}),
     };
 
-    return cy.request(
-      'PATCH',
-      `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/usuarios/${uid}`,
-      { fields: aFirestoreFields(usuario) }
-    ).then(() => uid);
+    return cy.request({
+      method: 'PATCH',
+      url: `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/usuarios/${uid}`,
+      // El token "owner" es un valor especial que solo reconoce el emulador
+      // local: salta las reglas de seguridad para poder sembrar datos de
+      // prueba directamente. Nunca funciona contra el Firestore real.
+      headers: { Authorization: 'Bearer owner' },
+      body: { fields: aFirestoreFields(usuario) },
+    }).then(() => uid);
   });
 });
 
 Cypress.Commands.add('seedComunidad', (idComunidad: string, datos: Record<string, string>) => {
-  return cy.request(
-    'PATCH',
-    `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/comunidades/${idComunidad}`,
-    { fields: aFirestoreFields(datos) }
-  );
+  return cy.request({
+    method: 'PATCH',
+    url: `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/comunidades/${idComunidad}`,
+    headers: { Authorization: 'Bearer owner' },
+    body: { fields: aFirestoreFields(datos) },
+  });
 });
