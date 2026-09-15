@@ -14,23 +14,25 @@ export interface UsuarioSembrado {
   numeroApartamento?: string;
 }
 
-// Cypress.env() (acceso directo desde el objeto global Cypress) se eliminó
-// en Cypress 16; hay que leer las variables de entorno con cy.env() dentro
-// del contexto de ejecución de un comando/prueba.
+// Cypress 16 cambió la firma de cy.env()/Cypress.env() para leer un solo
+// valor (ver https://on.cypress.io/cypress-env-migration) y ese mecanismo
+// quedó inestable entre versiones. Como estos valores nunca cambian (son
+// los emuladores locales de firebase.json y environment.e2e.ts, no
+// secretos), se dejan como constantes fijas en vez de pasarlos por env.
 function proyecto(): string {
-  return cy.env('firebaseProjectId');
+  return 'alertbxt';
 }
 
 function apiKey(): string {
-  return cy.env('firebaseApiKey');
+  return 'demo-api-key';
 }
 
 function authUrl(): string {
-  return cy.env('authEmulatorUrl');
+  return 'http://localhost:9099';
 }
 
 function firestoreUrl(): string {
-  return cy.env('firestoreEmulatorUrl');
+  return 'http://localhost:8080';
 }
 
 // Convierte un objeto plano a formato de documento REST de Firestore
