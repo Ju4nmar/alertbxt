@@ -7,8 +7,11 @@ describe('Inicio de sesión', () => {
     cy.visit('/login');
 
     // Con los campos requeridos vacíos, el formulario ya es inválido apenas
-    // carga la página, sin necesidad de tocar los campos.
-    cy.get('.confirm-btn').should('be.disabled');
+    // carga la página, sin necesidad de tocar los campos. Se verifica el
+    // atributo "disabled" (no el helper semántico be.disabled de
+    // chai-jquery) porque ion-button es un custom element de Stencil y ese
+    // helper no siempre lo reconoce de forma fiable.
+    cy.get('.confirm-btn').should('have.attr', 'disabled');
 
     cy.get('ion-input[name="email"] input').click().blur();
     cy.get('ion-input[name="password"] input').click().blur();
