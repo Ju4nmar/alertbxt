@@ -14,20 +14,23 @@ export interface UsuarioSembrado {
   numeroApartamento?: string;
 }
 
+// Cypress.env() (acceso directo desde el objeto global Cypress) se eliminó
+// en Cypress 16; hay que leer las variables de entorno con cy.env() dentro
+// del contexto de ejecución de un comando/prueba.
 function proyecto(): string {
-  return Cypress.env('firebaseProjectId');
+  return cy.env('firebaseProjectId');
 }
 
 function apiKey(): string {
-  return Cypress.env('firebaseApiKey');
+  return cy.env('firebaseApiKey');
 }
 
 function authUrl(): string {
-  return Cypress.env('authEmulatorUrl');
+  return cy.env('authEmulatorUrl');
 }
 
 function firestoreUrl(): string {
-  return Cypress.env('firestoreEmulatorUrl');
+  return cy.env('firestoreEmulatorUrl');
 }
 
 // Convierte un objeto plano a formato de documento REST de Firestore
