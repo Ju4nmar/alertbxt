@@ -11,5 +11,9 @@ export const environment = {
   measurementId: "G-Q8KNG7S9Q2"
 },
   // Pega aquí la clave pública VAPID de Firebase Cloud Messaging.
-  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE'
+  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE',
+  // Site key de reCAPTCHA v3 para Firebase App Check (Firebase Console >
+  // Build > App Check > Apps > registrar la app web). Mientras quede vacío,
+  // main.ts no activa App Check (ver comentario ahí).
+  appCheckSiteKey: ''
 };
