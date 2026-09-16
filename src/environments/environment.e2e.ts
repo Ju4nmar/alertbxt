@@ -14,4 +14,5 @@ export const environment = {
     appId: '1:392991506907:web:c892fc7459052ff444e7fe',
   },
   messagingVapidKey: '',
+  appCheckSiteKey: '',
 };

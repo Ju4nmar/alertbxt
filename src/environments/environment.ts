@@ -19,7 +19,12 @@ export const environment = {
   measurementId: "G-Q8KNG7S9Q2"
 },
   // Pega aquí la clave pública VAPID de Firebase Cloud Messaging.
-  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE'
+  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE',
+  // Site key "score-based" de reCAPTCHA Enterprise (Google Cloud Console >
+  // Security > reCAPTCHA Enterprise > crear clave) registrada luego en
+  // Firebase Console > Build > App Check > Apps. Mientras quede vacío,
+  // main.ts no activa App Check (ver comentario ahí).
+  appCheckSiteKey: ''
 };
 
 /*
