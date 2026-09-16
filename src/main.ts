@@ -3,7 +3,7 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { RouteReuseStrategy, provideRouter } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
 import { getApp, provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { ReCaptchaV3Provider, initializeAppCheck, provideAppCheck } from '@angular/fire/app-check';
+import { ReCaptchaEnterpriseProvider, initializeAppCheck, provideAppCheck } from '@angular/fire/app-check';
 import { connectFirestoreEmulator, provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { browserLocalPersistence, connectAuthEmulator, getAuth, provideAuth, setPersistence } from '@angular/fire/auth';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
@@ -38,7 +38,7 @@ bootstrapApplication(AppComponent, {
             (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
           }
           return initializeAppCheck(getApp(), {
-            provider: new ReCaptchaV3Provider(environment.appCheckSiteKey),
+            provider: new ReCaptchaEnterpriseProvider(environment.appCheckSiteKey),
             isTokenAutoRefreshEnabled: true,
           });
         })]
