@@ -26,7 +26,9 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   enlaceInvitacion = '';
   mensajeCopiado = '';
   mensajeGuardado = '';
+  mensajeGuardadoVecindad = '';
   isSaving = false;
+  isSavingVecindad = false;
   isRequestingDeletion = false;
   mensajeEliminacion = '';
 
@@ -99,7 +101,6 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
     const numeroApartamento = this.numeroApartamento.trim();
-    const nombreComunidad = this.nombreComunidad.trim();
 
     if (!this.usuario || !nombre || !correo || !telefono) {
       this.mensajeGuardado = 'Completa todos los campos requeridos';
@@ -110,8 +111,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       nombre.length < 3 || nombre.length > 80 ||
       correo.length > 120 ||
       telefono.length < 7 || telefono.length > 15 ||
-      numeroApartamento.length > 20 ||
-      nombreComunidad.length > 60
+      numeroApartamento.length > 20
     ) {
       this.mensajeGuardado = 'Revisa la longitud de los campos';
       return;
@@ -146,14 +146,6 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       await firstValueFrom(this.firestoreService.addUsuario(updatedUser));
       this.authService.setCurrentUser(updatedUser);
       this.usuario = updatedUser;
-
-      if (this.usuario.rol === 'admin' && this.comunidad?.idComunidad && nombreComunidad) {
-        await firstValueFrom(this.firestoreService.updateComunidad(this.comunidad.idComunidad, {
-          nombreComunidad,
-        }));
-        this.comunidad = { ...this.comunidad, nombreComunidad };
-      }
-
       this.mensajeGuardado = 'Perfil actualizado';
       setTimeout(() => this.mensajeGuardado = '', 2500);
     } catch (error) {
@@ -161,6 +153,59 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       this.mensajeGuardado = 'No se pudo guardar';
     } finally {
       this.isSaving = false;
+    }
+  }
+
+  // Aparte de guardarPerfil(): el nombre de la vecindad vive en su propia
+  // tarjeta ("Vecindad"), separada de "Datos personales" para que ambas
+  // quepan una junto a la otra en escritorio — así necesita su propio botón
+  // de guardar en vez de depender de uno en una tarjeta distinta.
+  async guardarVecindad(): Promise<void> {
+    if (this.isSavingVecindad || !this.comunidad?.idComunidad) {
+      return;
+    }
+
+    this.mensajeGuardadoVecindad = '';
+    const nombreComunidad = this.nombreComunidad.trim();
+
+    if (!nombreComunidad) {
+      this.mensajeGuardadoVecindad = 'El nombre de la vecindad es requerido';
+      return;
+    }
+
+    if (nombreComunidad.length > 60) {
+      this.mensajeGuardadoVecindad = 'No debe superar 60 caracteres';
+      return;
+    }
+
+    this.isSavingVecindad = true;
+    const idComunidad = this.comunidad.idComunidad;
+    const codigoInvitacion = this.comunidad.codigoInvitacion;
+
+    try {
+      await firstValueFrom(this.firestoreService.updateComunidad(idComunidad, { nombreComunidad }));
+      this.comunidad = { ...this.comunidad, nombreComunidad };
+
+      // Backfill para comunidades creadas antes de que el cliente escribiera
+      // codigos_invitacion (ver comentario en
+      // FirestoreService.registrarCodigoInvitacion): re-escribirlo aquí
+      // también arregla las comunidades existentes a las que les falta,
+      // aprovechando que este botón ya está disponible para el admin.
+      if (codigoInvitacion) {
+        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(
+          codigoInvitacion,
+          idComunidad,
+          nombreComunidad
+        ));
+      }
+
+      this.mensajeGuardadoVecindad = 'Vecindad actualizada';
+      setTimeout(() => this.mensajeGuardadoVecindad = '', 2500);
+    } catch (error) {
+      console.error('Error guardando vecindad:', error);
+      this.mensajeGuardadoVecindad = 'No se pudo guardar';
+    } finally {
+      this.isSavingVecindad = false;
     }
   }
 
