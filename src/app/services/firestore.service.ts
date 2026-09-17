@@ -258,20 +258,39 @@ export class FirestoreService {
     );
   }
 
-  getComunidadByCodigoInvitacion(codigoInvitacion: string): Observable<Comunidad | null> {
+  // Validar un código de invitación ocurre ANTES de autenticarse (al
+  // registrarse, o al unirse con Google desde cero), así que no puede
+  // depender de una consulta a "comunidades" protegida por signedIn(): eso
+  // producía permission-denied y el mensaje "Error al validar código de
+  // invitación" siempre, incluso con un código correcto. En su lugar se lee
+  // un documento aparte en "codigos_invitacion" (doc id = el código),
+  // público solo para lectura puntual (get, nunca list), que solo contiene
+  // el id y nombre de la comunidad — nunca los datos del administrador.
+  getComunidadByCodigoInvitacion(codigoInvitacion: string): Observable<{ idComunidad: string; nombreComunidad: string } | null> {
     this.isLoadingSubject.next(true);
-    const q = this.inContext(() => {
-      const col = collection(this.firestore, 'comunidades');
-      return query(col, where('codigoInvitacion', '==', codigoInvitacion), limit(1));
-    });
+    const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
 
-    return this.inContext(() => collectionData(q, { idField: 'idComunidad' })).pipe(
-      map(data => data.length > 0 ? data[0] as Comunidad : null),
+    return this.inContext(() => docData(ref)).pipe(
+      map(data => data ? { idComunidad: data['comunidadId'] as string, nombreComunidad: data['nombreComunidad'] as string } : null),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
         console.error('Error obteniendo comunidad por código:', error);
         this.isLoadingSubject.next(false);
         return throwError(() => new Error('Error al validar código de invitación'));
+      })
+    );
+  }
+
+  // Se registra junto con addComunidad() al crear una comunidad nueva, para
+  // que getComunidadByCodigoInvitacion() pueda validarlo sin autenticación.
+  registrarCodigoInvitacion(codigoInvitacion: string, comunidadId: string, nombreComunidad: string): Observable<void> {
+    const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
+
+    return from(this.inContext(() => setDoc(ref, { comunidadId, nombreComunidad }))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error registrando código de invitación:', error);
+        return throwError(() => new Error('Error al registrar código de invitación'));
       })
     );
   }

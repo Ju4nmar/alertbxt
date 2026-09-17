@@ -2,6 +2,11 @@ import { Injectable, NgZone, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 import { Comunidad, Usuario } from '../models';
+
+// Lo mínimo que necesitan los flujos de "unirse a una vecindad" (antes de
+// autenticarse no se puede leer más que esto, ver
+// FirestoreService.getComunidadByCodigoInvitacion).
+type ComunidadResumen = { idComunidad: string; nombreComunidad: string };
 import { AuthClientService } from './auth-client.service';
 import { FirestoreService } from './firestore.service';
 import { FcmService } from './fcm.service';
@@ -125,6 +130,7 @@ export class AuthService {
         };
 
         const comunidadId = await firstValueFrom(this.firestoreService.addComunidad(comunidadData));
+        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(codigoInvitacion, comunidadId, comunidadData.nombreComunidad));
         const newUser: Usuario = {
           idUsuario: result.user.uid,
           nombre: data.administradorNombre.trim(),
@@ -173,7 +179,7 @@ export class AuthService {
     );
   }
 
-  joinComunidadWithGoogle(codigoInvitacion: string, aceptaTerminos: boolean): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+  joinComunidadWithGoogle(codigoInvitacion: string, aceptaTerminos: boolean): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
     if (!aceptaTerminos) {
       return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
     }
@@ -275,7 +281,7 @@ export class AuthService {
     );
   }
 
-  joinComunidad(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+  joinComunidad(codigoInvitacion: string): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
     return this.firestoreService.getComunidadByCodigoInvitacion(codigoInvitacion.trim().toUpperCase()).pipe(
       take(1),
       switchMap(comunidad => {
@@ -320,7 +326,7 @@ export class AuthService {
     password: string;
     codigoInvitacion: string;
     aceptaTerminos: boolean;
-  }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+  }): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
     if (!data.aceptaTerminos) {
       return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
     }

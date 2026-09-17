@@ -110,6 +110,24 @@ service cloud.firestore {
       allow update, delete: if isAdminForCommunity(comunidadId);
     }
 
+    // Permite validar un código de invitación ANTES de autenticarse (al
+    // registrarse o unirse con Google desde cero): solo lectura puntual
+    // (get, nunca list, así que no se puede enumerar toda la colección) y
+    // sin datos del administrador — solo el id y nombre de la comunidad.
+    match /codigos_invitacion/{codigo} {
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['comunidadId', 'nombreComunidad'])
+        && request.resource.data.comunidadId is string
+        && request.resource.data.nombreComunidad is string
+        && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
+        && get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.administradorCorreo == request.auth.token.email;
+
+      allow update, delete: if false;
+    }
+
     match /avisos/{avisoId} {
       allow read: if isMemberOfCommunity(resource.data.comunidadId);
 
