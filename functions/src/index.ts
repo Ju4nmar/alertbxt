@@ -38,6 +38,41 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+interface ComunidadData {
+  codigoInvitacion?: string;
+  nombreComunidad?: string;
+}
+
+// Mantiene codigos_invitacion/{codigo} en sincronía con comunidades: es lo
+// que getComunidadByCodigoInvitacion() lee para validar un código ANTES de
+// que el residente nuevo se autentique (ver comentario en
+// FirestoreService), así que no puede depender de una escritura del
+// cliente que se puede saltar u olvidar — la maneja el propio backend con
+// privilegios de administrador, siempre, para toda comunidad.
+export const onComunidadWrite = onDocumentWritten('comunidades/{comunidadId}', async event => {
+  const after = event.data?.after;
+  if (!after?.exists) {
+    return;
+  }
+
+  const data = after.data() as ComunidadData;
+  if (!data.codigoInvitacion || !data.nombreComunidad) {
+    return;
+  }
+
+  // Sin optimización de "solo si cambió": así cualquier escritura futura al
+  // documento (incluida una edición no relacionada) también sirve para
+  // sincronizar retroactivamente comunidades que existían antes de esta
+  // función, sin necesitar una migración aparte.
+  const db = getFirestore();
+  await db.doc(`codigos_invitacion/${data.codigoInvitacion}`).set({
+    comunidadId: event.params.comunidadId,
+    nombreComunidad: data.nombreComunidad,
+  });
+
+  logger.info('codigos_invitacion sincronizado', { comunidadId: event.params.comunidadId, codigo: data.codigoInvitacion });
+});
+
 export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event => {
   const snapshot = event.data;
   if (!snapshot) {

@@ -28,7 +28,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let authClientSpy: jasmine.SpyObj<AuthClientService>;
   let firestoreServiceSpy: jasmine.SpyObj<Pick<FirestoreService,
-    'getUsuarioById' | 'addUsuario' | 'addComunidad' | 'getComunidadByCodigoInvitacion' | 'registrarCodigoInvitacion' | 'solicitarEliminacionCuenta'>>;
+    'getUsuarioById' | 'addUsuario' | 'addComunidad' | 'getComunidadByCodigoInvitacion' | 'solicitarEliminacionCuenta'>>;
   let fcmServiceSpy: jasmine.SpyObj<FcmService>;
 
   beforeEach(() => {
@@ -43,9 +43,8 @@ describe('AuthService', () => {
     authClientSpy.signOut.and.resolveTo();
 
     firestoreServiceSpy = jasmine.createSpyObj('FirestoreService', [
-      'getUsuarioById', 'addUsuario', 'addComunidad', 'getComunidadByCodigoInvitacion', 'registrarCodigoInvitacion', 'solicitarEliminacionCuenta',
+      'getUsuarioById', 'addUsuario', 'addComunidad', 'getComunidadByCodigoInvitacion', 'solicitarEliminacionCuenta',
     ]);
-    firestoreServiceSpy.registrarCodigoInvitacion.and.returnValue(of(void 0));
 
     fcmServiceSpy = jasmine.createSpyObj('FcmService', ['iniciarParaUsuario', 'detener']);
     fcmServiceSpy.iniciarParaUsuario.and.resolveTo();
@@ -186,12 +185,10 @@ describe('AuthService', () => {
     expect(authClientSpy.createUserWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
-  it('registerAdminAndCreateComunidad() registra el código de invitación junto con la comunidad', async () => {
-    // Regresión: registrarCodigoInvitacion() es lo que hace que
-    // getComunidadByCodigoInvitacion() pueda validar el código sin que el
-    // que se une esté autenticado todavía (ver comentario en
-    // FirestoreService). Si esta llamada faltara, unirse a la vecindad
-    // fallaría siempre con "Código de invitación inválido".
+  it('registerAdminAndCreateComunidad() crea la comunidad con un código de invitación de 8 caracteres', async () => {
+    // La Cloud Function onComunidadWrite (Admin SDK) es la que sincroniza
+    // codigos_invitacion a partir de este documento — el cliente solo debe
+    // garantizar que comunidades siempre se cree con un código válido.
     firestoreServiceSpy.addComunidad.and.returnValue(of('comunidad-nueva'));
     firestoreServiceSpy.addUsuario.and.returnValue(of(void 0));
     authClientSpy.createUserWithEmailAndPassword.and.resolveTo(credencialDePrueba('uid-admin'));
@@ -205,8 +202,10 @@ describe('AuthService', () => {
       aceptaTerminos: true,
     }));
 
-    expect(firestoreServiceSpy.registrarCodigoInvitacion)
-      .toHaveBeenCalledWith(jasmine.any(String), 'comunidad-nueva', 'Cañadulce');
+    expect(firestoreServiceSpy.addComunidad).toHaveBeenCalledWith(jasmine.objectContaining({
+      nombreComunidad: 'Cañadulce',
+      codigoInvitacion: jasmine.stringMatching(/^[A-Z0-9]{8}$/),
+    }));
   });
 
   it('setupAuthState() carga el perfil de Firestore cuando Firebase Auth reporta un usuario autenticado', async () => {

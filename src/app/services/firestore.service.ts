@@ -281,20 +281,6 @@ export class FirestoreService {
     );
   }
 
-  // Se registra junto con addComunidad() al crear una comunidad nueva, para
-  // que getComunidadByCodigoInvitacion() pueda validarlo sin autenticación.
-  registrarCodigoInvitacion(codigoInvitacion: string, comunidadId: string, nombreComunidad: string): Observable<void> {
-    const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
-
-    return from(this.inContext(() => setDoc(ref, { comunidadId, nombreComunidad }))).pipe(
-      map(() => void 0),
-      catchError(error => {
-        console.error('Error registrando código de invitación:', error);
-        return throwError(() => new Error('Error al registrar código de invitación'));
-      })
-    );
-  }
-
   getRecordatoriosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {

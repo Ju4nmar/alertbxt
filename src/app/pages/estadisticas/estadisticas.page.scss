@@ -94,7 +94,12 @@ ion-content {
 /* ============== Fila de tarjetas resumen + gráfico ============== */
 .chart-row {
   display: grid;
-  grid-template-columns: minmax(160px, 260px) 1fr;
+  /* La tarjeta del gráfico tenía un tope de 1fr (crecía a rellenar TODO el
+     ancho disponible), pero el donut adentro es de tamaño fijo — el
+     resultado era una tarjeta ancha con mucho aire vacío alrededor de un
+     gráfico chico. Con un tope razonable, la tarjeta y el donut (más
+     grande, ver .donut-wrap) usan mejor el espacio en vez de estirarse. */
+  grid-template-columns: minmax(160px, 260px) minmax(280px, 580px);
   gap: 12px;
   align-items: stretch;
 }
@@ -120,8 +125,8 @@ ion-content {
 .donut-wrap {
   position: relative;
   flex-shrink: 0;
-  width: 140px;
-  height: 140px;
+  width: 168px;
+  height: 168px;
 }
 
 .donut-svg {
@@ -133,12 +138,12 @@ ion-content {
 .donut-track {
   fill: none;
   stroke: var(--ab-surface-muted);
-  stroke-width: 14;
+  stroke-width: 16;
 }
 
 .donut-segment {
   fill: none;
-  stroke-width: 14;
+  stroke-width: 16;
   stroke-linecap: butt;
   transition: stroke-dasharray 220ms ease;
 }
@@ -154,7 +159,7 @@ ion-content {
 
 .donut-center-value {
   font-family: var(--ab-font-heading);
-  font-size: 1.6rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--ab-text-primary);
   line-height: 1.1;

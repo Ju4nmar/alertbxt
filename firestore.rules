@@ -118,14 +118,10 @@ service cloud.firestore {
       allow get: if true;
       allow list: if false;
 
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['comunidadId', 'nombreComunidad'])
-        && request.resource.data.comunidadId is string
-        && request.resource.data.nombreComunidad is string
-        && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
-        && get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.administradorCorreo == request.auth.token.email;
-
-      allow update, delete: if false;
+      // Solo lo escribe la Cloud Function onComunidadWrite (Admin SDK, que
+      // salta las reglas): así queda garantizado que siempre coincide con
+      // la comunidad real, sin depender de que el cliente lo escriba bien.
+      allow create, update, delete: if false;
     }
 
     match /avisos/{avisoId} {
