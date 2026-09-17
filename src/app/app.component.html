@@ -121,7 +121,7 @@
 
         <button *ngIf="currentUser?.rol === 'admin'" type="button" class="tab-btn" [class.tab-active]="isActive('/estadisticas')" (click)="goToEstadisticas()">
           <ion-icon name="stats-chart"></ion-icon>
-          <span>Stats</span>
+          <span>Estad.</span>
         </button>
 
         <button *ngIf="!currentUser?.comunidadId" type="button" class="tab-btn" [class.tab-active]="isActive('/unirse-vecindad')" (click)="goToUnirseVecindad()">
