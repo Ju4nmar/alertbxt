@@ -75,11 +75,13 @@ ion-content.feed-content {
 
 .cards-grid {
   display: grid;
-  /* El tope de 380px evita que una sola tarjeta (o una fila incompleta) se
-     estire a todo el ancho del contenedor y deforme la imagen. */
-  grid-template-columns: repeat(auto-fit, minmax(270px, min(380px, 100%)));
+  /* El tope de 320px evita que una sola tarjeta (o una fila incompleta) se
+     estire a todo el ancho del contenedor; con este tope sí caben 3
+     columnas reales en escritorio (antes el tope de 380px solo dejaba 2,
+     desperdiciando buena parte del ancho disponible junto al sidebar). */
+  grid-template-columns: repeat(auto-fit, minmax(260px, min(320px, 100%)));
   gap: 1.2rem;
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 6px var(--ab-space-4) 40px;
   justify-content: center;
