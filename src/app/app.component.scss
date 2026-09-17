@@ -168,6 +168,15 @@ ion-menu.ab-sidebar {
   background: var(--ion-background-color);
 }
 
+/* ion-split-pane ignora el --width del menú: por defecto reserva hasta el
+   28% del viewport para el panel lateral (min 270px), así que en pantallas
+   anchas (p. ej. 1440px) el sidebar terminaba ocupando ~403px en vez de los
+   264px que sí definía .ab-sidebar, robándole ancho real al contenido. */
+ion-split-pane {
+  --side-min-width: 264px;
+  --side-max-width: 264px;
+}
+
 .sidebar-content {
   --background: transparent;
   --padding-top: 16px;
