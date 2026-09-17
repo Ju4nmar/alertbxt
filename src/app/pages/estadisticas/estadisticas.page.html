@@ -14,14 +14,22 @@
       <section class="stats-section">
         <h3>Vecinos</h3>
         <div class="chart-row">
-          <div class="headline-stack">
-            <div class="stat-card stat-card--wide">
+          <div class="stats-mini-grid">
+            <div class="stat-card">
               <span class="stat-value">{{ resumen.usuarios.total }}</span>
               <span class="stat-label">Total registrados</span>
             </div>
-            <div class="stat-card stat-card--wide stat-card--success">
+            <div class="stat-card stat-card--success">
               <span class="stat-value">{{ resumen.usuarios.activos }}</span>
               <span class="stat-label">Activos</span>
+            </div>
+            <div class="stat-card stat-card--tertiary">
+              <span class="stat-value">{{ resumen.usuarios.admins }}</span>
+              <span class="stat-label">Administradores</span>
+            </div>
+            <div class="stat-card stat-card--primary">
+              <span class="stat-value">{{ resumen.usuarios.residentes }}</span>
+              <span class="stat-label">Residentes</span>
             </div>
           </div>
 
@@ -59,17 +67,6 @@
             <ng-template #legendVecinosVacia>
               <p class="chart-empty">Aún no hay vecinos registrados.</p>
             </ng-template>
-          </div>
-        </div>
-
-        <div class="stats-grid stats-grid--compact">
-          <div class="stat-card stat-card--tertiary">
-            <span class="stat-value">{{ resumen.usuarios.admins }}</span>
-            <span class="stat-label">Administradores</span>
-          </div>
-          <div class="stat-card stat-card--primary">
-            <span class="stat-value">{{ resumen.usuarios.residentes }}</span>
-            <span class="stat-label">Residentes</span>
           </div>
         </div>
       </section>

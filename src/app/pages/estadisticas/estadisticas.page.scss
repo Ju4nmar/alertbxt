@@ -29,12 +29,6 @@ ion-content {
 }
 
 /* ============== Tarjetas de conteo ============== */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
 .stat-card {
   display: flex;
   flex-direction: column;
@@ -78,19 +72,6 @@ ion-content {
 .stat-card--primary:hover { box-shadow: var(--ab-shadow-primary); }
 .stat-card--tertiary:hover { box-shadow: var(--ab-shadow-tertiary); }
 
-.stats-grid--compact {
-  margin-top: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-}
-
-.stats-grid--compact .stat-card {
-  padding: 12px 16px;
-}
-
-.stats-grid--compact .stat-value {
-  font-size: 1.4rem;
-}
-
 /* ============== Fila de tarjetas resumen + gráfico ============== */
 .chart-row {
   display: grid;
@@ -99,7 +80,7 @@ ion-content {
      resultado era una tarjeta ancha con mucho aire vacío alrededor de un
      gráfico chico. Con un tope razonable, la tarjeta y el donut (más
      grande, ver .donut-wrap) usan mejor el espacio en vez de estirarse. */
-  grid-template-columns: minmax(160px, 260px) minmax(280px, 580px);
+  grid-template-columns: minmax(220px, 320px) minmax(280px, 580px);
   gap: 12px;
   align-items: stretch;
 }
@@ -108,6 +89,25 @@ ion-content {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* La sección "Vecinos" tiene 4 tarjetas chicas (antes: 2 apiladas junto al
+   gráfico + 2 más anchas en una fila aparte debajo, con tamaños
+   inconsistentes entre sí). Con las 4 en una sola grilla 2x2 quedan todas
+   del mismo tamaño. */
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  align-content: start;
+}
+
+.stats-mini-grid .stat-card {
+  padding: 14px 16px;
+}
+
+.stats-mini-grid .stat-value {
+  font-size: 1.5rem;
 }
 
 .chart-card {
@@ -214,11 +214,5 @@ ion-content {
 @media (max-width: 640px) {
   .chart-row {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
