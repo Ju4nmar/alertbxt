@@ -129,8 +129,10 @@ export class AuthService {
           fechaCreacion: new Date().toISOString(),
         };
 
+        // El registro en codigos_invitacion lo crea una Cloud Function
+        // (onComunidadWrite) con privilegios de administrador en cuanto se
+        // guarda este documento — no depende de que el cliente lo escriba.
         const comunidadId = await firstValueFrom(this.firestoreService.addComunidad(comunidadData));
-        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(codigoInvitacion, comunidadId, comunidadData.nombreComunidad));
         const newUser: Usuario = {
           idUsuario: result.user.uid,
           nombre: data.administradorNombre.trim(),
