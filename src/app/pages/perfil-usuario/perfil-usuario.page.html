@@ -61,9 +61,14 @@
 
     <div *ngIf="comunidad; else sinComunidad" class="invite-box">
       <ion-item>
-        <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" [readonly]="usuario?.rol !== 'admin'" maxlength="60" (ionInput)="mensajeGuardado = ''"></ion-input>
+        <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" [readonly]="usuario?.rol !== 'admin'" maxlength="60" (ionInput)="mensajeGuardadoVecindad = ''"></ion-input>
       </ion-item>
       <p class="field-hint">Máximo 60 caracteres.</p>
+
+      <ion-button *ngIf="usuario?.rol === 'admin'" class="save-btn" (click)="guardarVecindad()" [disabled]="isSavingVecindad">
+        {{ isSavingVecindad ? 'Guardando...' : 'Guardar Cambios' }}
+      </ion-button>
+      <p *ngIf="mensajeGuardadoVecindad" class="copy-message">{{ mensajeGuardadoVecindad }}</p>
 
       <p class="invite-label">Código de invitación</p>
       <div class="codigo-row">

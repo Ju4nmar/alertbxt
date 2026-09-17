@@ -281,6 +281,25 @@ export class FirestoreService {
     );
   }
 
+  // La Cloud Function onComunidadWrite (Admin SDK) debería mantener esto
+  // sincronizado sola, pero su trigger de Eventarc quedó sin dispararse
+  // pese a varios reintentos y redeploys (posible atasco de plataforma sin
+  // diagnóstico posible desde la CLI). El cliente también escribe aquí
+  // como respaldo, para no depender de un único mecanismo: si la función
+  // llega a funcionar más adelante, ambas escrituras son idénticas y no
+  // hay conflicto.
+  registrarCodigoInvitacion(codigoInvitacion: string, comunidadId: string, nombreComunidad: string): Observable<void> {
+    const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
+
+    return from(this.inContext(() => setDoc(ref, { comunidadId, nombreComunidad }))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error registrando código de invitación:', error);
+        return throwError(() => new Error('Error al registrar código de invitación'));
+      })
+    );
+  }
+
   getRecordatoriosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
