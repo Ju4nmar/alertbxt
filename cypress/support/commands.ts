@@ -101,3 +101,15 @@ Cypress.Commands.add('seedComunidad', (idComunidad: string, datos: Record<string
     body: { fields: aFirestoreFields(datos) },
   });
 });
+
+// Crea el documento de codigos_invitacion/{codigo} que
+// getComunidadByCodigoInvitacion() lee para validar un código sin que el
+// que se une esté autenticado (ver FirestoreService).
+Cypress.Commands.add('registrarCodigoInvitacion', (codigo: string, comunidadId: string, nombreComunidad: string) => {
+  return cy.request({
+    method: 'PATCH',
+    url: `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/codigos_invitacion/${codigo}`,
+    headers: { Authorization: 'Bearer owner' },
+    body: { fields: aFirestoreFields({ comunidadId, nombreComunidad }) },
+  });
+});

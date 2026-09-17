@@ -28,7 +28,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let authClientSpy: jasmine.SpyObj<AuthClientService>;
   let firestoreServiceSpy: jasmine.SpyObj<Pick<FirestoreService,
-    'getUsuarioById' | 'addUsuario' | 'addComunidad' | 'getComunidadByCodigoInvitacion' | 'solicitarEliminacionCuenta'>>;
+    'getUsuarioById' | 'addUsuario' | 'addComunidad' | 'getComunidadByCodigoInvitacion' | 'registrarCodigoInvitacion' | 'solicitarEliminacionCuenta'>>;
   let fcmServiceSpy: jasmine.SpyObj<FcmService>;
 
   beforeEach(() => {
@@ -43,8 +43,9 @@ describe('AuthService', () => {
     authClientSpy.signOut.and.resolveTo();
 
     firestoreServiceSpy = jasmine.createSpyObj('FirestoreService', [
-      'getUsuarioById', 'addUsuario', 'addComunidad', 'getComunidadByCodigoInvitacion', 'solicitarEliminacionCuenta',
+      'getUsuarioById', 'addUsuario', 'addComunidad', 'getComunidadByCodigoInvitacion', 'registrarCodigoInvitacion', 'solicitarEliminacionCuenta',
     ]);
+    firestoreServiceSpy.registrarCodigoInvitacion.and.returnValue(of(void 0));
 
     fcmServiceSpy = jasmine.createSpyObj('FcmService', ['iniciarParaUsuario', 'detener']);
     fcmServiceSpy.iniciarParaUsuario.and.resolveTo();
@@ -149,7 +150,7 @@ describe('AuthService', () => {
   it('joinComunidad() rechaza cuando el usuario ya pertenece a otra vecindad', async () => {
     service.setCurrentUser(usuarioDePrueba({ comunidadId: 'comunidad-actual' }));
     firestoreServiceSpy.getComunidadByCodigoInvitacion.and.returnValue(
-      of({ idComunidad: 'comunidad-otra', nombreComunidad: 'Otra', administradorNombre: '', administradorCorreo: '', administradorCelular: '', codigoInvitacion: 'ABCD1234', fechaCreacion: '' })
+      of({ idComunidad: 'comunidad-otra', nombreComunidad: 'Otra' })
     );
 
     await expectAsync(firstValueFrom(service.joinComunidad('ABCD1234')))
@@ -183,6 +184,29 @@ describe('AuthService', () => {
     }))).toBeRejectedWithError('Debe aceptar el tratamiento de datos personales');
 
     expect(authClientSpy.createUserWithEmailAndPassword).not.toHaveBeenCalled();
+  });
+
+  it('registerAdminAndCreateComunidad() registra el código de invitación junto con la comunidad', async () => {
+    // Regresión: registrarCodigoInvitacion() es lo que hace que
+    // getComunidadByCodigoInvitacion() pueda validar el código sin que el
+    // que se une esté autenticado todavía (ver comentario en
+    // FirestoreService). Si esta llamada faltara, unirse a la vecindad
+    // fallaría siempre con "Código de invitación inválido".
+    firestoreServiceSpy.addComunidad.and.returnValue(of('comunidad-nueva'));
+    firestoreServiceSpy.addUsuario.and.returnValue(of(void 0));
+    authClientSpy.createUserWithEmailAndPassword.and.resolveTo(credencialDePrueba('uid-admin'));
+
+    await firstValueFrom(service.registerAdminAndCreateComunidad({
+      nombreComunidad: 'Cañadulce',
+      administradorNombre: 'Admin',
+      administradorCorreo: 'admin@alertbxt.test',
+      administradorCelular: '3000000000',
+      contrasena: 'password123',
+      aceptaTerminos: true,
+    }));
+
+    expect(firestoreServiceSpy.registrarCodigoInvitacion)
+      .toHaveBeenCalledWith(jasmine.any(String), 'comunidad-nueva', 'Cañadulce');
   });
 
   it('setupAuthState() carga el perfil de Firestore cuando Firebase Auth reporta un usuario autenticado', async () => {
