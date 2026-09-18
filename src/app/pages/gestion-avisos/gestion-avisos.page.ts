@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage';
 import {
+  AlertController,
   IonButton,
   IonContent,
   IonInput,
@@ -46,6 +47,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly imageOptimizer = inject(ImageOptimizerService);
   private readonly localNotificationService = inject(LocalNotificationService);
+  private readonly alertController = inject(AlertController);
   private readonly destroy$ = new Subject<void>();
 
   avisos: Aviso[] = [];
@@ -248,6 +250,18 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       return;
     }
 
+    const alerta = await this.alertController.create({
+      header: 'Eliminar aviso',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este aviso?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAviso(id) },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private async confirmarEliminarAviso(id: string): Promise<void> {
     try {
       await firstValueFrom(this.firestoreService.deleteAviso(id));
     } catch (error) {

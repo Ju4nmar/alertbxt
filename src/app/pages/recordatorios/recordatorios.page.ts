@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
+import { AlertController, IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Recordatorio } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +19,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly localNotificationService = inject(LocalNotificationService);
+  private readonly alertController = inject(AlertController);
   private readonly destroy$ = new Subject<void>();
 
   recordatorios: Recordatorio[] = [];
@@ -144,6 +145,18 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       return;
     }
 
+    const alerta = await this.alertController.create({
+      header: 'Eliminar recordatorio',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este recordatorio?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarRecordatorio(id) },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private async confirmarEliminarRecordatorio(id: string): Promise<void> {
     this.isLoading = true;
     try {
       await firstValueFrom(this.firestoreService.deleteRecordatorio(id));
