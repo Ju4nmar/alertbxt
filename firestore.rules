@@ -106,6 +106,13 @@ service cloud.firestore {
         allow read: if isSelf(uid);
         allow write: if false;
       }
+
+      // Copia para el admin de lo que envió (a uno o varios destinatarios a
+      // la vez), también escrita solo por enviarMensajeIndividual.
+      match /mensajes_enviados/{mensajeId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
     }
 
     match /comunidades/{comunidadId} {

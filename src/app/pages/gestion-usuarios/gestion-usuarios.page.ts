@@ -57,8 +57,15 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   cargaError = '';
   filtroTexto = '';
 
+  modoSeleccion = false;
+  private readonly idsSeleccionados = new Set<string>();
+
   get esComunidadDeCasas(): boolean {
     return this.comunidad?.tipoComunidad === 'casas';
+  }
+
+  get cantidadSeleccionados(): number {
+    return this.idsSeleccionados.size;
   }
 
   get usuariosFiltrados(): Usuario[] {
@@ -133,6 +140,11 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   }
 
   abrirDetalle(usuario: Usuario): void {
+    if (this.modoSeleccion) {
+      this.alternarSeleccion(usuario);
+      return;
+    }
+
     this.usuarioSeleccionado = usuario;
     this.modalAbierto = true;
   }
@@ -140,6 +152,31 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   cerrarModal(): void {
     this.modalAbierto = false;
     this.usuarioSeleccionado = null;
+  }
+
+  activarModoSeleccion(): void {
+    this.modoSeleccion = true;
+  }
+
+  cancelarSeleccion(): void {
+    this.modoSeleccion = false;
+    this.idsSeleccionados.clear();
+  }
+
+  estaSeleccionado(usuario: Usuario): boolean {
+    return !!usuario.idUsuario && this.idsSeleccionados.has(usuario.idUsuario);
+  }
+
+  alternarSeleccion(usuario: Usuario): void {
+    if (!usuario.idUsuario || !this.puedeGestionarUsuario(usuario)) {
+      return;
+    }
+
+    if (this.idsSeleccionados.has(usuario.idUsuario)) {
+      this.idsSeleccionados.delete(usuario.idUsuario);
+    } else {
+      this.idsSeleccionados.add(usuario.idUsuario);
+    }
   }
 
   async alternarEstado(usuario: Usuario): Promise<void> {
@@ -182,8 +219,28 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
       return;
     }
 
+    await this.abrirDialogoMensaje([usuario], `Mensaje para ${usuario.nombre}`);
+  }
+
+  async enviarMensajeSeleccionados(): Promise<void> {
+    if (!this.idsSeleccionados.size || this.enviandoMensaje) {
+      return;
+    }
+
+    const usuarios = this.usuarios.filter(usuario => this.estaSeleccionado(usuario));
+    if (!usuarios.length) {
+      return;
+    }
+
+    const encabezado = usuarios.length === 1
+      ? `Mensaje para ${usuarios[0].nombre}`
+      : `Mensaje para ${usuarios.length} vecinos`;
+    await this.abrirDialogoMensaje(usuarios, encabezado);
+  }
+
+  private async abrirDialogoMensaje(usuarios: Usuario[], header: string): Promise<void> {
     const alerta = await this.alertController.create({
-      header: `Mensaje para ${usuario.nombre}`,
+      header,
       inputs: [
         {
           name: 'mensaje',
@@ -194,23 +251,29 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
       ],
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { text: 'Enviar', handler: data => this.confirmarEnviarMensaje(usuario, (data?.mensaje || '').trim()) },
+        { text: 'Enviar', handler: data => this.confirmarEnviarMensaje(usuarios, (data?.mensaje || '').trim()) },
       ],
     });
     await alerta.present();
   }
 
-  private confirmarEnviarMensaje(usuario: Usuario, mensaje: string): boolean {
-    if (!mensaje || !usuario.idUsuario) {
+  private confirmarEnviarMensaje(usuarios: Usuario[], mensaje: string): boolean {
+    const ids = usuarios.map(usuario => usuario.idUsuario).filter((id): id is string => !!id);
+
+    if (!mensaje || !ids.length) {
       this.toastService.error('Escribe un mensaje antes de enviarlo.');
       return false;
     }
 
     this.enviandoMensaje = true;
-    this.mensajesService.enviarMensajeIndividual(usuario.idUsuario, mensaje)
+    this.mensajesService.enviarMensajeIndividual(ids, mensaje)
       .pipe(take(1), finalize(() => this.enviandoMensaje = false), takeUntil(this.destroy$))
       .subscribe({
-        next: () => this.toastService.success(`Mensaje enviado a ${usuario.nombre}`),
+        next: () => {
+          const destino = usuarios.length === 1 ? usuarios[0].nombre : `${usuarios.length} vecinos`;
+          this.toastService.success(`Mensaje enviado a ${destino}`);
+          this.cancelarSeleccion();
+        },
         error: error => {
           console.error('Error enviando mensaje individual:', error);
           this.toastService.error(error?.message || 'No se pudo enviar el mensaje.');

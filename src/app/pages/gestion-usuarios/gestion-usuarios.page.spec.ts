@@ -128,12 +128,44 @@ describe('GestionUsuariosPage', () => {
 
     manejadorEnviar?.({ mensaje: 'Recuerda pagar la administración' });
 
-    expect(enviarMensajeIndividualSpy).toHaveBeenCalledWith('residente-1', 'Recuerda pagar la administración');
+    expect(enviarMensajeIndividualSpy).toHaveBeenCalledWith(['residente-1'], 'Recuerda pagar la administración');
   });
 
   it('enviarMensaje() no se puede usar sobre la propia cuenta del administrador', async () => {
     await component.enviarMensaje(admin);
 
     expect(alertControllerSpy.create).not.toHaveBeenCalled();
+  });
+
+  it('enviarMensajeSeleccionados() envía a todos los vecinos marcados en modo selección', async () => {
+    const residente2: Usuario = { ...residente, idUsuario: 'residente-2', nombre: 'Residente Dos' };
+    (component as unknown as { usuarios: Usuario[] }).usuarios = [residente, residente2];
+
+    let manejadorEnviar: ((data: { mensaje: string }) => boolean) | undefined;
+    alertControllerSpy.create.and.callFake((opciones: unknown) => {
+      const config = opciones as { buttons: Array<{ text: string; handler?: (data: { mensaje: string }) => boolean }> };
+      manejadorEnviar = config.buttons.find(boton => boton.text === 'Enviar')?.handler;
+      return Promise.resolve({ present: () => Promise.resolve() } as never);
+    });
+
+    component.activarModoSeleccion();
+    component.alternarSeleccion(residente);
+    component.alternarSeleccion(residente2);
+    expect(component.cantidadSeleccionados).toBe(2);
+
+    await component.enviarMensajeSeleccionados();
+    manejadorEnviar?.({ mensaje: 'Reunión de propietarios el sábado' });
+
+    expect(enviarMensajeIndividualSpy).toHaveBeenCalledWith(
+      jasmine.arrayWithExactContents(['residente-1', 'residente-2']),
+      'Reunión de propietarios el sábado'
+    );
+  });
+
+  it('alternarSeleccion() ignora al propio administrador', () => {
+    component.activarModoSeleccion();
+    component.alternarSeleccion(admin);
+
+    expect(component.cantidadSeleccionados).toBe(0);
   });
 });
