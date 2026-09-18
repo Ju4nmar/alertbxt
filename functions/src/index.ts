@@ -4,6 +4,7 @@ import { getFunctions } from 'firebase-admin/functions';
 import { getMessaging } from 'firebase-admin/messaging';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 
 initializeApp();
@@ -263,3 +264,101 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
     await ref.update({ estado: 'completado' });
   }
 );
+
+interface UsuarioData {
+  nombre?: string;
+  rol?: string;
+  comunidadId?: string;
+}
+
+interface EnviarMensajeIndividualRequest {
+  destinatarioId?: string;
+  mensaje?: string;
+}
+
+const MENSAJE_MAX_LENGTH = 500;
+
+// Callable en vez de trigger de Firestore a propósito: es síncrona, se
+// invoca directo desde el cliente y su resultado (éxito o error) es
+// inmediato — sin la capa de Eventarc/Pub-Sub que dejó a onComunidadWrite
+// sin dispararse nunca en producción (ver ese comentario más arriba).
+export const enviarMensajeIndividual = onCall<EnviarMensajeIndividualRequest>(async request => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+
+  const destinatarioId = request.data.destinatarioId;
+  const mensaje = (request.data.mensaje || '').trim();
+
+  if (!destinatarioId || !mensaje) {
+    throw new HttpsError('invalid-argument', 'Falta el destinatario o el mensaje.');
+  }
+
+  if (mensaje.length > MENSAJE_MAX_LENGTH) {
+    throw new HttpsError('invalid-argument', `El mensaje no debe superar ${MENSAJE_MAX_LENGTH} caracteres.`);
+  }
+
+  const db = getFirestore();
+  const [autorSnap, destinatarioSnap] = await Promise.all([
+    db.doc(`usuarios/${uid}`).get(),
+    db.doc(`usuarios/${destinatarioId}`).get(),
+  ]);
+
+  const autor = autorSnap.data() as UsuarioData | undefined;
+  const destinatario = destinatarioSnap.data() as UsuarioData | undefined;
+
+  if (!autor || autor.rol !== 'admin') {
+    throw new HttpsError('permission-denied', 'Solo un administrador puede enviar mensajes individuales.');
+  }
+
+  if (!destinatario) {
+    throw new HttpsError('not-found', 'El destinatario no existe.');
+  }
+
+  if (!autor.comunidadId || destinatario.comunidadId !== autor.comunidadId) {
+    throw new HttpsError('permission-denied', 'El destinatario no pertenece a tu comunidad.');
+  }
+
+  const mensajeDoc = {
+    autorId: uid,
+    autorNombre: autor.nombre || 'Administrador',
+    mensaje,
+    fecha: new Date().toISOString(),
+  };
+
+  const mensajeRef = await db.collection(`usuarios/${destinatarioId}/mensajes_admin`).add(mensajeDoc);
+
+  const dispositivosSnap = await db.collection(`usuarios/${destinatarioId}/dispositivos`).get();
+  const tokens = dispositivosSnap.docs.map(doc => doc.id);
+
+  if (tokens.length) {
+    const messaging = getMessaging();
+    const response = await messaging.sendEachForMulticast({
+      tokens,
+      notification: {
+        title: `Mensaje de ${mensajeDoc.autorNombre}`,
+        body: mensaje,
+      },
+      data: { mensajeId: mensajeRef.id, tipo: 'mensaje_individual' },
+      webpush: {
+        fcmOptions: { link: '/mensajes' },
+      },
+    });
+
+    await Promise.all(response.responses.map(async (result, index) => {
+      if (result.success) {
+        return;
+      }
+
+      const code = result.error?.code;
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+        await db.doc(`usuarios/${destinatarioId}/dispositivos/${tokens[index]}`).delete();
+      }
+    }));
+  }
+
+  logger.info('Mensaje individual enviado', { mensajeId: mensajeRef.id, destinatarioId, autorId: uid });
+
+  return { mensajeId: mensajeRef.id };
+});

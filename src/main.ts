@@ -7,6 +7,7 @@ import { ReCaptchaEnterpriseProvider, initializeAppCheck, provideAppCheck } from
 import { connectFirestoreEmulator, provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { browserLocalPersistence, connectAuthEmulator, getAuth, provideAuth, setPersistence } from '@angular/fire/auth';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
+import { provideFunctions, getFunctions } from '@angular/fire/functions';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { AppComponent } from './app/app.component';
@@ -51,6 +52,7 @@ bootstrapApplication(AppComponent, {
       return firestore;
     }),
     provideMessaging(() => getMessaging(getApp())),
+    provideFunctions(() => getFunctions(getApp())),
     provideAuth(() => {
       const auth = getAuth();
       if (environment.useEmulators) {

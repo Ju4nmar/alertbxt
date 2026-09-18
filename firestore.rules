@@ -97,6 +97,15 @@ service cloud.firestore {
       match /dispositivos/{token} {
         allow read, create, update, delete: if isSelf(uid);
       }
+
+      // Solo la Cloud Function enviarMensajeIndividual (Admin SDK) escribe
+      // aquí: ya valida ahí que quien envía es admin de la misma comunidad
+      // del destinatario, así que no hace falta repetir esa lógica en una
+      // regla de create para el cliente.
+      match /mensajes_admin/{mensajeId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
     }
 
     match /comunidades/{comunidadId} {

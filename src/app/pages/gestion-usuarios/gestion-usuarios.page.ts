@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import {
   IonButton,
   AlertController,
@@ -17,6 +18,7 @@ import { Subject, distinctUntilChanged, filter, finalize, switchMap, take, takeU
 import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { MensajesService } from '../../services/mensajes.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -34,6 +36,7 @@ import { ToastService } from '../../services/toast.service';
     IonModal,
     IonToolbar,
     CommonModule,
+    FormsModule,
   ],
 })
 export class GestionUsuariosPage implements OnInit, OnDestroy {
@@ -41,6 +44,7 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly alertController = inject(AlertController);
   private readonly toastService = inject(ToastService);
+  private readonly mensajesService = inject(MensajesService);
   private readonly destroy$ = new Subject<void>();
 
   usuarios: Usuario[] = [];
@@ -49,10 +53,27 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   isLoading = false;
   modalAbierto = false;
   actualizandoUsuario = false;
+  enviandoMensaje = false;
   cargaError = '';
+  filtroTexto = '';
 
   get esComunidadDeCasas(): boolean {
     return this.comunidad?.tipoComunidad === 'casas';
+  }
+
+  get usuariosFiltrados(): Usuario[] {
+    const texto = this.filtroTexto.trim().toLowerCase();
+    if (!texto) {
+      return this.usuarios;
+    }
+
+    return this.usuarios.filter(usuario => {
+      const unidad = this.formatearUnidad(usuario).toLowerCase();
+      return (usuario.nombre || '').toLowerCase().includes(texto)
+        || (usuario.numeroApartamento || '').toLowerCase().includes(texto)
+        || (usuario.torre || '').toLowerCase().includes(texto)
+        || unidad.includes(texto);
+    });
   }
 
   constructor() {
@@ -154,6 +175,49 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
     return usuarioActual?.rol === 'admin'
       && usuarioActual.comunidadId === usuario.comunidadId
       && usuarioActual.idUsuario !== usuario.idUsuario;
+  }
+
+  async enviarMensaje(usuario: Usuario): Promise<void> {
+    if (!this.puedeGestionarUsuario(usuario) || !usuario.idUsuario || this.enviandoMensaje) {
+      return;
+    }
+
+    const alerta = await this.alertController.create({
+      header: `Mensaje para ${usuario.nombre}`,
+      inputs: [
+        {
+          name: 'mensaje',
+          type: 'textarea',
+          placeholder: 'Escribe tu mensaje...',
+          attributes: { maxlength: 500 },
+        },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Enviar', handler: data => this.confirmarEnviarMensaje(usuario, (data?.mensaje || '').trim()) },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private confirmarEnviarMensaje(usuario: Usuario, mensaje: string): boolean {
+    if (!mensaje || !usuario.idUsuario) {
+      this.toastService.error('Escribe un mensaje antes de enviarlo.');
+      return false;
+    }
+
+    this.enviandoMensaje = true;
+    this.mensajesService.enviarMensajeIndividual(usuario.idUsuario, mensaje)
+      .pipe(take(1), finalize(() => this.enviandoMensaje = false), takeUntil(this.destroy$))
+      .subscribe({
+        next: () => this.toastService.success(`Mensaje enviado a ${usuario.nombre}`),
+        error: error => {
+          console.error('Error enviando mensaje individual:', error);
+          this.toastService.error(error?.message || 'No se pudo enviar el mensaje.');
+        },
+      });
+
+    return true;
   }
 
   private actualizarUsuario(usuario: Usuario, cambios: Partial<Pick<Usuario, 'activo' | 'rol'>>): void {
