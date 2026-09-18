@@ -38,8 +38,13 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   correo = '';
   telefono = '';
   numeroApartamento = '';
+  torre = '';
   rol: 'admin' | 'residente' = 'residente';
   nombreComunidad = '';
+
+  get esComunidadDeCasas(): boolean {
+    return this.comunidad?.tipoComunidad === 'casas';
+  }
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -50,6 +55,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
         this.correo = user!.correo;
         this.telefono = user!.telefono;
         this.numeroApartamento = user!.numeroApartamento || '';
+        this.torre = user!.torre || '';
         this.rol = user!.rol;
         if (!user!.comunidadId) {
           this.comunidad = null;
@@ -102,6 +108,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
     const numeroApartamento = this.numeroApartamento.trim();
+    const torre = this.torre.trim();
 
     if (!this.usuario || !nombre || !correo || !telefono) {
       await this.toastService.error('Completa todos los campos requeridos');
@@ -112,7 +119,8 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       nombre.length < 3 || nombre.length > 80 ||
       correo.length > 120 ||
       telefono.length < 7 || telefono.length > 15 ||
-      numeroApartamento.length > 20
+      numeroApartamento.length > 20 ||
+      torre.length > 20
     ) {
       await this.toastService.error('Revisa la longitud de los campos');
       return;
@@ -140,6 +148,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       correo,
       telefono,
       numeroApartamento,
+      ...(this.esComunidadDeCasas ? {} : { torre }),
       rol: this.usuario.rol === 'admin' ? this.rol : this.usuario.rol,
     };
 

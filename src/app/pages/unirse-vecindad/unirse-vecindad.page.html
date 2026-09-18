@@ -26,7 +26,7 @@
 
       <form (ngSubmit)="joinComunidad()" #unirseForm="ngForm" class="unirse-form" novalidate>
         <ion-item class="codigo-item">
-          <ion-input label="Código de invitación" label-placement="floating" [(ngModel)]="codigoInvitacion" name="codigoInvitacion" required minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" placeholder="ABCD2345" #codigoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+          <ion-input label="Código de invitación" label-placement="floating" [(ngModel)]="codigoInvitacion" name="codigoInvitacion" required minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" placeholder="ABCD2345" #codigoInput="ngModel" (ionInput)="onCodigoInvitacionChange()"></ion-input>
         </ion-item>
         <div *ngIf="codigoInput.invalid && (codigoInput.dirty || codigoInput.touched)" class="field-error">
           <span *ngIf="codigoInput.errors?.['required']">El código de invitación es obligatorio.</span>
@@ -83,11 +83,21 @@
             <span *ngIf="telefonoInput.errors?.['pattern'] || telefonoInput.errors?.['maxlength']">Usa solo números, espacios o +; máximo 15 caracteres.</span>
           </div>
 
+          <ng-container *ngIf="!esComunidadDeCasas">
+            <ion-item>
+              <ion-input label="Torre" label-placement="floating" [(ngModel)]="torre" name="torre" required maxlength="20" #torreInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+            </ion-item>
+            <div *ngIf="torreInput.invalid && (torreInput.dirty || torreInput.touched)" class="field-error">
+              <span *ngIf="torreInput.errors?.['required']">La torre es obligatoria.</span>
+              <span *ngIf="torreInput.errors?.['maxlength']">No debe superar 20 caracteres.</span>
+            </div>
+          </ng-container>
+
           <ion-item>
-            <ion-input label="Número de apartamento" label-placement="floating" [(ngModel)]="numeroApartamento" name="numeroApartamento" required maxlength="20" #apartamentoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
+            <ion-input [label]="esComunidadDeCasas ? 'Número de casa' : 'Número de apartamento'" label-placement="floating" [(ngModel)]="numeroApartamento" name="numeroApartamento" required maxlength="20" #apartamentoInput="ngModel" (ionInput)="joinError = ''"></ion-input>
           </ion-item>
           <div *ngIf="apartamentoInput.invalid && (apartamentoInput.dirty || apartamentoInput.touched)" class="field-error">
-            <span *ngIf="apartamentoInput.errors?.['required']">El número de apartamento es obligatorio.</span>
+            <span *ngIf="apartamentoInput.errors?.['required']">{{ esComunidadDeCasas ? 'El número de casa es obligatorio.' : 'El número de apartamento es obligatorio.' }}</span>
             <span *ngIf="apartamentoInput.errors?.['maxlength']">No debe superar 20 caracteres.</span>
           </div>
 

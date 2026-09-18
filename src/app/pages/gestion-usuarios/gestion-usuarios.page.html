@@ -14,7 +14,7 @@
       <ion-icon slot="start" name="person-circle" class="usuario-icon"></ion-icon>
       <div class="usuario-info">
         <ion-label class="usuario-nombre">{{ usuario.nombre }}</ion-label>
-        <p class="usuario-apartamento" *ngIf="usuario.numeroApartamento">Apartamento {{ usuario.numeroApartamento }}</p>
+        <p class="usuario-apartamento" *ngIf="usuario.numeroApartamento">{{ formatearUnidad(usuario) }}</p>
         <div class="usuario-tags">
           <span class="usuario-rol" [ngClass]="obtenerBadgeRol(usuario.rol).clase">
             {{ obtenerBadgeRol(usuario.rol).label }}
@@ -63,8 +63,8 @@
           </div>
 
           <div class="detalle-fila">
-            <span class="detalle-label">Apartamento:</span>
-            <span class="detalle-valor">{{ usuarioSeleccionado.numeroApartamento || 'No disponible' }}</span>
+            <span class="detalle-label">{{ esComunidadDeCasas ? 'Casa:' : 'Apartamento:' }}</span>
+            <span class="detalle-valor">{{ formatearUnidad(usuarioSeleccionado) || 'No disponible' }}</span>
           </div>
 
           <div class="detalle-fila">

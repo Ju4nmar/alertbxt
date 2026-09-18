@@ -1,12 +1,12 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
-import { Comunidad, Usuario } from '../models';
+import { Comunidad, TipoComunidad, Usuario } from '../models';
 
 // Lo mínimo que necesitan los flujos de "unirse a una vecindad" (antes de
 // autenticarse no se puede leer más que esto, ver
 // FirestoreService.getComunidadByCodigoInvitacion).
-type ComunidadResumen = { idComunidad: string; nombreComunidad: string };
+type ComunidadResumen = { idComunidad: string; nombreComunidad: string; tipoComunidad?: TipoComunidad };
 import { AuthClientService } from './auth-client.service';
 import { FirestoreService } from './firestore.service';
 import { FcmService } from './fcm.service';
@@ -111,6 +111,7 @@ export class AuthService {
     administradorCorreo: string;
     administradorCelular: string;
     contrasena: string;
+    tipoComunidad: TipoComunidad;
     aceptaTerminos: boolean;
   }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
     if (!data.aceptaTerminos) {
@@ -126,13 +127,14 @@ export class AuthService {
           administradorCorreo: data.administradorCorreo.trim(),
           administradorCelular: data.administradorCelular.trim(),
           codigoInvitacion,
+          tipoComunidad: data.tipoComunidad,
           fechaCreacion: new Date().toISOString(),
         };
 
         const comunidadId = await firstValueFrom(this.firestoreService.addComunidad(comunidadData));
         // Respaldo del cliente además de la Cloud Function onComunidadWrite
         // (ver comentario en FirestoreService.registrarCodigoInvitacion).
-        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(codigoInvitacion, comunidadId, comunidadData.nombreComunidad));
+        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(codigoInvitacion, comunidadId, comunidadData.nombreComunidad, data.tipoComunidad));
         const newUser: Usuario = {
           idUsuario: result.user.uid,
           nombre: data.administradorNombre.trim(),
@@ -325,6 +327,7 @@ export class AuthService {
     correo: string;
     telefono: string;
     numeroApartamento: string;
+    torre?: string;
     password: string;
     codigoInvitacion: string;
     aceptaTerminos: boolean;
@@ -350,6 +353,7 @@ export class AuthService {
               correo: data.correo.trim(),
               telefono: data.telefono.trim(),
               numeroApartamento: data.numeroApartamento.trim(),
+              ...(data.torre?.trim() ? { torre: data.torre.trim() } : {}),
               rol: 'residente',
               activo: true,
               comunidadId: comunidad.idComunidad || '',

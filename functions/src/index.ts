@@ -41,6 +41,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 interface ComunidadData {
   codigoInvitacion?: string;
   nombreComunidad?: string;
+  tipoComunidad?: 'apartamentos' | 'casas';
 }
 
 // Mantiene codigos_invitacion/{codigo} en sincronía con comunidades: es lo
@@ -65,10 +66,14 @@ export const onComunidadWrite = onDocumentWritten('comunidades/{comunidadId}', a
   // sincronizar retroactivamente comunidades que existían antes de esta
   // función, sin necesitar una migración aparte.
   const db = getFirestore();
-  await db.doc(`codigos_invitacion/${data.codigoInvitacion}`).set({
+  const codigoDoc: Record<string, unknown> = {
     comunidadId: event.params.comunidadId,
     nombreComunidad: data.nombreComunidad,
-  });
+  };
+  if (data.tipoComunidad) {
+    codigoDoc['tipoComunidad'] = data.tipoComunidad;
+  }
+  await db.doc(`codigos_invitacion/${data.codigoInvitacion}`).set(codigoDoc);
 
   logger.info('codigos_invitacion sincronizado', { comunidadId: event.params.comunidadId, codigo: data.codigoInvitacion });
 });

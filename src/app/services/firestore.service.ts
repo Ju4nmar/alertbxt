@@ -15,7 +15,7 @@ import {
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, Recordatorio, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Recordatorio, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -266,12 +266,16 @@ export class FirestoreService {
   // un documento aparte en "codigos_invitacion" (doc id = el código),
   // público solo para lectura puntual (get, nunca list), que solo contiene
   // el id y nombre de la comunidad — nunca los datos del administrador.
-  getComunidadByCodigoInvitacion(codigoInvitacion: string): Observable<{ idComunidad: string; nombreComunidad: string } | null> {
+  getComunidadByCodigoInvitacion(codigoInvitacion: string): Observable<{ idComunidad: string; nombreComunidad: string; tipoComunidad?: TipoComunidad } | null> {
     this.isLoadingSubject.next(true);
     const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
 
     return this.inContext(() => docData(ref)).pipe(
-      map(data => data ? { idComunidad: data['comunidadId'] as string, nombreComunidad: data['nombreComunidad'] as string } : null),
+      map(data => data ? {
+        idComunidad: data['comunidadId'] as string,
+        nombreComunidad: data['nombreComunidad'] as string,
+        tipoComunidad: data['tipoComunidad'] as TipoComunidad | undefined,
+      } : null),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
         console.error('Error obteniendo comunidad por código:', error);
@@ -288,10 +292,14 @@ export class FirestoreService {
   // como respaldo, para no depender de un único mecanismo: si la función
   // llega a funcionar más adelante, ambas escrituras son idénticas y no
   // hay conflicto.
-  registrarCodigoInvitacion(codigoInvitacion: string, comunidadId: string, nombreComunidad: string): Observable<void> {
+  registrarCodigoInvitacion(codigoInvitacion: string, comunidadId: string, nombreComunidad: string, tipoComunidad?: TipoComunidad): Observable<void> {
     const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
+    const data: Record<string, unknown> = { comunidadId, nombreComunidad };
+    if (tipoComunidad) {
+      data['tipoComunidad'] = tipoComunidad;
+    }
 
-    return from(this.inContext(() => setDoc(ref, { comunidadId, nombreComunidad }))).pipe(
+    return from(this.inContext(() => setDoc(ref, data))).pipe(
       map(() => void 0),
       catchError(error => {
         console.error('Error registrando código de invitación:', error);
