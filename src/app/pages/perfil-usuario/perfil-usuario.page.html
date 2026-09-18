@@ -2,13 +2,23 @@
   <h2 class="page-title">Perfil de usuario</h2>
 
   <div class="page-shell">
+  <section class="perfil-panel full-span appearance-panel">
+    <h3>Apariencia</h3>
+    <div class="theme-tabs" role="radiogroup" aria-label="Tema de la aplicación">
+      <button type="button" class="theme-chip" role="radio" [attr.aria-checked]="temaActual === 'system'" [class.active]="temaActual === 'system'" (click)="establecerTema('system')">Automático</button>
+      <button type="button" class="theme-chip" role="radio" [attr.aria-checked]="temaActual === 'light'" [class.active]="temaActual === 'light'" (click)="establecerTema('light')">Claro</button>
+      <button type="button" class="theme-chip" role="radio" [attr.aria-checked]="temaActual === 'dark'" [class.active]="temaActual === 'dark'" (click)="establecerTema('dark')">Oscuro</button>
+    </div>
+    <p class="field-hint">"Automático" sigue el tema de tu sistema operativo.</p>
+  </section>
+
   <section class="perfil-panel">
     <h3>Datos personales</h3>
 
     <form *ngIf="usuario" #perfilForm="ngForm" (ngSubmit)="guardarPerfil()" novalidate>
       <div class="perfil-grid">
         <ion-item>
-          <ion-input label="Nombre" label-placement="floating" [(ngModel)]="nombre" name="nombre" required minlength="3" maxlength="80" #nombreInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+          <ion-input label="Nombre" label-placement="floating" [(ngModel)]="nombre" name="nombre" required minlength="3" maxlength="80" #nombreInput="ngModel"></ion-input>
         </ion-item>
         <div *ngIf="nombreInput.invalid && (nombreInput.dirty || nombreInput.touched)" class="field-error">
           <span *ngIf="nombreInput.errors?.['required']">El nombre es requerido.</span>
@@ -17,7 +27,7 @@
         </div>
 
         <ion-item>
-          <ion-input label="Correo" label-placement="floating" type="email" [(ngModel)]="correo" name="correo" required email maxlength="120" #correoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+          <ion-input label="Correo" label-placement="floating" type="email" [(ngModel)]="correo" name="correo" required email maxlength="120" #correoInput="ngModel"></ion-input>
         </ion-item>
         <div *ngIf="correoInput.invalid && (correoInput.dirty || correoInput.touched)" class="field-error">
           <span *ngIf="correoInput.errors?.['required']">El correo es requerido.</span>
@@ -26,7 +36,7 @@
         </div>
 
         <ion-item>
-          <ion-input label="Teléfono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+          <ion-input label="Teléfono" label-placement="floating" type="tel" inputmode="tel" [(ngModel)]="telefono" name="telefono" required minlength="7" maxlength="15" pattern="[0-9+ ]{7,15}" #telefonoInput="ngModel"></ion-input>
         </ion-item>
         <div *ngIf="telefonoInput.invalid && (telefonoInput.dirty || telefonoInput.touched)" class="field-error">
           <span *ngIf="telefonoInput.errors?.['required']">El teléfono es obligatorio.</span>
@@ -35,7 +45,7 @@
         </div>
 
         <ion-item>
-          <ion-input label="Número de apartamento" label-placement="floating" [(ngModel)]="numeroApartamento" name="numeroApartamento" maxlength="20" #apartamentoInput="ngModel" (ionInput)="mensajeGuardado = ''"></ion-input>
+          <ion-input label="Número de apartamento" label-placement="floating" [(ngModel)]="numeroApartamento" name="numeroApartamento" maxlength="20" #apartamentoInput="ngModel"></ion-input>
         </ion-item>
         <div *ngIf="apartamentoInput.invalid && (apartamentoInput.dirty || apartamentoInput.touched)" class="field-error">
           <span *ngIf="apartamentoInput.errors?.['maxlength']">No debe superar 20 caracteres.</span>
@@ -53,7 +63,6 @@
         {{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}
       </ion-button>
     </form>
-    <p *ngIf="mensajeGuardado" class="copy-message">{{ mensajeGuardado }}</p>
   </section>
 
   <section class="perfil-panel">
@@ -61,14 +70,13 @@
 
     <div *ngIf="comunidad; else sinComunidad" class="invite-box">
       <ion-item>
-        <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" [readonly]="usuario?.rol !== 'admin'" maxlength="60" (ionInput)="mensajeGuardadoVecindad = ''"></ion-input>
+        <ion-input label="Nombre de la vecindad" label-placement="floating" [(ngModel)]="nombreComunidad" name="nombreComunidad" [readonly]="usuario?.rol !== 'admin'" maxlength="60"></ion-input>
       </ion-item>
       <p class="field-hint">Máximo 60 caracteres.</p>
 
       <ion-button *ngIf="usuario?.rol === 'admin'" class="save-btn" (click)="guardarVecindad()" [disabled]="isSavingVecindad">
         {{ isSavingVecindad ? 'Guardando...' : 'Guardar Cambios' }}
       </ion-button>
-      <p *ngIf="mensajeGuardadoVecindad" class="copy-message">{{ mensajeGuardadoVecindad }}</p>
 
       <p class="invite-label">Código de invitación</p>
       <div class="codigo-row">
@@ -81,8 +89,6 @@
         <span>{{ enlaceInvitacion }}</span>
         <ion-button size="small" (click)="copiarEnlace()">Copiar enlace</ion-button>
       </div>
-
-      <p *ngIf="mensajeCopiado" class="copy-message">{{ mensajeCopiado }}</p>
     </div>
 
     <ng-template #sinComunidad>
