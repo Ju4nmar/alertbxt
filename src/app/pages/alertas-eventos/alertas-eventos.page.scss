@@ -173,6 +173,32 @@ ion-content.feed-content {
   border-radius: var(--ab-radius-md);
 }
 
+.skeleton-card {
+  cursor: default;
+}
+
+.skeleton-card:hover {
+  transform: none;
+  box-shadow: var(--ab-shadow-md);
+}
+
+.skeleton-card .skeleton-line--short {
+  height: 18px;
+  width: 30%;
+  margin-bottom: 10px;
+}
+
+.skeleton-card .card-header .skeleton-line--wide {
+  height: 18px;
+}
+
+.skeleton-card .skeleton-block {
+  width: 100%;
+  height: 138px;
+  margin: 0.75rem auto 0.7rem;
+  border-radius: var(--ab-radius-md);
+}
+
 .card-image {
   display: block;
   object-fit: cover;

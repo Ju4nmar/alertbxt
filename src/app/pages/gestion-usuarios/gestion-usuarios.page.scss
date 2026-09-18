@@ -66,6 +66,36 @@ ion-content {
   margin-right: 10px;
 }
 
+/* .usuario-item real es un ion-item: sus --background/--padding-* solo
+   afectan las partes internas de su Shadow DOM. El skeleton es un <div>
+   plano, así que necesita el mismo aspecto declarado con propiedades CSS
+   normales en vez de esas variables. */
+.skeleton-item {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 16px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  box-shadow: var(--ab-shadow-sm);
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+.skeleton-item .usuario-info {
+  flex: 1;
+  gap: 8px;
+}
+
+.skeleton-item .skeleton-line--medium {
+  height: 15px;
+}
+
 .usuario-info {
   display: flex;
   flex-direction: column;

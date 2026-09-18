@@ -2,13 +2,16 @@
   <h2 class="page-title">Mensajes</h2>
 
   <div class="page-shell">
-    <div *ngIf="isLoading" class="loading-spinner">
-      Cargando mensajes...
-    </div>
-
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
     </div>
+
+    <ng-container *ngIf="isLoading">
+      <div class="mensaje-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+        <div class="skeleton-line skeleton-line--short"></div>
+        <div class="skeleton-line skeleton-line--wide"></div>
+      </div>
+    </ng-container>
 
     <div *ngFor="let mensaje of mensajes" class="mensaje-item">
       <div class="mensaje-header">

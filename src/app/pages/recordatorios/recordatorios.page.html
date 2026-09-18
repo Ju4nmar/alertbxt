@@ -62,6 +62,17 @@
       {{ cargaError }}
     </div>
 
+    <ng-container *ngIf="isLoadingLista">
+      <div class="recordatorio-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+        <div class="recordatorio-info">
+          <div class="skeleton-line skeleton-line--medium"></div>
+          <div class="recordatorio-meta">
+            <div class="skeleton-line skeleton-line--short"></div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
       <div class="recordatorio-info">
         <h4>{{ recordatorio.tituloRecordatorio }}</h4>

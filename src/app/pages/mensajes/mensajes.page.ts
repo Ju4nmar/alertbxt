@@ -23,6 +23,7 @@ export class MensajesPage implements OnInit, OnDestroy {
   mensajes: MensajeAdmin[] = [];
   isLoading = true;
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3];
 
   constructor() {
     addIcons({ chatbubbleEllipsesOutline });

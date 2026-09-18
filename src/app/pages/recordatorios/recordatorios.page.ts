@@ -31,8 +31,13 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   horaRecordatorio = '';
   idEditando: string | null = null;
   isLoading = false;
+  // Separado de isLoading (que también cubre "guardando el formulario"):
+  // reusarlo para el skeleton de la lista la haría parpadear cada vez que
+  // se guarda un recordatorio, no solo en la carga inicial.
+  isLoadingLista = true;
   recordatorioError = '';
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3];
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -46,10 +51,12 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       next: data => {
         this.recordatorios = data;
         this.isLoading = false;
+        this.isLoadingLista = false;
       },
       error: error => {
         console.error('Error cargando recordatorios:', error);
         this.isLoading = false;
+        this.isLoadingLista = false;
         this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
       },
     });

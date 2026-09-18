@@ -65,8 +65,14 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   compressionInfo = '';
   imagenExistente: string | null = null;
   isLoading = false;
+  // Separado de isLoading (compartido con firestoreService.isLoading$ y con
+  // "guardando el formulario"): reusarlo para el skeleton de la lista la
+  // haría parpadear cada vez que se guarda o edita un aviso, no solo en la
+  // carga inicial.
+  isLoadingLista = true;
   avisoError = '';
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3];
   private currentComunidadId = '';
 
   ngOnInit(): void {
@@ -81,10 +87,12 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     ).subscribe({
       next: data => {
         this.organizarAvisos(data);
+        this.isLoadingLista = false;
       },
       error: error => {
         console.error('Error cargando avisos:', error);
         this.cargaError = 'No se pudieron cargar los avisos. Revisa tu conexión e intenta de nuevo.';
+        this.isLoadingLista = false;
       },
     });
 

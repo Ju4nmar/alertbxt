@@ -1,12 +1,18 @@
 <ion-content>
   <h2 class="page-title">Gestión de usuarios</h2>
 
-  <div *ngIf="isLoading" class="loading-spinner">
-    Cargando usuarios...
-  </div>
-
   <div *ngIf="cargaError" class="error-message" role="alert">
     {{ cargaError }}
+  </div>
+
+  <div class="usuarios-list" *ngIf="isLoading" aria-hidden="true">
+    <div class="usuario-item skeleton-item" *ngFor="let placeholder of skeletonPlaceholders">
+      <div class="skeleton-circle skeleton-avatar"></div>
+      <div class="usuario-info">
+        <div class="skeleton-line skeleton-line--medium"></div>
+        <div class="skeleton-line skeleton-line--short"></div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="!isLoading && usuarios.length" class="filtro-usuarios">
