@@ -6,6 +6,8 @@ import { firstValueFrom, of, Subject, filter, switchMap, takeUntil } from 'rxjs'
 import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { ThemeService, ThemePreference } from '../../services/theme.service';
+import { ToastService } from '../../services/toast.service';
 import { isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
@@ -19,14 +21,14 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly alertController = inject(AlertController);
+  private readonly toastService = inject(ToastService);
+  private readonly themeService = inject(ThemeService);
   private readonly destroy$ = new Subject<void>();
 
   usuario: Usuario | null = null;
   comunidad: Comunidad | null = null;
   enlaceInvitacion = '';
-  mensajeCopiado = '';
-  mensajeGuardado = '';
-  mensajeGuardadoVecindad = '';
+  temaActual: ThemePreference = this.themeService.getPreference();
   isSaving = false;
   isSavingVecindad = false;
   isRequestingDeletion = false;
@@ -96,14 +98,13 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.mensajeGuardado = '';
     const nombre = this.nombre.trim();
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
     const numeroApartamento = this.numeroApartamento.trim();
 
     if (!this.usuario || !nombre || !correo || !telefono) {
-      this.mensajeGuardado = 'Completa todos los campos requeridos';
+      await this.toastService.error('Completa todos los campos requeridos');
       return;
     }
 
@@ -113,12 +114,12 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       telefono.length < 7 || telefono.length > 15 ||
       numeroApartamento.length > 20
     ) {
-      this.mensajeGuardado = 'Revisa la longitud de los campos';
+      await this.toastService.error('Revisa la longitud de los campos');
       return;
     }
 
     if (!isValidEmail(correo) || !isValidPhone(telefono)) {
-      this.mensajeGuardado = 'Revisa el formato del correo o del teléfono.';
+      await this.toastService.error('Revisa el formato del correo o del teléfono.');
       return;
     }
 
@@ -127,7 +128,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     // Sin este control, el intento fallaría en Firestore con un error
     // genérico que no explica la causa real.
     if (this.usuario.rol === 'admin' && this.rol !== this.usuario.rol) {
-      this.mensajeGuardado = 'No puedes cambiar tu propio rol. Pídele a otro administrador que lo haga desde Gestión de usuarios.';
+      await this.toastService.error('No puedes cambiar tu propio rol. Pídele a otro administrador que lo haga desde Gestión de usuarios.');
       return;
     }
 
@@ -146,11 +147,10 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       await firstValueFrom(this.firestoreService.addUsuario(updatedUser));
       this.authService.setCurrentUser(updatedUser);
       this.usuario = updatedUser;
-      this.mensajeGuardado = 'Perfil actualizado';
-      setTimeout(() => this.mensajeGuardado = '', 2500);
+      await this.toastService.success('Perfil actualizado');
     } catch (error) {
       console.error('Error guardando perfil:', error);
-      this.mensajeGuardado = 'No se pudo guardar';
+      await this.toastService.error('No se pudo guardar');
     } finally {
       this.isSaving = false;
     }
@@ -165,16 +165,15 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.mensajeGuardadoVecindad = '';
     const nombreComunidad = this.nombreComunidad.trim();
 
     if (!nombreComunidad) {
-      this.mensajeGuardadoVecindad = 'El nombre de la vecindad es requerido';
+      await this.toastService.error('El nombre de la vecindad es requerido');
       return;
     }
 
     if (nombreComunidad.length > 60) {
-      this.mensajeGuardadoVecindad = 'No debe superar 60 caracteres';
+      await this.toastService.error('No debe superar 60 caracteres');
       return;
     }
 
@@ -199,24 +198,31 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
         ));
       }
 
-      this.mensajeGuardadoVecindad = 'Vecindad actualizada';
-      setTimeout(() => this.mensajeGuardadoVecindad = '', 2500);
+      await this.toastService.success('Vecindad actualizada');
     } catch (error) {
       console.error('Error guardando vecindad:', error);
-      this.mensajeGuardadoVecindad = 'No se pudo guardar';
+      await this.toastService.error('No se pudo guardar');
     } finally {
       this.isSavingVecindad = false;
     }
   }
 
+  establecerTema(preferencia: ThemePreference): void {
+    if (preferencia === this.temaActual) {
+      return;
+    }
+
+    this.temaActual = preferencia;
+    this.themeService.setPreference(preferencia);
+  }
+
   private async copiarTexto(texto: string, mensaje: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(texto);
-      this.mensajeCopiado = mensaje;
-      setTimeout(() => this.mensajeCopiado = '', 2500);
+      await this.toastService.success(mensaje);
     } catch (error) {
       console.error('Error copiando texto:', error);
-      this.mensajeCopiado = 'No se pudo copiar';
+      await this.toastService.error('No se pudo copiar');
     }
   }
 

@@ -26,6 +26,7 @@ import { FirestoreService } from './services/firestore.service';
 import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
+import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -60,6 +61,10 @@ export class AppComponent implements OnDestroy {
   private readonly localNotificationService = inject(LocalNotificationService);
   private readonly fcmService = inject(FcmService);
   private readonly pwaInstallService = inject(PwaInstallService);
+  // Se inyecta aunque no se use directamente aquí: su constructor aplica el
+  // atributo data-theme antes del primer render, para que ninguna pantalla
+  // parpadee con el tema equivocado mientras el usuario navega a Perfil.
+  private readonly themeService = inject(ThemeService);
   private readonly destroy$ = new Subject<void>();
 
   nombreUsuario: string | null = null;

@@ -17,6 +17,7 @@ import { Subject, distinctUntilChanged, filter, finalize, switchMap, take, takeU
 import { Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-gestion-usuarios',
@@ -39,6 +40,7 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
   private readonly alertController = inject(AlertController);
+  private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
   usuarios: Usuario[] = [];
@@ -132,8 +134,14 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
     this.firestoreService.updateUsuarioEstado(usuario.idUsuario, cambios)
       .pipe(take(1), finalize(() => this.actualizandoUsuario = false), takeUntil(this.destroy$))
       .subscribe({
-        next: () => this.usuarioSeleccionado = { ...usuario, ...cambios },
-        error: error => console.error('Error actualizando usuario:', error),
+        next: () => {
+          this.usuarioSeleccionado = { ...usuario, ...cambios };
+          this.toastService.success('Usuario actualizado');
+        },
+        error: error => {
+          console.error('Error actualizando usuario:', error);
+          this.toastService.error('No se pudo actualizar el usuario.');
+        },
       });
   }
 

@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
+import { AlertController, IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Recordatorio } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { LocalNotificationService } from '../../services/local-notification.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-recordatorios',
@@ -19,6 +20,8 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly localNotificationService = inject(LocalNotificationService);
+  private readonly alertController = inject(AlertController);
+  private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
   recordatorios: Recordatorio[] = [];
@@ -109,6 +112,8 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     };
 
     try {
+      const estabaEditando = !!this.idEditando;
+
       if (this.idEditando) {
         await firstValueFrom(this.firestoreService.updateRecordatorio(this.idEditando, recordatorio));
         this.idEditando = null;
@@ -121,6 +126,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
         });
       }
       this.resetForm();
+      await this.toastService.success(estabaEditando ? 'Recordatorio actualizado' : 'Recordatorio creado');
     } catch (error) {
       console.error('Error guardando recordatorio:', error);
       this.recordatorioError = 'No se pudo guardar el recordatorio.';
@@ -144,12 +150,26 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
       return;
     }
 
+    const alerta = await this.alertController.create({
+      header: 'Eliminar recordatorio',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este recordatorio?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarRecordatorio(id) },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private async confirmarEliminarRecordatorio(id: string): Promise<void> {
     this.isLoading = true;
     try {
       await firstValueFrom(this.firestoreService.deleteRecordatorio(id));
+      await this.toastService.success('Recordatorio eliminado');
     } catch (error) {
       console.error('Error eliminando recordatorio:', error);
       this.recordatorioError = 'No se pudo eliminar el recordatorio.';
+      await this.toastService.error('No se pudo eliminar el recordatorio.');
     } finally {
       this.isLoading = false;
     }

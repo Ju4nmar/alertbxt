@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage';
 import {
+  AlertController,
   IonButton,
   IonContent,
   IonInput,
@@ -17,6 +18,7 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ImageOptimizerService } from '../../services/image-optimizer.service';
 import { LocalNotificationService } from '../../services/local-notification.service';
+import { ToastService } from '../../services/toast.service';
 
 const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
 const MAX_ORIGINAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -46,6 +48,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly imageOptimizer = inject(ImageOptimizerService);
   private readonly localNotificationService = inject(LocalNotificationService);
+  private readonly alertController = inject(AlertController);
+  private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
   avisos: Aviso[] = [];
@@ -208,6 +212,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
         avisoData.imagen = urlImagen;
       }
 
+      const estabaEditando = !!this.idEditando;
+
       if (this.idEditando) {
         await firstValueFrom(this.firestoreService.updateAviso(this.idEditando, avisoData));
         this.idEditando = null;
@@ -222,6 +228,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       }
 
       this.limpiarFormulario();
+      await this.toastService.success(estabaEditando ? 'Aviso actualizado' : 'Aviso publicado');
     } catch (error) {
       console.error('Error guardando aviso:', error);
       this.avisoError = 'No se pudo guardar el aviso. Intenta nuevamente.';
@@ -248,11 +255,25 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       return;
     }
 
+    const alerta = await this.alertController.create({
+      header: 'Eliminar aviso',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este aviso?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAviso(id) },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private async confirmarEliminarAviso(id: string): Promise<void> {
     try {
       await firstValueFrom(this.firestoreService.deleteAviso(id));
+      await this.toastService.success('Aviso eliminado');
     } catch (error) {
       console.error('Error eliminando aviso:', error);
       this.avisoError = 'No se pudo eliminar el aviso.';
+      await this.toastService.error('No se pudo eliminar el aviso.');
     }
   }
 
@@ -298,6 +319,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error actualizando estado de la alerta SOS:', error);
       this.avisoError = 'No se pudo actualizar el estado de la alerta.';
+      await this.toastService.error('No se pudo actualizar el estado de la alerta.');
     }
   }
 
