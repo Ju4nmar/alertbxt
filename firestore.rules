@@ -61,7 +61,7 @@ service cloud.firestore {
       allow update: if isSelf(uid)
         && request.resource.data.idUsuario == uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
+          .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'torre', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
         && request.resource.data.rol == resource.data.rol
         && request.resource.data.rol in ['admin', 'residente']
         && (
@@ -125,9 +125,10 @@ service cloud.firestore {
       // mismas condiciones que ya validaba el backend: solo el admin dueño
       // de la comunidad referenciada puede crear su propio código.
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['comunidadId', 'nombreComunidad'])
+        && request.resource.data.keys().hasOnly(['comunidadId', 'nombreComunidad', 'tipoComunidad'])
         && request.resource.data.comunidadId is string
         && request.resource.data.nombreComunidad is string
+        && (!('tipoComunidad' in request.resource.data.keys()) || request.resource.data.tipoComunidad in ['apartamentos', 'casas'])
         && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
         && get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.administradorCorreo == request.auth.token.email;
       allow update, delete: if false;

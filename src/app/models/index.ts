@@ -13,12 +13,19 @@ export interface Aviso {
   estado?: 'pendiente' | 'validado' | 'rechazado';
 }
 
+export type TipoComunidad = 'apartamentos' | 'casas';
+
 export interface Usuario {
   idUsuario?: string;
   nombre: string;
   correo: string;
   telefono: string;
+  // Con tipoComunidad "apartamentos" guarda el número de apartamento y
+  // torre va aparte; con "casas" guarda el número de casa y torre no
+  // aplica. Comunidades creadas antes de este campo no tienen
+  // tipoComunidad (se tratan como "apartamentos" por compatibilidad).
   numeroApartamento?: string;
+  torre?: string;
   rol: 'admin' | 'residente';
   activo: boolean;
   pendienteEliminacion?: boolean;
@@ -35,6 +42,9 @@ export interface Comunidad {
   administradorCorreo: string;
   administradorCelular: string;
   codigoInvitacion: string;
+  // Opcional para comunidades creadas antes de este campo; se tratan
+  // como "apartamentos" donde haga falta un valor por defecto.
+  tipoComunidad?: TipoComunidad;
   fechaCreacion?: string;
   ubicacion?: string;
   logoUrl?: string;

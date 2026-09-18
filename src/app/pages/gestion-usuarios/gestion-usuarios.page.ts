@@ -14,7 +14,7 @@ import {
 import { addIcons } from 'ionicons';
 import { close, personCircle } from 'ionicons/icons';
 import { Subject, distinctUntilChanged, filter, finalize, switchMap, take, takeUntil } from 'rxjs';
-import { Usuario } from '../../models';
+import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ToastService } from '../../services/toast.service';
@@ -45,10 +45,15 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
 
   usuarios: Usuario[] = [];
   usuarioSeleccionado: Usuario | null = null;
+  comunidad: Comunidad | null = null;
   isLoading = false;
   modalAbierto = false;
   actualizandoUsuario = false;
   cargaError = '';
+
+  get esComunidadDeCasas(): boolean {
+    return this.comunidad?.tipoComunidad === 'casas';
+  }
 
   constructor() {
     addIcons({ personCircle, close });
@@ -73,6 +78,32 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
           this.cargaError = 'No se pudieron cargar los usuarios. Revisa tu conexión e intenta de nuevo.';
         },
       });
+
+    // Determina si mostrar "Torre y Apartamento" o "Número de casa" al
+    // listar vecinos (ver Comunidad.tipoComunidad).
+    this.authService.currentUser$
+      .pipe(
+        filter(user => !!user?.comunidadId && user?.rol === 'admin'),
+        distinctUntilChanged((previous, current) => previous?.comunidadId === current?.comunidadId),
+        switchMap(user => this.firestoreService.getComunidadById(user!.comunidadId)),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: comunidad => this.comunidad = comunidad,
+        error: error => console.error('Error cargando la comunidad:', error),
+      });
+  }
+
+  formatearUnidad(usuario: Usuario): string {
+    if (!usuario.numeroApartamento) {
+      return '';
+    }
+
+    if (this.esComunidadDeCasas) {
+      return `Casa ${usuario.numeroApartamento}`;
+    }
+
+    return usuario.torre ? `Torre ${usuario.torre} - Apto ${usuario.numeroApartamento}` : `Apartamento ${usuario.numeroApartamento}`;
   }
 
   ngOnDestroy(): void {

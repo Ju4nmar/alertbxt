@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { FirestoreService } from '../../services/firestore.service';
 import { UnirseVecindadPage } from './unirse-vecindad.page';
 
 describe('UnirseVecindadPage', () => {
@@ -27,6 +28,12 @@ describe('UnirseVecindadPage', () => {
             authReady$: of(true),
             currentUser$: of(null),
             ...authServiceSpy,
+          },
+        },
+        {
+          provide: FirestoreService,
+          useValue: {
+            getComunidadByCodigoInvitacion: () => of(null),
           },
         },
       ],
@@ -63,6 +70,7 @@ describe('UnirseVecindadPage', () => {
     component.correo = 'vecino@alertbxt.test';
     component.telefono = '3000000000';
     component.numeroApartamento = '101';
+    component.torre = '5';
     component.password = 'password123';
     component.confirmPassword = 'password123';
     component.aceptaTerminos = false;
@@ -83,6 +91,7 @@ describe('UnirseVecindadPage', () => {
     component.correo = 'vecino@alertbxt.test';
     component.telefono = '3000000000';
     component.numeroApartamento = '101';
+    component.torre = '5';
     component.password = 'password123';
     component.confirmPassword = 'password123';
     component.aceptaTerminos = true;

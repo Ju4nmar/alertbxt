@@ -50,6 +50,7 @@ describe('GestionUsuariosPage', () => {
           provide: FirestoreService,
           useValue: {
             getUsuariosByComunidad: () => of([residente]),
+            getComunidadById: () => of(null),
             updateUsuarioEstado: updateUsuarioEstadoSpy,
           },
         },

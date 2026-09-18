@@ -179,6 +179,7 @@ describe('AuthService', () => {
       administradorCorreo: 'admin@alertbxt.test',
       administradorCelular: '3000000000',
       contrasena: 'password123',
+      tipoComunidad: 'apartamentos',
       aceptaTerminos: false,
     }))).toBeRejectedWithError('Debe aceptar el tratamiento de datos personales');
 
@@ -201,17 +202,20 @@ describe('AuthService', () => {
       administradorCorreo: 'admin@alertbxt.test',
       administradorCelular: '3000000000',
       contrasena: 'password123',
+      tipoComunidad: 'apartamentos',
       aceptaTerminos: true,
     }));
 
     expect(firestoreServiceSpy.addComunidad).toHaveBeenCalledWith(jasmine.objectContaining({
       nombreComunidad: 'Cañadulce',
       codigoInvitacion: jasmine.stringMatching(/^[A-Z0-9]{8}$/),
+      tipoComunidad: 'apartamentos',
     }));
     expect(firestoreServiceSpy.registrarCodigoInvitacion).toHaveBeenCalledWith(
       jasmine.stringMatching(/^[A-Z0-9]{8}$/),
       'comunidad-nueva',
-      'Cañadulce'
+      'Cañadulce',
+      'apartamentos'
     );
   });
 
