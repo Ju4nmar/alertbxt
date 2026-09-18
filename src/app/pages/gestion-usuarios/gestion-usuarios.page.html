@@ -9,8 +9,18 @@
     {{ cargaError }}
   </div>
 
-  <ion-list *ngIf="!isLoading && usuarios.length" class="usuarios-list">
-    <ion-item *ngFor="let usuario of usuarios; trackBy: trackByUsuarioId" button (click)="abrirDetalle(usuario)" class="usuario-item">
+  <div *ngIf="!isLoading && usuarios.length" class="filtro-usuarios">
+    <input
+      type="search"
+      class="filtro-input"
+      [(ngModel)]="filtroTexto"
+      [placeholder]="esComunidadDeCasas ? 'Buscar por nombre o número de casa' : 'Buscar por nombre, torre o apartamento'"
+      aria-label="Buscar vecino"
+    />
+  </div>
+
+  <ion-list *ngIf="!isLoading && usuariosFiltrados.length" class="usuarios-list">
+    <ion-item *ngFor="let usuario of usuariosFiltrados; trackBy: trackByUsuarioId" button (click)="abrirDetalle(usuario)" class="usuario-item">
       <ion-icon slot="start" name="person-circle" class="usuario-icon"></ion-icon>
       <div class="usuario-info">
         <ion-label class="usuario-nombre">{{ usuario.nombre }}</ion-label>
@@ -26,6 +36,10 @@
       </div>
     </ion-item>
   </ion-list>
+
+  <div *ngIf="!isLoading && usuarios.length && !usuariosFiltrados.length" class="empty-state">
+    <p>Ningún vecino coincide con "{{ filtroTexto }}".</p>
+  </div>
 
   <div *ngIf="!isLoading && !usuarios.length" class="empty-state">
     <p>No hay usuarios en esta comunidad.</p>
@@ -87,6 +101,9 @@
           </div>
 
           <div class="acciones-usuario" *ngIf="puedeGestionarUsuario(usuarioSeleccionado)">
+            <ion-button expand="block" color="tertiary" [disabled]="enviandoMensaje" (click)="enviarMensaje(usuarioSeleccionado)">
+              {{ enviandoMensaje ? 'Enviando...' : 'Enviar mensaje' }}
+            </ion-button>
             <ion-button expand="block" [disabled]="actualizandoUsuario" (click)="alternarEstado(usuarioSeleccionado)">
               {{ usuarioSeleccionado.activo === false ? 'Activar residente' : 'Desactivar residente' }}
             </ion-button>

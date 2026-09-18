@@ -8,6 +8,7 @@ import {
   doc,
   docData,
   limit,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -15,7 +16,7 @@ import {
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, Recordatorio, TipoComunidad, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, MensajeAdmin, Recordatorio, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -400,6 +401,24 @@ export class FirestoreService {
         return throwError(() => new Error('Error al eliminar recordatorio'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  getMensajesAdminByUsuario(idUsuario: string): Observable<MensajeAdmin[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, `usuarios/${idUsuario}/mensajes_admin`);
+      return query(col, orderBy('fecha', 'desc'), limit(100));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idMensaje' })).pipe(
+      map(data => data as MensajeAdmin[]),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo mensajes:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar mensajes'));
+      })
     );
   }
 

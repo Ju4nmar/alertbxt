@@ -4,12 +4,14 @@ import { of } from 'rxjs';
 import { Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { MensajesService } from '../../services/mensajes.service';
 import { GestionUsuariosPage } from './gestion-usuarios.page';
 
 describe('GestionUsuariosPage', () => {
   let component: GestionUsuariosPage;
   let fixture: ComponentFixture<GestionUsuariosPage>;
   let updateUsuarioEstadoSpy: jasmine.Spy;
+  let enviarMensajeIndividualSpy: jasmine.Spy;
   let alertControllerSpy: jasmine.SpyObj<Pick<AlertController, 'create'>>;
 
   const admin: Usuario = {
@@ -34,6 +36,7 @@ describe('GestionUsuariosPage', () => {
 
   beforeEach(async () => {
     updateUsuarioEstadoSpy = jasmine.createSpy('updateUsuarioEstado').and.returnValue(of(void 0));
+    enviarMensajeIndividualSpy = jasmine.createSpy('enviarMensajeIndividual').and.returnValue(of(void 0));
     alertControllerSpy = jasmine.createSpyObj('AlertController', ['create']);
 
     await TestBed.configureTestingModule({
@@ -52,6 +55,12 @@ describe('GestionUsuariosPage', () => {
             getUsuariosByComunidad: () => of([residente]),
             getComunidadById: () => of(null),
             updateUsuarioEstado: updateUsuarioEstadoSpy,
+          },
+        },
+        {
+          provide: MensajesService,
+          useValue: {
+            enviarMensajeIndividual: enviarMensajeIndividualSpy,
           },
         },
         { provide: AlertController, useValue: alertControllerSpy },
@@ -102,5 +111,29 @@ describe('GestionUsuariosPage', () => {
     component.cambiarRol(residente);
 
     expect(updateUsuarioEstadoSpy).toHaveBeenCalledWith('residente-1', { rol: 'admin' });
+  });
+
+  it('enviarMensaje() pide el texto y llama a MensajesService con el destinatario correcto', async () => {
+    let manejadorEnviar: ((data: { mensaje: string }) => boolean) | undefined;
+    alertControllerSpy.create.and.callFake((opciones: unknown) => {
+      const config = opciones as { buttons: Array<{ text: string; handler?: (data: { mensaje: string }) => boolean }> };
+      manejadorEnviar = config.buttons.find(boton => boton.text === 'Enviar')?.handler;
+      return Promise.resolve({ present: () => Promise.resolve() } as never);
+    });
+
+    await component.enviarMensaje(residente);
+
+    expect(alertControllerSpy.create).toHaveBeenCalled();
+    expect(enviarMensajeIndividualSpy).not.toHaveBeenCalled();
+
+    manejadorEnviar?.({ mensaje: 'Recuerda pagar la administración' });
+
+    expect(enviarMensajeIndividualSpy).toHaveBeenCalledWith('residente-1', 'Recuerda pagar la administración');
+  });
+
+  it('enviarMensaje() no se puede usar sobre la propia cuenta del administrador', async () => {
+    await component.enviarMensaje(admin);
+
+    expect(alertControllerSpy.create).not.toHaveBeenCalled();
   });
 });
