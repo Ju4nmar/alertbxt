@@ -13,8 +13,9 @@ import {
   personOutline,
   timeOutline,
 } from 'ionicons/icons';
-import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, map, of, switchMap, takeUntil } from 'rxjs';
+import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, interval, map, of, switchMap, takeUntil } from 'rxjs';
 import { Aviso, Recordatorio } from '../../models';
+import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 
@@ -45,7 +46,7 @@ type FiltroPanel = 'todos' | 'aviso' | 'recordatorio';
   styleUrls: ['./alertas-eventos.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonButton, IonIcon],
+  imports: [CommonModule, FormsModule, IonContent, IonButton, IonIcon, TiempoRelativoPipe],
 })
 export class AlertasEventosPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
@@ -121,6 +122,15 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     this.firestoreService.isLoading$.pipe(takeUntil(this.destroy$)).subscribe(loading => {
       this.isLoading = loading;
     });
+
+    // La página usa OnPush: sin este tick, "hace 2 minutos" se queda
+    // congelado hasta la próxima carga de datos o interacción del usuario,
+    // en vez de ir avanzando por sí solo mientras la pantalla está abierta.
+    interval(60_000).pipe(takeUntil(this.destroy$)).subscribe(() => this.cdr.markForCheck());
+  }
+
+  esFuturo(fecha: string | undefined): boolean {
+    return !!fecha && new Date(fecha).getTime() > Date.now();
   }
 
   ngOnDestroy(): void {
