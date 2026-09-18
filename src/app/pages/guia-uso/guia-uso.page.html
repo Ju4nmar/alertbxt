@@ -1,0 +1,154 @@
+<ion-content>
+  <h2 class="page-title">Guía de uso</h2>
+
+  <div class="page-shell">
+    <p class="guia-intro">
+      Un repaso rápido de cada función de AlertBxt. Toca cualquier sección para
+      expandirla.
+    </p>
+
+    <ion-accordion-group class="guia-accordion" multiple="true">
+      <ion-accordion value="comunidad">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="people-outline"></ion-icon>
+          <ion-label>Únete a tu comunidad</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Para usar AlertBxt necesitas pertenecer a una comunidad. Ve a
+            <strong>Unirme a una vecindad</strong> e ingresa el código de
+            invitación que te dio el administrador de tu conjunto o barrio.
+          </p>
+          <p>
+            Según el tipo de comunidad, te pedirá tu apartamento y torre, o la
+            dirección de tu casa.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="sos">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="alert-circle-outline"></ion-icon>
+          <ion-label>Botón SOS</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            El botón rojo <strong>SOS</strong>, siempre visible abajo, es para
+            emergencias reales. <strong>Mantenlo presionado</strong> hasta que
+            el anillo se complete (cerca de 1.5 segundos) para abrir el
+            formulario y describir qué ocurre y dónde. Un toque simple no lo
+            dispara — es intencional, para evitar alertas accidentales.
+          </p>
+          <p>Al enviarla, toda tu comunidad recibe una notificación inmediata.</p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="alertas">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="calendar-outline"></ion-icon>
+          <ion-label>Alertas y eventos</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Aquí ves los avisos del administrador (emergencia, mantenimiento,
+            informativo), las alertas SOS de tus vecinos y tus próximos
+            recordatorios. Cada tarjeta muestra la fecha exacta y también
+            cuánto falta o cuánto pasó, por ejemplo "vence en 2 días" o "hace
+            3 horas".
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="recordatorios">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="calendar-outline"></ion-icon>
+          <ion-label>Recordatorios</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Crea recordatorios personales (pagos, citas, tareas) con fecha
+            límite. Márcalos como completados cuando termines; mientras estén
+            pendientes también aparecen en tu feed de Alertas y eventos.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="mensajes">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="chatbubble-ellipses-outline"></ion-icon>
+          <ion-label>Mensajes</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            En <strong>Recibidos</strong> ves los mensajes que el
+            administrador te envió directamente a ti.
+          </p>
+          <p *ngIf="esAdmin">
+            Como administrador también tienes la pestaña
+            <strong>Enviados</strong>, con el registro de cada mensaje que has
+            mandado, y puedes escribirle a varios vecinos a la vez marcando
+            sus casillas desde <strong>Gestión de vecinos</strong>.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="perfil">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="person-outline"></ion-icon>
+          <ion-label>Perfil y notificaciones</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Desde <strong>Perfil</strong> actualizas tus datos, cambias entre
+            tema claro, oscuro o el de tu sistema, activas las notificaciones
+            push en este dispositivo y, si lo necesitas, solicitas la
+            eliminación de tu cuenta.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ng-container *ngIf="esAdmin">
+        <ion-accordion value="gestion-avisos">
+          <ion-item slot="header" lines="none">
+            <ion-icon slot="start" name="notifications-outline"></ion-icon>
+            <ion-label>Gestión de avisos (administrador)</ion-label>
+          </ion-item>
+          <div class="ion-padding" slot="content">
+            <p>
+              Publica, edita y elimina los avisos que ve toda tu comunidad:
+              emergencia, mantenimiento o informativo, con imagen opcional.
+            </p>
+          </div>
+        </ion-accordion>
+
+        <ion-accordion value="gestion-usuarios">
+          <ion-item slot="header" lines="none">
+            <ion-icon slot="start" name="people-outline"></ion-icon>
+            <ion-label>Gestión de vecinos (administrador)</ion-label>
+          </ion-item>
+          <div class="ion-padding" slot="content">
+            <p>
+              Consulta y administra a los vecinos de tu comunidad: activa o
+              desactiva cuentas, cambia roles y envíales un mensaje individual
+              o a varios seleccionados a la vez.
+            </p>
+          </div>
+        </ion-accordion>
+
+        <ion-accordion value="estadisticas">
+          <ion-item slot="header" lines="none">
+            <ion-icon slot="start" name="stats-chart-outline"></ion-icon>
+            <ion-label>Estadísticas (administrador)</ion-label>
+          </ion-item>
+          <div class="ion-padding" slot="content">
+            <p>
+              Un vistazo general a tu comunidad: vecinos activos, avisos
+              publicados por tipo y recordatorios completados frente a
+              pendientes.
+            </p>
+          </div>
+        </ion-accordion>
+      </ng-container>
+    </ion-accordion-group>
+  </div>
+</ion-content>
