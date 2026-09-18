@@ -66,3 +66,14 @@ export interface Dispositivo {
   fechaRegistro: string;
 }
 
+// Vive en usuarios/{destinatarioId}/mensajes_admin — solo la Cloud Function
+// enviarMensajeIndividual puede escribir aquí (ver firestore.rules), así
+// que siempre coincide con un push real enviado por un administrador.
+export interface MensajeAdmin {
+  idMensaje?: string;
+  autorId: string;
+  autorNombre: string;
+  mensaje: string;
+  fecha: string;
+}
+

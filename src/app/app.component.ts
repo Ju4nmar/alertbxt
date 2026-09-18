@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
+import { alertCircle, calendar, chatbubbleEllipses, download, logOut, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -84,7 +84,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart});
+    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -254,6 +254,10 @@ export class AppComponent implements OnDestroy {
 
   goToPerfilUsuario(){
     this.navigateTo('/perfil-usuario');
+  }
+
+  goToMensajes(){
+    this.navigateTo('/mensajes');
   }
 
   goToUnirseVecindad(){

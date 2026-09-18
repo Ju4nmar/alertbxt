@@ -1,0 +1,27 @@
+<ion-content>
+  <h2 class="page-title">Mensajes</h2>
+
+  <div class="page-shell">
+    <div *ngIf="isLoading" class="loading-spinner">
+      Cargando mensajes...
+    </div>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">
+      {{ cargaError }}
+    </div>
+
+    <div *ngFor="let mensaje of mensajes" class="mensaje-item">
+      <div class="mensaje-header">
+        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+        <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
+        <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
+      </div>
+      <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
+    </div>
+
+    <div *ngIf="!isLoading && !cargaError && !mensajes.length" class="empty-state">
+      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+      <p>Todavía no tienes mensajes de tu administrador.</p>
+    </div>
+  </div>
+</ion-content>

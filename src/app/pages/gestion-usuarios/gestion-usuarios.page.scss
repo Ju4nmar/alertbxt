@@ -2,6 +2,34 @@ ion-content {
   --background: var(--ion-background-color);
 }
 
+.filtro-usuarios {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 16px 16px;
+}
+
+.filtro-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 1rem;
+  transition: border-color 150ms ease;
+}
+
+.filtro-input::placeholder {
+  color: var(--ab-text-secondary);
+}
+
+.filtro-input:focus {
+  outline: none;
+  border-color: var(--ion-color-primary);
+}
+
 .usuarios-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
