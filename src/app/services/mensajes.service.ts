@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Observable, catchError, from, map, throwError } from 'rxjs';
-import { MensajeAdmin } from '../models';
+import { MensajeAdmin, MensajeEnviado } from '../models';
 import { FirestoreService } from './firestore.service';
 
 @Injectable({ providedIn: 'root' })
@@ -9,13 +9,13 @@ export class MensajesService {
   private readonly functions = inject(Functions);
   private readonly firestoreService = inject(FirestoreService);
 
-  enviarMensajeIndividual(destinatarioId: string, mensaje: string): Observable<void> {
-    const enviarMensaje = httpsCallable<{ destinatarioId: string; mensaje: string }, { mensajeId: string }>(
+  enviarMensajeIndividual(destinatarioIds: string[], mensaje: string): Observable<void> {
+    const enviarMensaje = httpsCallable<{ destinatarioIds: string[]; mensaje: string }, { mensajeId: string; enviados: number }>(
       this.functions,
       'enviarMensajeIndividual'
     );
 
-    return from(enviarMensaje({ destinatarioId, mensaje })).pipe(
+    return from(enviarMensaje({ destinatarioIds, mensaje })).pipe(
       map(() => void 0),
       catchError(error => {
         console.error('Error enviando mensaje individual:', error);
@@ -28,6 +28,10 @@ export class MensajesService {
     return this.firestoreService.getMensajesAdminByUsuario(idUsuario);
   }
 
+  getMensajesEnviados(idUsuario: string): Observable<MensajeEnviado[]> {
+    return this.firestoreService.getMensajesEnviadosByUsuario(idUsuario);
+  }
+
   private getMensajeError(error: unknown): string {
     const code = (error as { code?: string })?.code;
 
@@ -36,7 +40,7 @@ export class MensajesService {
     }
 
     if (code === 'functions/not-found') {
-      return 'El destinatario no existe.';
+      return 'Ningún destinatario válido pertenece a tu comunidad.';
     }
 
     if (code === 'functions/invalid-argument') {

@@ -77,3 +77,12 @@ export interface MensajeAdmin {
   fecha: string;
 }
 
+// Vive en usuarios/{autorId}/mensajes_enviados — copia del admin de un
+// mensaje que envió (a uno o varios destinatarios a la vez).
+export interface MensajeEnviado {
+  idMensaje?: string;
+  destinatarios: { id: string; nombre: string }[];
+  mensaje: string;
+  fecha: string;
+}
+
