@@ -225,6 +225,42 @@ ion-item.ng-invalid.ng-dirty {
   caret-color: var(--ion-color-primary) !important;
 }
 
+/* Los inputs nativos type="date"/"time" (usados donde ion-input de ese tipo
+   da mala UX) quedaban sin ningún estilo propio, mostrando el look por
+   defecto del navegador — se ve claramente distinto a los demás campos del
+   mismo formulario. Se les da el mismo "card field" que ion-item de arriba. */
+:is(form, .invite-box) .native-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+:is(form, .invite-box) .native-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ab-text-secondary);
+}
+
+:is(form, .invite-box) .native-input-group input[type="date"],
+:is(form, .invite-box) .native-input-group input[type="time"] {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 1rem;
+  transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:is(form, .invite-box) .native-input-group input[type="date"]:focus,
+:is(form, .invite-box) .native-input-group input[type="time"]:focus {
+  outline: none;
+  border-color: var(--ion-color-primary);
+}
+
 /* Nota: estos formularios NO se renderizan en Shadow DOM en este build de
    Ionic (ion-input/textarea/select usan CSS "scoped" con clases normales),
    así que los selectores ::part(...) nunca aplican — se usan las clases
