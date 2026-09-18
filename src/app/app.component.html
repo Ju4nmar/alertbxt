@@ -149,11 +149,24 @@
         *ngIf="isLoggedIn"
         type="button"
         class="sos-fab"
-        (click)="generarAlerta()"
+        [class.sos-fab--sosteniendo]="sosSosteniendo"
+        (pointerdown)="iniciarSostenidoSos()"
+        (pointerup)="cancelarSostenidoSos()"
+        (pointerleave)="cancelarSostenidoSos()"
+        (pointercancel)="cancelarSostenidoSos()"
+        (keydown.enter)="iniciarSostenidoSos()"
+        (keydown.space)="iniciarSostenidoSos()"
+        (keyup.enter)="cancelarSostenidoSos()"
+        (keyup.space)="cancelarSostenidoSos()"
+        (contextmenu)="$event.preventDefault()"
         [disabled]="!currentUser?.comunidadId"
-        aria-label="Generar alerta de emergencia SOS"
+        aria-label="Mantén presionado 1.5 segundos para generar una alerta de emergencia SOS"
       >
-        SOS
+        <svg class="sos-fab-ring" viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="sos-fab-ring-track" cx="32" cy="32" r="29"></circle>
+          <circle class="sos-fab-ring-progress" cx="32" cy="32" r="29"></circle>
+        </svg>
+        <span class="sos-fab-label">SOS</span>
       </button>
     </div>
   </ion-split-pane>
