@@ -20,9 +20,10 @@
 
     <ng-container *ngIf="!isLoading && vista === 'recibidos'">
       <div *ngFor="let mensaje of mensajesRecibidos" class="mensaje-item">
-        <button type="button" class="mensaje-header mensaje-header-btn" [attr.aria-expanded]="hiloEstaAbierto(usuarioId, mensaje.idMensaje)" (click)="toggleHilo(usuarioId, mensaje.idMensaje)">
+        <button type="button" class="mensaje-header mensaje-header-btn" [disabled]="mensaje.esRespuesta" [attr.aria-expanded]="hiloEstaAbierto(usuarioId, mensaje.idMensaje)" (click)="toggleHilo(usuarioId, mensaje.idMensaje)">
           <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
           <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
+          <span class="mensaje-etiqueta" *ngIf="mensaje.esRespuesta">Respuesta</span>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
         </button>
         <p class="mensaje-texto">{{ mensaje.mensaje }}</p>

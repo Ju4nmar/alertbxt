@@ -460,8 +460,21 @@ export const responderMensajeAdmin = onCall<ResponderMensajeRequest>(async reque
   const autorNombre = residente?.nombre || 'Vecino';
   const fecha = new Date().toISOString();
 
+  // Además del hilo (bajo el mensaje del residente), la respuesta llega a la
+  // bandeja "Recibidos" del admin como un mensaje más, marcado esRespuesta,
+  // para que la vea junto al resto sin tener que abrir "Enviados".
   const respuestaRef = mensajeRef.collection('respuestas').doc();
-  await respuestaRef.set({ autorId: uid, autorNombre, texto, fecha, esAdmin: false });
+  const batch = db.batch();
+  batch.set(respuestaRef, { autorId: uid, autorNombre, texto, fecha, esAdmin: false });
+  batch.set(db.collection(`usuarios/${mensajeOriginal.autorId}/mensajes_admin`).doc(), {
+    autorId: uid,
+    autorNombre,
+    mensaje: texto,
+    fecha,
+    esRespuesta: true,
+    enRespuestaA: mensajeId,
+  });
+  await batch.commit();
 
   const dispositivosSnap = await db.collection(`usuarios/${mensajeOriginal.autorId}/dispositivos`).get();
   const tokens = dispositivosSnap.docs.map(doc => doc.id);

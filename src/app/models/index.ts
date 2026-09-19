@@ -85,6 +85,9 @@ export interface MensajeAdmin {
   autorNombre: string;
   mensaje: string;
   fecha: string;
+  // Respuesta de un residente a un mensaje del admin (ver responderMensajeAdmin).
+  esRespuesta?: boolean;
+  enRespuestaA?: string;
 }
 
 // Vive en usuarios/{autorId}/mensajes_enviados — copia del admin de un

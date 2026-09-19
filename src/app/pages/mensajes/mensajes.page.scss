@@ -90,6 +90,20 @@ ion-content {
   cursor: pointer;
 }
 
+.mensaje-header-btn:disabled {
+  cursor: default;
+}
+
+.mensaje-etiqueta {
+  padding: 2px 9px;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-tipo-informativo-bg);
+  color: var(--ab-tipo-informativo);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .mensaje-header-btn:focus-visible {
   outline: 2px solid var(--ion-color-primary);
   outline-offset: 2px;
