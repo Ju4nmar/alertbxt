@@ -50,12 +50,22 @@ export interface Comunidad {
   logoUrl?: string;
 }
 
+// idUsuario: recordatorio personal (el propio residente lo creó para sí
+// mismo). usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
+// un administrador asignó a varios vecinos o a toda la comunidad — un solo
+// documento compartido, no una copia por destinatario. Igual que con los
+// personales, "estado" pasa a 'completado' automáticamente cuando se envía
+// el push (ver functions/src/index.ts), no es algo que cada usuario marque
+// por separado.
 export interface Recordatorio {
   idRecordatorios?: string;
   tituloRecordatorio: string;
   descripcionRecordatorio: string;
   fechaHora: string;
-  idUsuario: string;
+  idUsuario?: string;
+  usuariosAsignados?: string[];
+  paraTodaLaComunidad?: boolean;
+  autorId?: string;
   comunidadId: string;
   fechaCreacion?: string;
   estado?: 'pendiente' | 'completado';

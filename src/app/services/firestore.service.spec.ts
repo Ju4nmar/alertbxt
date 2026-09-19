@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
+import { Functions } from '@angular/fire/functions';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import { FirestoreService } from './firestore.service';
@@ -12,6 +13,7 @@ describe('FirestoreService', () => {
       providers: [
         FirestoreService,
         { provide: Firestore, useValue: { updateDoc: updateDocSpy } },
+        { provide: Functions, useValue: {} },
         {
           provide: AuthService,
           useValue: {

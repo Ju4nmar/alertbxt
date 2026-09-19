@@ -14,6 +14,7 @@ import {
   updateDoc,
   where,
 } from '@angular/fire/firestore';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
@@ -25,6 +26,7 @@ import { AuthService } from './auth.service';
 export class FirestoreService {
   private readonly injector = inject(Injector);
   private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
   private readonly isLoadingSubject = new BehaviorSubject<boolean>(false);
   public readonly isLoading$ = this.isLoadingSubject.asObservable();
 
@@ -342,6 +344,61 @@ export class FirestoreService {
     );
   }
 
+  // Recordatorios de grupo que un admin asignó puntualmente a este usuario
+  // (usuariosAsignados array-contains uid) — un solo documento compartido
+  // con otros destinatarios, no una copia propia. Ver getRecordatoriosByUsuario
+  // sobre por qué comunidadId también se filtra aquí.
+  getRecordatoriosAsignadosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, 'recordatorios');
+      return query(
+        col,
+        where('usuariosAsignados', 'array-contains', idUsuario),
+        where('comunidadId', '==', comunidadId),
+        limit(100)
+      );
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios asignados:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios asignados'));
+      })
+    );
+  }
+
+  // Recordatorios que un admin asignó a toda la comunidad (paraTodaLaComunidad).
+  getRecordatoriosParaTodaLaComunidad(comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, 'recordatorios');
+      return query(
+        col,
+        where('comunidadId', '==', comunidadId),
+        where('paraTodaLaComunidad', '==', true),
+        limit(100)
+      );
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios de la comunidad:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios de la comunidad'));
+      })
+    );
+  }
+
   getRecordatoriosByComunidad(comunidadId: string): Observable<Recordatorio[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
@@ -401,6 +458,30 @@ export class FirestoreService {
         return throwError(() => new Error('Error al eliminar recordatorio'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  // A diferencia de addRecordatorio (escritura directa del cliente, para
+  // recordatorios personales), esto pasa por una Cloud Function porque
+  // valida que quien asigna es admin y que los destinatarios pertenecen a
+  // su comunidad — la misma razón por la que enviarMensajeIndividual no es
+  // un simple addDoc.
+  crearRecordatorioAsignado(datos: {
+    titulo: string;
+    descripcion: string;
+    fechaHora: string;
+    usuarioIds?: string[];
+    paraTodos?: boolean;
+  }): Observable<void> {
+    const crear = httpsCallable<typeof datos, { recordatorioId: string }>(this.functions, 'crearRecordatorioAsignado');
+
+    return from(crear(datos)).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error creando recordatorio asignado:', error);
+        const mensaje = (error as { message?: string })?.message;
+        return throwError(() => new Error(mensaje || 'No se pudo crear el recordatorio.'));
+      })
     );
   }
 
@@ -481,7 +562,10 @@ export class FirestoreService {
       tituloRecordatorio: data.tituloRecordatorio || String(data['titulo'] || data['tituloRecordatorio'] || 'Recordatorio'),
       descripcionRecordatorio: data.descripcionRecordatorio || String(data['descripcion'] || ''),
       fechaHora: data.fechaHora || String(data['fecha'] || data['fechaHora'] || ''),
-      idUsuario: data.idUsuario || String(data['idUsuario'] || ''),
+      idUsuario: data.idUsuario || undefined,
+      usuariosAsignados: data.usuariosAsignados,
+      paraTodaLaComunidad: data.paraTodaLaComunidad,
+      autorId: data.autorId,
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
       fechaCreacion: data.fechaCreacion || String(data['fechaCreacion'] || ''),
       estado: data.estado,

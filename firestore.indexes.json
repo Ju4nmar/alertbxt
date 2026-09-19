@@ -15,6 +15,22 @@
         { "fieldPath": "idUsuario", "order": "ASCENDING" },
         { "fieldPath": "fechaHora", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "recordatorios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "usuariosAsignados", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "comunidadId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "recordatorios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "comunidadId", "order": "ASCENDING" },
+        { "fieldPath": "paraTodaLaComunidad", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

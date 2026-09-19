@@ -106,6 +106,68 @@ ion-textarea {
   font-weight: 700;
 }
 
+/* ============== Asignar a (solo admin) ============== */
+.asignacion-field {
+  margin-top: 4px;
+}
+
+.asignacion-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--ab-text-primary);
+}
+
+.asignacion-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.asignacion-chip {
+  padding: 9px 16px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-surface);
+  color: var(--ab-text-secondary);
+  font-family: var(--ab-font-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.asignacion-chip.active {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.asignacion-lista {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface-muted);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.asignacion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  color: var(--ab-text-primary);
+  font-size: 0.92rem;
+}
+
+.asignacion-item input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* En columna: la lista vive junto al formulario en una columna angosta,
    así el título nunca compite por espacio con los botones. */
 .recordatorio-item {
@@ -173,6 +235,15 @@ ion-textarea {
 .estado-pill--completado {
   background: var(--ab-tipo-recordatorio-bg);
   color: var(--ab-tipo-recordatorio);
+}
+
+.origen-pill {
+  padding: 3px 10px;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-tipo-informativo-bg, var(--ab-surface-muted));
+  color: var(--ab-tipo-informativo, var(--ab-text-secondary));
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .acciones {
