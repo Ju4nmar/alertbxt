@@ -27,6 +27,7 @@ import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
 import { ThemeService } from './services/theme.service';
+import { TourService } from './services/tour.service';
 
 @Component({
   selector: 'app-root',
@@ -65,6 +66,7 @@ export class AppComponent implements OnDestroy {
   // atributo data-theme antes del primer render, para que ninguna pantalla
   // parpadee con el tema equivocado mientras el usuario navega a Perfil.
   private readonly themeService = inject(ThemeService);
+  private readonly tourService = inject(TourService);
   private readonly destroy$ = new Subject<void>();
 
   nombreUsuario: string | null = null;
@@ -98,6 +100,7 @@ export class AppComponent implements OnDestroy {
         this.currentUser = user;
         this.isLoggedIn = !!user;
         this.nombreUsuario = user?.nombre || null;
+        this.tourService.iniciarSiEsNuevo(user);
       });
 
     this.pwaInstallService.canInstall$

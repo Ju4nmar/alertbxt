@@ -42,7 +42,7 @@
                 "output": "/"
               }
             ],
-            "styles": ["src/global.scss", "src/theme/variables.scss"],
+            "styles": ["node_modules/shepherd.js/dist/css/shepherd.css", "src/global.scss", "src/theme/variables.scss"],
             "scripts": [],
             "browser": "src/main.ts"
           },
@@ -144,7 +144,7 @@
                 "output": "/"
               }
             ],
-            "styles": ["src/global.scss", "src/theme/variables.scss"],
+            "styles": ["node_modules/shepherd.js/dist/css/shepherd.css", "src/global.scss", "src/theme/variables.scss"],
             "scripts": []
           },
           "configurations": {
