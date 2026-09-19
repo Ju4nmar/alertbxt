@@ -39,12 +39,14 @@
 }
 
 .auth-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
+  display: block;
+  width: min(220px, 60%);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 44px;
   background: rgba(255, 255, 255, 0.14);
-  padding: 10px;
-  margin-bottom: 22px;
+  padding: 22px;
+  margin: 0 0 28px;
 }
 
 .auth-eyebrow {
@@ -243,8 +245,11 @@ ion-input {
     max-width: 100%;
   }
 
-  .auth-hero-title {
-    font-size: 1.9rem;
+  .auth-logo {
+    width: 150px;
+    margin-bottom: 18px;
+    border-radius: 32px;
+    padding: 16px;
   }
 
   .auth-hero-copy {

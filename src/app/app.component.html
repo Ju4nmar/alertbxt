@@ -11,6 +11,9 @@
           <div class="sidebar-brand">
             <img src="assets/icon/Alertlogo.png" alt="" width="30" height="30" />
             <span>AlertBxt</span>
+            <button type="button" class="sidebar-theme sidebar-theme--brand" (click)="alternarTema()" [attr.aria-label]="temaOscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
+              <ion-icon [name]="temaOscuro ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+            </button>
           </div>
 
           <ion-list class="sidebar-list" lines="none">
@@ -70,9 +73,6 @@
               <ion-icon name="person-circle" class="sidebar-user-icon"></ion-icon>
               <span class="sidebar-user-name">{{ nombreUsuario || 'Usuario' }}</span>
             </div>
-            <button type="button" class="sidebar-theme" (click)="alternarTema()" [attr.aria-label]="temaOscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
-              <ion-icon [name]="temaOscuro ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-            </button>
             <button type="button" class="sidebar-logout" (click)="logout()" aria-label="Cerrar sesión">
               <ion-icon name="log-out"></ion-icon>
             </button>

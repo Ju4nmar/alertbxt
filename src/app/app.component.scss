@@ -317,6 +317,10 @@ ion-split-pane {
   }
 }
 
+.sidebar-theme--brand {
+  margin-left: auto;
+}
+
 .sidebar-theme:hover {
   background: var(--ab-surface-muted);
   color: var(--ion-color-primary);
