@@ -8,6 +8,7 @@ import {
   calendarOutline,
   checkmarkCircle,
   locationOutline,
+  navigateOutline,
   notificationsOffOutline,
   personCircleOutline,
   personOutline,
@@ -16,6 +17,7 @@ import {
 import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, interval, map, of, switchMap, takeUntil } from 'rxjs';
 import { Aviso, Recordatorio } from '../../models';
 import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
+import { enlaceMapa } from '../../utils/ubicacion.utils';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 
@@ -33,6 +35,8 @@ interface ModalData {
   descripcion: string;
   fecha?: string;
   ubicacion?: string;
+  enlaceMapa?: string;
+  precisionMetros?: number;
   tipo?: string;
   autor?: string;
   imagen?: string;
@@ -60,6 +64,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       calendarOutline,
       checkmarkCircle,
       locationOutline,
+      navigateOutline,
       notificationsOffOutline,
       personCircleOutline,
       personOutline,
@@ -220,6 +225,10 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
         descripcion: tarjeta.aviso.descripcionAviso || 'Sin descripción',
         fecha: tarjeta.aviso.fechaPublicacion,
         ubicacion: tarjeta.aviso.ubicacionAviso,
+        enlaceMapa: tarjeta.aviso.latitud !== undefined && tarjeta.aviso.longitud !== undefined
+          ? enlaceMapa(tarjeta.aviso.latitud, tarjeta.aviso.longitud)
+          : undefined,
+        precisionMetros: tarjeta.aviso.precisionMetros,
         tipo: tarjeta.aviso.tipoAviso,
         autor: tarjeta.aviso.autorNombre || tarjeta.aviso.autorId || 'Autor no disponible',
         imagen: tarjeta.aviso.imagen,
