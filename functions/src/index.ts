@@ -164,7 +164,14 @@ interface RecordatorioData {
   tituloRecordatorio?: string;
   fechaHora?: string;
   idUsuario?: string;
+  usuariosAsignados?: string[];
+  paraTodaLaComunidad?: boolean;
+  comunidadId?: string;
   estado?: string;
+}
+
+function tieneDestinatario(data: RecordatorioData): boolean {
+  return !!data.idUsuario || !!data.usuariosAsignados?.length || !!data.paraTodaLaComunidad;
 }
 
 interface RecordatorioTaskPayload {
@@ -190,7 +197,7 @@ export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatori
     return;
   }
 
-  if (!data.fechaHora || !data.idUsuario) {
+  if (!data.fechaHora || !tieneDestinatario(data)) {
     return;
   }
 
@@ -228,37 +235,56 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
     }
 
     const data = snapshot.data() as RecordatorioData;
-    if (data.estado === 'completado' || data.fechaHora !== fechaHoraEsperada || !data.idUsuario) {
+    if (data.estado === 'completado' || data.fechaHora !== fechaHoraEsperada || !tieneDestinatario(data)) {
       return;
     }
 
-    const dispositivosSnap = await db.collection(`usuarios/${data.idUsuario}/dispositivos`).get();
-    const tokens = dispositivosSnap.docs.map(doc => doc.id);
+    let destinatarioIds: string[];
+    if (data.paraTodaLaComunidad && data.comunidadId) {
+      const usuariosSnap = await db.collection('usuarios')
+        .where('comunidadId', '==', data.comunidadId)
+        .where('activo', '==', true)
+        .get();
+      destinatarioIds = usuariosSnap.docs.map(doc => doc.id);
+    } else if (data.usuariosAsignados?.length) {
+      destinatarioIds = data.usuariosAsignados;
+    } else {
+      destinatarioIds = data.idUsuario ? [data.idUsuario] : [];
+    }
 
-    if (tokens.length) {
+    const tokenRefs: TokenRef[] = [];
+    await Promise.all(destinatarioIds.map(async id => {
+      const dispositivosSnap = await db.collection(`usuarios/${id}/dispositivos`).get();
+      dispositivosSnap.docs.forEach(doc => tokenRefs.push({ idUsuario: id, token: doc.id }));
+    }));
+
+    if (tokenRefs.length) {
       const messaging = getMessaging();
-      const response = await messaging.sendEachForMulticast({
-        tokens,
-        notification: {
-          title: 'Recordatorio',
-          body: data.tituloRecordatorio || 'Tienes un recordatorio pendiente.',
-        },
-        data: { recordatorioId: idRecordatorio },
-        webpush: {
-          fcmOptions: { link: '/recordatorios' },
-        },
-      });
+      for (const tokenChunk of chunk(tokenRefs, FCM_MULTICAST_LIMIT)) {
+        const response = await messaging.sendEachForMulticast({
+          tokens: tokenChunk.map(ref => ref.token),
+          notification: {
+            title: 'Recordatorio',
+            body: data.tituloRecordatorio || 'Tienes un recordatorio pendiente.',
+          },
+          data: { recordatorioId: idRecordatorio },
+          webpush: {
+            fcmOptions: { link: '/recordatorios' },
+          },
+        });
 
-      await Promise.all(response.responses.map(async (result, index) => {
-        if (result.success) {
-          return;
-        }
+        await Promise.all(response.responses.map(async (result, index) => {
+          if (result.success) {
+            return;
+          }
 
-        const code = result.error?.code;
-        if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-          await db.doc(`usuarios/${data.idUsuario}/dispositivos/${tokens[index]}`).delete();
-        }
-      }));
+          const code = result.error?.code;
+          if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+            const tokenRef = tokenChunk[index];
+            await db.doc(`usuarios/${tokenRef.idUsuario}/dispositivos/${tokenRef.token}`).delete();
+          }
+        }));
+      }
     }
 
     await ref.update({ estado: 'completado' });
@@ -473,4 +499,106 @@ export const responderMensajeAdmin = onCall<ResponderMensajeRequest>(async reque
   });
 
   return { respuestaId: respuestaRef.id };
+});
+
+interface CrearRecordatorioAsignadoRequest {
+  titulo?: string;
+  descripcion?: string;
+  fechaHora?: string;
+  usuarioIds?: string[];
+  paraTodos?: boolean;
+}
+
+const RECORDATORIO_TITULO_MIN = 3;
+const RECORDATORIO_TITULO_MAX = 80;
+const RECORDATORIO_DESC_MIN = 5;
+const RECORDATORIO_DESC_MAX = 300;
+const MAX_ASIGNADOS_RECORDATORIO = 200;
+
+// Crea UN solo recordatorio compartido (no una copia por destinatario, a
+// diferencia de enviarMensajeIndividual): "completado" ya es automático —
+// lo pone enviarRecordatorioPush cuando llega la fecha, igual que en los
+// recordatorios personales — así que no hace falta rastrear el progreso de
+// cada destinatario por separado, ni duplicar el documento.
+export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest>(async request => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+
+  const titulo = (request.data.titulo || '').trim();
+  const descripcion = (request.data.descripcion || '').trim();
+  const fechaHoraTexto = request.data.fechaHora || '';
+  const paraTodos = !!request.data.paraTodos;
+  const usuarioIds = Array.from(new Set((request.data.usuarioIds || []).filter(Boolean)));
+
+  if (!titulo || !descripcion || !fechaHoraTexto) {
+    throw new HttpsError('invalid-argument', 'Completa título, descripción y fecha.');
+  }
+
+  if (titulo.length < RECORDATORIO_TITULO_MIN || titulo.length > RECORDATORIO_TITULO_MAX) {
+    throw new HttpsError('invalid-argument', 'Revisa la longitud del título.');
+  }
+
+  if (descripcion.length < RECORDATORIO_DESC_MIN || descripcion.length > RECORDATORIO_DESC_MAX) {
+    throw new HttpsError('invalid-argument', 'Revisa la longitud de la descripción.');
+  }
+
+  if (!paraTodos && !usuarioIds.length) {
+    throw new HttpsError('invalid-argument', 'Selecciona al menos un vecino, o marca "Todos".');
+  }
+
+  if (usuarioIds.length > MAX_ASIGNADOS_RECORDATORIO) {
+    throw new HttpsError('invalid-argument', `No puedes asignar a más de ${MAX_ASIGNADOS_RECORDATORIO} vecinos a la vez.`);
+  }
+
+  const fechaHora = new Date(fechaHoraTexto);
+  if (Number.isNaN(fechaHora.getTime()) || fechaHora.getTime() < Date.now()) {
+    throw new HttpsError('invalid-argument', 'La fecha y hora del recordatorio deben ser futuras.');
+  }
+
+  const db = getFirestore();
+  const autorSnap = await db.doc(`usuarios/${uid}`).get();
+  const autor = autorSnap.data() as UsuarioData | undefined;
+
+  if (!autor || autor.rol !== 'admin' || !autor.comunidadId) {
+    throw new HttpsError('permission-denied', 'Solo un administrador puede asignar recordatorios a otros vecinos.');
+  }
+
+  const recordatorioData: Record<string, unknown> = {
+    tituloRecordatorio: titulo,
+    descripcionRecordatorio: descripcion,
+    fechaHora: fechaHora.toISOString(),
+    comunidadId: autor.comunidadId,
+    autorId: uid,
+    fechaCreacion: new Date().toISOString(),
+    estado: 'pendiente',
+  };
+
+  if (paraTodos) {
+    recordatorioData['paraTodaLaComunidad'] = true;
+  } else {
+    const destinatarioSnaps = await Promise.all(usuarioIds.map(id => db.doc(`usuarios/${id}`).get()));
+    const asignadosValidos = destinatarioSnaps
+      .map((snap, index) => ({ id: usuarioIds[index], data: snap.data() as UsuarioData | undefined }))
+      .filter(({ data }) => data?.comunidadId === autor.comunidadId)
+      .map(({ id }) => id);
+
+    if (!asignadosValidos.length) {
+      throw new HttpsError('not-found', 'Ningún vecino seleccionado pertenece a tu comunidad.');
+    }
+
+    recordatorioData['usuariosAsignados'] = asignadosValidos;
+  }
+
+  const ref = await db.collection('recordatorios').add(recordatorioData);
+
+  logger.info('Recordatorio asignado creado', {
+    recordatorioId: ref.id,
+    autorId: uid,
+    paraTodos,
+    asignados: paraTodos ? undefined : (recordatorioData['usuariosAsignados'] as string[]).length,
+  });
+
+  return { recordatorioId: ref.id };
 });

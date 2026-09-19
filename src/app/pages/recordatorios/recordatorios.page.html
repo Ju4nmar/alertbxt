@@ -50,6 +50,24 @@
       </ion-button>
     </div>
 
+    <div class="asignacion-field" *ngIf="esAdmin && !idEditando">
+      <label class="asignacion-label">Asignar a</label>
+      <div class="asignacion-tabs" role="radiogroup" aria-label="Asignar recordatorio a">
+        <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'yo'" [class.active]="modoAsignacion === 'yo'" (click)="elegirModoAsignacion('yo')">Solo yo</button>
+        <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'elegir'" [class.active]="modoAsignacion === 'elegir'" (click)="elegirModoAsignacion('elegir')">Elegir vecinos</button>
+        <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'todos'" [class.active]="modoAsignacion === 'todos'" (click)="elegirModoAsignacion('todos')">Todos</button>
+      </div>
+
+      <div class="asignacion-lista" *ngIf="modoAsignacion === 'elegir'">
+        <p class="field-hint" *ngIf="!comunidadUsuarios.length">No hay otros vecinos en tu comunidad todavía.</p>
+        <label class="asignacion-item" *ngFor="let vecino of comunidadUsuarios">
+          <input type="checkbox" [checked]="estaAsignado(vecino)" (change)="alternarAsignado(vecino)" [attr.aria-label]="'Asignar a ' + vecino.nombre" />
+          {{ vecino.nombre }}
+        </label>
+        <p class="field-hint" *ngIf="cantidadAsignados">{{ cantidadAsignados }} {{ cantidadAsignados === 1 ? 'vecino seleccionado' : 'vecinos seleccionados' }}</p>
+      </div>
+    </div>
+
     <div *ngIf="recordatorioError" class="error-message" role="alert">
       {{ recordatorioError }}
     </div>
@@ -84,12 +102,13 @@
           <span class="estado-pill" [class.estado-pill--completado]="recordatorio.estado === 'completado'">
             {{ recordatorio.estado === 'completado' ? 'Completado' : 'Pendiente' }}
           </span>
+          <span class="origen-pill" *ngIf="origenRecordatorio(recordatorio) as origen">{{ origen }}</span>
         </div>
       </div>
 
-      <div class="acciones">
+      <div class="acciones" *ngIf="esPersonal(recordatorio)">
         <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>
-        <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio.idRecordatorios)">Eliminar</button>
+        <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio)">Eliminar</button>
       </div>
     </div>
   </div>

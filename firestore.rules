@@ -190,9 +190,14 @@ service cloud.firestore {
     }
 
     match /recordatorios/{recordatorioId} {
+      // usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
+      // creó un admin (solo crearRecordatorioAsignado, Admin SDK, escribe
+      // esos campos — no hay regla de create para ellos desde el cliente).
       allow read: if isMemberOfCommunity(resource.data.comunidadId)
         && (
           resource.data.idUsuario == request.auth.uid
+          || resource.data.get('usuariosAsignados', []).hasAny([request.auth.uid])
+          || resource.data.get('paraTodaLaComunidad', false) == true
           || isAdminForCommunity(resource.data.comunidadId)
         );
       allow delete: if isMemberOfCommunity(resource.data.comunidadId)
