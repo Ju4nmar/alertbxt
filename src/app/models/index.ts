@@ -78,11 +78,25 @@ export interface MensajeAdmin {
 }
 
 // Vive en usuarios/{autorId}/mensajes_enviados — copia del admin de un
-// mensaje que envió (a uno o varios destinatarios a la vez).
+// mensaje que envió (a uno o varios destinatarios a la vez). mensajeId es el
+// id del documento correspondiente en usuarios/{destinatario}/mensajes_admin
+// (distinto por destinatario): permite abrir el hilo de respuestas de cada
+// quien desde la vista "Enviados" sin tener que buscarlo aparte.
 export interface MensajeEnviado {
   idMensaje?: string;
-  destinatarios: { id: string; nombre: string }[];
+  destinatarios: { id: string; nombre: string; mensajeId?: string }[];
   mensaje: string;
   fecha: string;
+}
+
+// Vive en usuarios/{destinatarioId}/mensajes_admin/{mensajeId}/respuestas —
+// solo la Cloud Function responderMensajeAdmin puede escribir aquí.
+export interface RespuestaMensaje {
+  idRespuesta?: string;
+  autorId: string;
+  autorNombre: string;
+  texto: string;
+  fecha: string;
+  esAdmin: boolean;
 }
 

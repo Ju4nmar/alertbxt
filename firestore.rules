@@ -105,6 +105,19 @@ service cloud.firestore {
       match /mensajes_admin/{mensajeId} {
         allow read: if isSelf(uid);
         allow write: if false;
+
+        // Solo responderMensajeAdmin (Admin SDK) escribe aquí. El admin que
+        // originó el mensaje puede leer el hilo aunque no sea el dueño del
+        // documento padre (uid == el residente), verificando con get() que
+        // su uid coincide con el autorId de ese mensaje original.
+        match /respuestas/{respuestaId} {
+          allow read: if isSelf(uid)
+            || (
+              signedIn()
+              && get(/databases/$(database)/documents/usuarios/$(uid)/mensajes_admin/$(mensajeId)).data.autorId == request.auth.uid
+            );
+          allow write: if false;
+        }
       }
 
       // Copia para el admin de lo que envió (a uno o varios destinatarios a
