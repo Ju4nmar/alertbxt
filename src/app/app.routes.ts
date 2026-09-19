@@ -48,6 +48,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
+    path: 'guia-uso',
+    loadComponent: () => import('./pages/guia-uso/guia-uso.page').then(m => m.GuiaUsoPage),
+    canActivate: [AuthGuard],
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then(m => m.LoginPage),
     canActivate: [GuestGuard],
