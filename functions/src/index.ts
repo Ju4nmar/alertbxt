@@ -272,11 +272,12 @@ interface UsuarioData {
 }
 
 interface EnviarMensajeIndividualRequest {
-  destinatarioId?: string;
+  destinatarioIds?: string[];
   mensaje?: string;
 }
 
 const MENSAJE_MAX_LENGTH = 500;
+const MAX_DESTINATARIOS = 50;
 
 // Callable en vez de trigger de Firestore a propósito: es síncrona, se
 // invoca directo desde el cliente y su resultado (éxito o error) es
@@ -288,11 +289,15 @@ export const enviarMensajeIndividual = onCall<EnviarMensajeIndividualRequest>(as
     throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
   }
 
-  const destinatarioId = request.data.destinatarioId;
+  const destinatarioIds = Array.from(new Set((request.data.destinatarioIds || []).filter(Boolean)));
   const mensaje = (request.data.mensaje || '').trim();
 
-  if (!destinatarioId || !mensaje) {
+  if (!destinatarioIds.length || !mensaje) {
     throw new HttpsError('invalid-argument', 'Falta el destinatario o el mensaje.');
+  }
+
+  if (destinatarioIds.length > MAX_DESTINATARIOS) {
+    throw new HttpsError('invalid-argument', `No puedes enviar a más de ${MAX_DESTINATARIOS} vecinos a la vez.`);
   }
 
   if (mensaje.length > MENSAJE_MAX_LENGTH) {
@@ -300,65 +305,78 @@ export const enviarMensajeIndividual = onCall<EnviarMensajeIndividualRequest>(as
   }
 
   const db = getFirestore();
-  const [autorSnap, destinatarioSnap] = await Promise.all([
-    db.doc(`usuarios/${uid}`).get(),
-    db.doc(`usuarios/${destinatarioId}`).get(),
-  ]);
-
+  const autorSnap = await db.doc(`usuarios/${uid}`).get();
   const autor = autorSnap.data() as UsuarioData | undefined;
-  const destinatario = destinatarioSnap.data() as UsuarioData | undefined;
 
-  if (!autor || autor.rol !== 'admin') {
+  if (!autor || autor.rol !== 'admin' || !autor.comunidadId) {
     throw new HttpsError('permission-denied', 'Solo un administrador puede enviar mensajes individuales.');
   }
 
-  if (!destinatario) {
-    throw new HttpsError('not-found', 'El destinatario no existe.');
+  const destinatarioSnaps = await Promise.all(destinatarioIds.map(id => db.doc(`usuarios/${id}`).get()));
+  const destinatariosValidos: { id: string; nombre: string }[] = [];
+  destinatarioSnaps.forEach((snap, index) => {
+    const data = snap.data() as UsuarioData | undefined;
+    if (data && data.comunidadId === autor.comunidadId) {
+      destinatariosValidos.push({ id: destinatarioIds[index], nombre: data.nombre || 'Vecino' });
+    }
+  });
+
+  if (!destinatariosValidos.length) {
+    throw new HttpsError('not-found', 'Ningún destinatario válido pertenece a tu comunidad.');
   }
 
-  if (!autor.comunidadId || destinatario.comunidadId !== autor.comunidadId) {
-    throw new HttpsError('permission-denied', 'El destinatario no pertenece a tu comunidad.');
-  }
+  const fecha = new Date().toISOString();
+  const autorNombre = autor.nombre || 'Administrador';
 
-  const mensajeDoc = {
-    autorId: uid,
-    autorNombre: autor.nombre || 'Administrador',
-    mensaje,
-    fecha: new Date().toISOString(),
-  };
+  const batch = db.batch();
+  const mensajeEnviadoRef = db.collection(`usuarios/${uid}/mensajes_enviados`).doc();
+  batch.set(mensajeEnviadoRef, { destinatarios: destinatariosValidos, mensaje, fecha });
+  destinatariosValidos.forEach(destinatario => {
+    const ref = db.collection(`usuarios/${destinatario.id}/mensajes_admin`).doc();
+    batch.set(ref, { autorId: uid, autorNombre, mensaje, fecha });
+  });
+  await batch.commit();
 
-  const mensajeRef = await db.collection(`usuarios/${destinatarioId}/mensajes_admin`).add(mensajeDoc);
+  const tokenRefs: TokenRef[] = [];
+  await Promise.all(destinatariosValidos.map(async destinatario => {
+    const dispositivosSnap = await db.collection(`usuarios/${destinatario.id}/dispositivos`).get();
+    dispositivosSnap.docs.forEach(doc => tokenRefs.push({ idUsuario: destinatario.id, token: doc.id }));
+  }));
 
-  const dispositivosSnap = await db.collection(`usuarios/${destinatarioId}/dispositivos`).get();
-  const tokens = dispositivosSnap.docs.map(doc => doc.id);
-
-  if (tokens.length) {
+  if (tokenRefs.length) {
     const messaging = getMessaging();
-    const response = await messaging.sendEachForMulticast({
-      tokens,
-      notification: {
-        title: `Mensaje de ${mensajeDoc.autorNombre}`,
-        body: mensaje,
-      },
-      data: { mensajeId: mensajeRef.id, tipo: 'mensaje_individual' },
-      webpush: {
-        fcmOptions: { link: '/mensajes' },
-      },
-    });
+    for (const tokenChunk of chunk(tokenRefs, FCM_MULTICAST_LIMIT)) {
+      const response = await messaging.sendEachForMulticast({
+        tokens: tokenChunk.map(ref => ref.token),
+        notification: {
+          title: `Mensaje de ${autorNombre}`,
+          body: mensaje,
+        },
+        data: { tipo: 'mensaje_individual' },
+        webpush: {
+          fcmOptions: { link: '/mensajes' },
+        },
+      });
 
-    await Promise.all(response.responses.map(async (result, index) => {
-      if (result.success) {
-        return;
-      }
+      await Promise.all(response.responses.map(async (result, index) => {
+        if (result.success) {
+          return;
+        }
 
-      const code = result.error?.code;
-      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-        await db.doc(`usuarios/${destinatarioId}/dispositivos/${tokens[index]}`).delete();
-      }
-    }));
+        const code = result.error?.code;
+        if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+          const tokenRef = tokenChunk[index];
+          await db.doc(`usuarios/${tokenRef.idUsuario}/dispositivos/${tokenRef.token}`).delete();
+        }
+      }));
+    }
   }
 
-  logger.info('Mensaje individual enviado', { mensajeId: mensajeRef.id, destinatarioId, autorId: uid });
+  logger.info('Mensaje individual enviado', {
+    mensajeEnviadoId: mensajeEnviadoRef.id,
+    destinatarios: destinatariosValidos.map(d => d.id),
+    autorId: uid,
+  });
 
-  return { mensajeId: mensajeRef.id };
+  return { mensajeId: mensajeEnviadoRef.id, enviados: destinatariosValidos.length };
 });

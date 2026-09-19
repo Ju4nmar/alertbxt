@@ -55,6 +55,7 @@
           <p class="card-date">
             <ion-icon name="time-outline"></ion-icon>
             {{ aviso.fechaPublicacion | date: 'short' }}
+            <span class="card-date-relativo">(publicado {{ aviso.fechaPublicacion | tiempoRelativo }})</span>
           </p>
           <p class="card-date" *ngIf="aviso.ubicacionAviso">
             <ion-icon name="location-outline"></ion-icon>
@@ -88,6 +89,7 @@
             <p class="card-date">
               <ion-icon name="calendar-outline"></ion-icon>
               {{ recordatorio.fechaHora | date: 'medium' }}
+              <span class="card-date-relativo">({{ esFuturo(recordatorio.fechaHora) ? 'vence' : 'venció' }} {{ recordatorio.fechaHora | tiempoRelativo }})</span>
             </p>
             <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripción') | slice:0:140 }}</p>
             <div class="reminder-mark" [class.completed]="isReminderCompleted(recordatorio)">

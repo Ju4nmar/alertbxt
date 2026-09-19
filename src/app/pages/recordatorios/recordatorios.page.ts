@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AlertController, IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Recordatorio } from '../../models';
+import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { LocalNotificationService } from '../../services/local-notification.service';
@@ -14,7 +15,7 @@ import { ToastService } from '../../services/toast.service';
   templateUrl: './recordatorios.page.html',
   styleUrls: ['./recordatorios.page.scss'],
   standalone: true,
-  imports: [IonButton, IonInput, IonItem, IonTextarea, IonContent, CommonModule, FormsModule],
+  imports: [IonButton, IonInput, IonItem, IonTextarea, IonContent, CommonModule, FormsModule, TiempoRelativoPipe],
 })
 export class RecordatoriosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
@@ -184,6 +185,10 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
   trackByRecordatorioId(_: number, recordatorio: Recordatorio): string {
     return recordatorio.idRecordatorios || recordatorio.fechaHora || recordatorio.tituloRecordatorio;
+  }
+
+  esFuturo(fecha: string | undefined): boolean {
+    return !!fecha && new Date(fecha).getTime() > Date.now();
   }
 
   private toLocalDateInputValue(date: Date): string {

@@ -2,6 +2,11 @@
   <h2 class="page-title">Mensajes</h2>
 
   <div class="page-shell">
+    <div *ngIf="esAdmin" class="vista-tabs" role="tablist" aria-label="Bandeja de mensajes">
+      <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'recibidos'" [class.active]="vista === 'recibidos'" (click)="cambiarVista('recibidos')">Recibidos</button>
+      <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'enviados'" [class.active]="vista === 'enviados'" (click)="cambiarVista('enviados')">Enviados</button>
+    </div>
+
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
     </div>
@@ -13,18 +18,36 @@
       </div>
     </ng-container>
 
-    <div *ngFor="let mensaje of mensajes" class="mensaje-item">
-      <div class="mensaje-header">
-        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-        <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
-        <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
+    <ng-container *ngIf="!isLoading && vista === 'recibidos'">
+      <div *ngFor="let mensaje of mensajesRecibidos" class="mensaje-item">
+        <div class="mensaje-header">
+          <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+          <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
+          <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
+        </div>
+        <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
       </div>
-      <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
-    </div>
 
-    <div *ngIf="!isLoading && !cargaError && !mensajes.length" class="empty-state">
-      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-      <p>Todavía no tienes mensajes de tu administrador.</p>
-    </div>
+      <div *ngIf="!cargaError && !mensajesRecibidos.length" class="empty-state">
+        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+        <p>Todavía no tienes mensajes de tu administrador.</p>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="!isLoading && vista === 'enviados'">
+      <div *ngFor="let mensaje of mensajesEnviados" class="mensaje-item">
+        <div class="mensaje-header">
+          <ion-icon name="paper-plane-outline"></ion-icon>
+          <span class="mensaje-autor">Para {{ formatearDestinatarios(mensaje) }}</span>
+          <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
+        </div>
+        <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
+      </div>
+
+      <div *ngIf="!mensajesEnviados.length" class="empty-state">
+        <ion-icon name="paper-plane-outline"></ion-icon>
+        <p>Todavía no le has enviado mensajes a ningún vecino.</p>
+      </div>
+    </ng-container>
   </div>
 </ion-content>
