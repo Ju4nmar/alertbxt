@@ -244,6 +244,7 @@ ion-content {
 .alerta-sos-item .acciones {
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
   flex-shrink: 0;
@@ -282,6 +283,12 @@ ion-content {
   --background: var(--ion-color-success);
   --background-activated: var(--ion-color-success-shade);
   --color: #ffffff;
+}
+
+.btn-rechazar-aviso {
+  --background: var(--ion-color-warning);
+  --background-activated: var(--ion-color-warning-shade);
+  --color: var(--ion-color-warning-contrast);
 }
 
 @media (min-width: 769px) {
