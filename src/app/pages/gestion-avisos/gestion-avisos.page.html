@@ -75,6 +75,17 @@
 
     <div class="lista-avisos">
       <h3>Avisos existentes</h3>
+
+      <ng-container *ngIf="isLoadingLista">
+        <div class="aviso-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+          <div class="aviso-info">
+            <div class="skeleton-line skeleton-line--short"></div>
+            <div class="skeleton-line skeleton-line--wide"></div>
+            <div class="skeleton-line skeleton-line--medium"></div>
+          </div>
+        </div>
+      </ng-container>
+
       <div *ngFor="let aviso of avisosAdministrativos; trackBy: trackByAvisoId" class="aviso-item" [ngClass]="'tipo-' + (aviso.tipoAviso || 'informativo')">
         <div class="aviso-info">
           <span class="ab-badge" [ngClass]="'ab-badge--' + (aviso.tipoAviso || 'informativo')">{{ aviso.tipoAviso || 'informativo' }}</span>
@@ -87,7 +98,7 @@
         </div>
       </div>
 
-      <p *ngIf="!avisosAdministrativos.length" class="empty-list">No hay avisos administrativos publicados.</p>
+      <p *ngIf="!isLoadingLista && !avisosAdministrativos.length" class="empty-list">No hay avisos administrativos publicados.</p>
     </div>
 
     <div class="lista-avisos lista-alertas-sos">
@@ -110,7 +121,7 @@
         </div>
       </div>
 
-      <p *ngIf="!alertasSos.length" class="empty-list">No hay alertas SOS pendientes de moderación.</p>
+      <p *ngIf="!isLoadingLista && !alertasSos.length" class="empty-list">No hay alertas SOS pendientes de moderación.</p>
     </div>
   </div>
   </div>

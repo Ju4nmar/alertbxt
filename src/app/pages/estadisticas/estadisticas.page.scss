@@ -129,6 +129,22 @@ ion-content {
   height: 168px;
 }
 
+.skeleton-section-title {
+  height: 18px;
+  width: 140px;
+  margin-bottom: var(--ab-space-3);
+}
+
+.skeleton-donut {
+  flex-shrink: 0;
+  width: 168px;
+  height: 168px;
+}
+
+.skeleton-chart-card {
+  justify-content: center;
+}
+
 .donut-svg {
   width: 100%;
   height: 100%;

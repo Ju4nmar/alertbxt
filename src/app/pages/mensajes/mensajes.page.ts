@@ -29,6 +29,7 @@ export class MensajesPage implements OnInit, OnDestroy {
   mensajesEnviados: MensajeEnviado[] = [];
   isLoading = true;
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3];
 
   get esAdmin(): boolean {
     return this.usuario?.rol === 'admin';

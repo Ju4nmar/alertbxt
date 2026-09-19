@@ -76,6 +76,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   modalData: ModalData | null = null;
   isLoading = false;
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3, 4, 5, 6];
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(

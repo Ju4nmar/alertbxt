@@ -7,13 +7,16 @@
       <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'enviados'" [class.active]="vista === 'enviados'" (click)="cambiarVista('enviados')">Enviados</button>
     </div>
 
-    <div *ngIf="isLoading" class="loading-spinner">
-      Cargando mensajes...
-    </div>
-
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
     </div>
+
+    <ng-container *ngIf="isLoading">
+      <div class="mensaje-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+        <div class="skeleton-line skeleton-line--short"></div>
+        <div class="skeleton-line skeleton-line--wide"></div>
+      </div>
+    </ng-container>
 
     <ng-container *ngIf="!isLoading && vista === 'recibidos'">
       <div *ngFor="let mensaje of mensajesRecibidos" class="mensaje-item">

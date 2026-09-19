@@ -66,6 +66,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
   donutRecordatorios: DonutSegmento[] = [];
   isLoading = true;
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3];
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(

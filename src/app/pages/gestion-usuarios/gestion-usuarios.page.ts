@@ -50,12 +50,15 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   usuarios: Usuario[] = [];
   usuarioSeleccionado: Usuario | null = null;
   comunidad: Comunidad | null = null;
-  isLoading = false;
+  // Arranca en true (antes quedaba en false hasta que la carga terminaba,
+  // así que el "Cargando..." nunca llegaba a mostrarse en la práctica).
+  isLoading = true;
   modalAbierto = false;
   actualizandoUsuario = false;
   enviandoMensaje = false;
   cargaError = '';
   filtroTexto = '';
+  readonly skeletonPlaceholders = [1, 2, 3, 4, 5, 6];
 
   modoSeleccion = false;
   private readonly idsSeleccionados = new Set<string>();

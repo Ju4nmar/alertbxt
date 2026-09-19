@@ -35,14 +35,6 @@ ion-content {
   color: var(--ion-color-primary-contrast);
 }
 
-.loading-spinner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 220px;
-  color: var(--ab-text-secondary);
-}
-
 .empty-state {
   display: flex;
   flex-direction: column;

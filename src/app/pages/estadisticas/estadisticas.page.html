@@ -2,13 +2,26 @@
   <h2 class="page-title">Estadísticas</h2>
 
   <div class="page-shell">
-    <div *ngIf="isLoading" class="loading-spinner">
-      Cargando estadísticas...
-    </div>
-
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
     </div>
+
+    <ng-container *ngIf="isLoading">
+      <section class="stats-section skeleton-section" aria-hidden="true" *ngFor="let seccion of skeletonPlaceholders">
+        <div class="skeleton-line skeleton-line--short skeleton-section-title"></div>
+        <div class="chart-row">
+          <div class="stats-mini-grid">
+            <div class="stat-card skeleton-stat-card" *ngFor="let tarjeta of [1, 2]">
+              <div class="skeleton-line skeleton-line--short"></div>
+              <div class="skeleton-line skeleton-line--wide"></div>
+            </div>
+          </div>
+          <div class="chart-card skeleton-chart-card">
+            <div class="skeleton-circle skeleton-donut"></div>
+          </div>
+        </div>
+      </section>
+    </ng-container>
 
     <ng-container *ngIf="!isLoading && !cargaError">
       <section class="stats-section">
