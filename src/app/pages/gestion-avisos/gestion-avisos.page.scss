@@ -370,3 +370,17 @@ ion-content {
     min-width: 74px;
   }
 }
+
+.alerta-sos-ubicacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ab-text-primary);
+}
+
+.alerta-sos-ubicacion a {
+  color: var(--ion-color-primary);
+}

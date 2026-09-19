@@ -21,6 +21,8 @@ const TIPO_TITULOS: Record<string, string> = {
 
 interface AvisoData {
   tituloAviso?: string;
+  descripcionAviso?: string;
+  ubicacionAviso?: string;
   tipoAviso?: string;
   comunidadId?: string;
   autorId?: string;
@@ -117,7 +119,11 @@ export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event =
   }
 
   const titulo = TIPO_TITULOS[aviso.tipoAviso || ''] || 'Nuevo aviso';
-  const cuerpo = aviso.tituloAviso || 'Toca para ver los detalles.';
+  // En una alerta SOS el título es siempre "Alerta SOS": lo útil es el tipo
+  // de emergencia y dónde ocurre (torre y apartamento).
+  const cuerpo = aviso.tipoAviso === 'alerta' && aviso.descripcionAviso
+    ? [aviso.descripcionAviso, aviso.ubicacionAviso].filter(Boolean).join(' · ')
+    : aviso.tituloAviso || 'Toca para ver los detalles.';
   const messaging = getMessaging();
 
   for (const tokenChunk of chunk(tokenRefs, FCM_MULTICAST_LIMIT)) {

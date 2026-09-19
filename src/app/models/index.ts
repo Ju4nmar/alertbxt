@@ -6,6 +6,11 @@ export interface Aviso {
   tipoAviso: string;
   fechaPublicacion?: string;
   ubicacionAviso?: string;
+  // Solo alertas SOS: coordenadas GPS del momento del envío (si el usuario
+  // dio permiso) y su precisión en metros.
+  latitud?: number;
+  longitud?: number;
+  precisionMetros?: number;
   autorId: string;
   autorNombre?: string;
   comunidadId: string;
