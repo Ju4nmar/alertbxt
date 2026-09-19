@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonButton, IonCheckbox, IonContent, IonInput, IonItem, IonLabel } from '@ionic/angular/standalone';
 import { firstValueFrom } from 'rxjs';
+import { TipoComunidad } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
@@ -24,9 +25,15 @@ export class RegistroPage {
   administradorCelular = '';
   password = '';
   confirmPassword = '';
+  tipoComunidad: TipoComunidad | '' = '';
   aceptaTerminos = false;
   isLoading = false;
   registroError = '';
+
+  elegirTipoComunidad(tipo: TipoComunidad): void {
+    this.tipoComunidad = tipo;
+    this.registroError = '';
+  }
 
   async createComunidad(): Promise<void> {
     if (this.isLoading) {
@@ -42,6 +49,11 @@ export class RegistroPage {
 
     if (!nombreComunidad || !administradorNombre || !administradorCorreo || !administradorCelular || !this.password || !this.confirmPassword) {
       this.registroError = 'Completa todos los campos requeridos.';
+      return;
+    }
+
+    if (!this.tipoComunidad) {
+      this.registroError = 'Selecciona si tu vecindad es de apartamentos o de casas.';
       return;
     }
 
@@ -67,7 +79,7 @@ export class RegistroPage {
     }
 
     if (!this.aceptaTerminos) {
-      this.registroError = 'Debes aceptar los términos y condiciones.';
+      this.registroError = 'Debes aceptar el tratamiento de tus datos personales.';
       return;
     }
 
@@ -79,6 +91,7 @@ export class RegistroPage {
         administradorCorreo,
         administradorCelular,
         contrasena: this.password,
+        tipoComunidad: this.tipoComunidad,
         aceptaTerminos: this.aceptaTerminos,
       }));
       this.router.navigate(['/alertas-eventos']);

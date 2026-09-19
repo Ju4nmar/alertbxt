@@ -170,47 +170,54 @@
 /* ============================================================
    MODO OSCURO — "noche de barrio": pizarra profunda, el latón
    y el ámbar hacen de luz de farol.
+
+   Se define como mixin porque ThemeService siempre escribe
+   [data-theme="light"] o [data-theme="dark"] explícitamente (no hay
+   modo "Automático"): un solo bloque @include más abajo basta, sin
+   necesitar una copia aparte reaccionando a prefers-color-scheme.
    ============================================================ */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ion-color-primary: #7ca6d6;
-    --ion-color-primary-rgb: 124, 166, 214;
-    --ion-color-primary-contrast: #0d1b28;
-    --ion-color-primary-contrast-rgb: 13, 27, 40;
-    --ion-color-primary-shade: #6d92bd;
-    --ion-color-primary-tint: #89aedb;
+@mixin farol-dark-theme {
+  --ion-color-primary: #7ca6d6;
+  --ion-color-primary-rgb: 124, 166, 214;
+  --ion-color-primary-contrast: #0d1b28;
+  --ion-color-primary-contrast-rgb: 13, 27, 40;
+  --ion-color-primary-shade: #6d92bd;
+  --ion-color-primary-tint: #89aedb;
 
-    --ion-color-secondary: #ada2c4;
-    --ion-color-secondary-contrast: #1d1a26;
+  --ion-color-secondary: #ada2c4;
+  --ion-color-secondary-contrast: #1d1a26;
 
-    --ion-color-tertiary: #d3a565;
-    --ion-color-tertiary-contrast: #241a08;
+  --ion-color-tertiary: #d3a565;
+  --ion-color-tertiary-contrast: #241a08;
 
-    --ion-background-color: #14181f;
-    --ion-background-color-rgb: 20, 24, 31;
-    --ion-text-color: #f1eee6;
-    --ion-text-color-rgb: 241, 238, 230;
+  --ion-background-color: #14181f;
+  --ion-background-color-rgb: 20, 24, 31;
+  --ion-text-color: #f1eee6;
+  --ion-text-color-rgb: 241, 238, 230;
 
-    --ion-toolbar-background: linear-gradient(115deg, #0f2135 0%, #17283b 55%, #241d30 100%);
-    --ion-toolbar-color: #f1eee6;
+  --ion-toolbar-background: linear-gradient(115deg, #0f2135 0%, #17283b 55%, #241d30 100%);
+  --ion-toolbar-color: #f1eee6;
 
-    --ab-surface: #1b2029;
-    --ab-surface-muted: #151920;
-    --ab-border: #2c323c;
-    --ab-text-primary: #f1eee6;
-    --ab-text-secondary: #a9aeb8;
+  --ab-surface: #1b2029;
+  --ab-surface-muted: #151920;
+  --ab-border: #2c323c;
+  --ab-text-primary: #f1eee6;
+  --ab-text-secondary: #a9aeb8;
 
-    --ab-tipo-emergencia-bg: rgba(192, 57, 43, 0.16);
-    --ab-tipo-mantenimiento-bg: rgba(224, 138, 30, 0.16);
-    --ab-tipo-informativo-bg: rgba(124, 166, 214, 0.14);
-    --ab-tipo-recordatorio-bg: rgba(79, 136, 80, 0.16);
+  --ab-tipo-emergencia-bg: rgba(192, 57, 43, 0.16);
+  --ab-tipo-mantenimiento-bg: rgba(224, 138, 30, 0.16);
+  --ab-tipo-informativo-bg: rgba(124, 166, 214, 0.14);
+  --ab-tipo-recordatorio-bg: rgba(79, 136, 80, 0.16);
 
-    --ab-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
-    --ab-shadow-md: 0 10px 26px rgba(0, 0, 0, 0.4);
-    --ab-shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.5);
-  }
+  --ab-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --ab-shadow-md: 0 10px 26px rgba(0, 0, 0, 0.4);
+  --ab-shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.5);
+}
 
-  ion-item {
-    --background: var(--ab-surface);
-  }
+:root[data-theme="dark"] {
+  @include farol-dark-theme;
+}
+
+:root[data-theme="dark"] ion-item {
+  --background: var(--ab-surface);
 }

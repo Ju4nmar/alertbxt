@@ -76,6 +76,20 @@ ion-content::part(scroll) {
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
+/* En móvil, ion-content vive detrás de la barra de navegación inferior fija
+   (.bottom-tabs) y del botón SOS flotante (.sos-fab): ambos son
+   position:fixed y no participan en el flujo, así que el padding-bottom del
+   wrapper .main-content (ver app.component.scss) nunca llega al scroll
+   interno real de ion-content (vive dentro de su Shadow DOM). Sin este
+   ajuste, el último tramo de cada página queda tapado por la barra inferior
+   y el SOS. Los valores replican el bottom del SOS (70px + safe-area) más
+   su alto (56px) y un margen de aire (16px). */
+@media (max-width: 991px) {
+  ion-content::part(scroll) {
+    padding-bottom: calc(70px + max(14px, env(safe-area-inset-bottom)) + 56px + 16px);
+  }
+}
+
 img {
   max-width: 100%;
 }
@@ -209,6 +223,42 @@ ion-item.ng-invalid.ng-dirty {
   color: var(--ab-text-primary);
   font-size: 1rem;
   caret-color: var(--ion-color-primary) !important;
+}
+
+/* Los inputs nativos type="date"/"time" (usados donde ion-input de ese tipo
+   da mala UX) quedaban sin ningún estilo propio, mostrando el look por
+   defecto del navegador — se ve claramente distinto a los demás campos del
+   mismo formulario. Se les da el mismo "card field" que ion-item de arriba. */
+:is(form, .invite-box) .native-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+:is(form, .invite-box) .native-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ab-text-secondary);
+}
+
+:is(form, .invite-box) .native-input-group input[type="date"],
+:is(form, .invite-box) .native-input-group input[type="time"] {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 1rem;
+  transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:is(form, .invite-box) .native-input-group input[type="date"]:focus,
+:is(form, .invite-box) .native-input-group input[type="time"]:focus {
+  outline: none;
+  border-color: var(--ion-color-primary);
 }
 
 /* Nota: estos formularios NO se renderizan en Shadow DOM en este build de
@@ -475,6 +525,40 @@ ion-alert [aria-checked="true"] .alert-radio-icon {
   border-radius: var(--ab-radius-pill);
 }
 
+/* ============================================================
+   SKELETONS DE CARGA — primitivas reutilizables. Cada página compone
+   estos bloques según la forma real de su contenido (ver *.page.html);
+   la animación de brillo y el respeto a prefers-reduced-motion quedan
+   definidos una sola vez aquí.
+   ============================================================ */
+@keyframes ab-skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-line,
+.skeleton-block,
+.skeleton-circle {
+  background: linear-gradient(90deg, var(--ab-surface-muted) 25%, var(--ab-border) 50%, var(--ab-surface-muted) 75%);
+  background-size: 200% 100%;
+  animation: ab-skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--ab-radius-sm);
+}
+
+.skeleton-line {
+  height: 12px;
+  margin: 6px 0;
+}
+
+.skeleton-line--wide { width: 90%; }
+.skeleton-line--medium { width: 65%; }
+.skeleton-line--short { width: 40%; }
+
+.skeleton-circle {
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* Respeta preferencia de reducción de movimiento (accesibilidad) */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -482,4 +566,63 @@ ion-alert [aria-checked="true"] .alert-radio-icon {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ============== Recorrido guiado (Shepherd.js) ============== */
+.shepherd-modal-overlay-container.shepherd-modal-is-visible path {
+  fill: rgba(10, 14, 20, 0.72);
+}
+
+.shepherd-element.ab-tour-step {
+  max-width: min(360px, calc(100vw - 32px));
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-lg);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  box-shadow: var(--ab-shadow-lg);
+}
+
+.ab-tour-step .shepherd-arrow:before {
+  background: var(--ab-surface);
+}
+
+.shepherd-element.ab-tour-step.shepherd-has-title .shepherd-content .shepherd-header {
+  padding: 16px 18px 0;
+  background: transparent;
+}
+
+.ab-tour-step .shepherd-title {
+  font-family: var(--ab-font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ab-text-primary);
+}
+
+.ab-tour-step .shepherd-text {
+  padding: 10px 18px 14px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ab-text-primary);
+}
+
+.ab-tour-step .shepherd-footer {
+  gap: 8px;
+  padding: 0 18px 16px;
+}
+
+.ab-tour-step .shepherd-button {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-family: var(--ab-font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.ab-tour-step .shepherd-button.shepherd-button-secondary {
+  background: transparent;
+  color: var(--ab-text-secondary);
+  border: 1.5px solid var(--ab-border);
 }

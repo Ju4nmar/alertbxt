@@ -88,7 +88,6 @@ src/
  │   ├── guards/
  │   ├── models/
  │   ├── app.routes.ts
- │   ├── app.config.ts
  │   └── app.component.ts
  │
  ├── assets/
@@ -121,6 +120,31 @@ ng serve
 
 ```bash
 npm run build
+```
+
+---
+
+## 🧪 Pruebas
+
+Pruebas unitarias (Karma + Jasmine):
+
+```bash
+npm run test
+```
+
+Pruebas E2E (Cypress), contra los emuladores locales de Firebase — no tocan el proyecto real ni requieren conexión a internet salvo la primera vez que se descargan los emuladores:
+
+```bash
+npm run e2e
+```
+
+Este comando levanta los emuladores de Auth y Firestore, sirve la app apuntando a ellos (`ng serve --configuration=e2e`) y corre las pruebas de Cypress contra esa instancia. Para desarrollar pruebas de forma interactiva:
+
+```bash
+firebase emulators:start --only auth,firestore
+# en otra terminal:
+ng serve --configuration=e2e
+npm run cypress:open
 ```
 
 ---

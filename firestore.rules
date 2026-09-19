@@ -61,7 +61,7 @@ service cloud.firestore {
       allow update: if isSelf(uid)
         && request.resource.data.idUsuario == uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
+          .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'torre', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
         && request.resource.data.rol == resource.data.rol
         && request.resource.data.rol in ['admin', 'residente']
         && (
@@ -97,6 +97,35 @@ service cloud.firestore {
       match /dispositivos/{token} {
         allow read, create, update, delete: if isSelf(uid);
       }
+
+      // Solo la Cloud Function enviarMensajeIndividual (Admin SDK) escribe
+      // aquí: ya valida ahí que quien envía es admin de la misma comunidad
+      // del destinatario, así que no hace falta repetir esa lógica en una
+      // regla de create para el cliente.
+      match /mensajes_admin/{mensajeId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+
+        // Solo responderMensajeAdmin (Admin SDK) escribe aquí. El admin que
+        // originó el mensaje puede leer el hilo aunque no sea el dueño del
+        // documento padre (uid == el residente), verificando con get() que
+        // su uid coincide con el autorId de ese mensaje original.
+        match /respuestas/{respuestaId} {
+          allow read: if isSelf(uid)
+            || (
+              signedIn()
+              && get(/databases/$(database)/documents/usuarios/$(uid)/mensajes_admin/$(mensajeId)).data.autorId == request.auth.uid
+            );
+          allow write: if false;
+        }
+      }
+
+      // Copia para el admin de lo que envió (a uno o varios destinatarios a
+      // la vez), también escrita solo por enviarMensajeIndividual.
+      match /mensajes_enviados/{mensajeId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
     }
 
     match /comunidades/{comunidadId} {
@@ -108,6 +137,30 @@ service cloud.firestore {
         && request.resource.data.codigoInvitacion.size() == 8;
 
       allow update, delete: if isAdminForCommunity(comunidadId);
+    }
+
+    // Permite validar un código de invitación ANTES de autenticarse (al
+    // registrarse o unirse con Google desde cero): solo lectura puntual
+    // (get, nunca list, así que no se puede enumerar toda la colección) y
+    // sin datos del administrador — solo el id y nombre de la comunidad.
+    match /codigos_invitacion/{codigo} {
+      allow get: if true;
+      allow list: if false;
+
+      // La Cloud Function onComunidadWrite (Admin SDK) debería mantener
+      // esto sincronizado sola, pero su trigger de Eventarc no se dispara en
+      // producción (ver comentario en FirestoreService.registrarCodigoInvitacion).
+      // El cliente escribe aquí como mecanismo principal de nuevo, con las
+      // mismas condiciones que ya validaba el backend: solo el admin dueño
+      // de la comunidad referenciada puede crear su propio código.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['comunidadId', 'nombreComunidad', 'tipoComunidad'])
+        && request.resource.data.comunidadId is string
+        && request.resource.data.nombreComunidad is string
+        && (!('tipoComunidad' in request.resource.data.keys()) || request.resource.data.tipoComunidad in ['apartamentos', 'casas'])
+        && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
+        && get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.administradorCorreo == request.auth.token.email;
+      allow update, delete: if false;
     }
 
     match /avisos/{avisoId} {
@@ -137,13 +190,23 @@ service cloud.firestore {
     }
 
     match /recordatorios/{recordatorioId} {
+      // usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
+      // creó un admin (solo crearRecordatorioAsignado, Admin SDK, escribe
+      // esos campos — no hay regla de create para ellos desde el cliente).
       allow read: if isMemberOfCommunity(resource.data.comunidadId)
         && (
           resource.data.idUsuario == request.auth.uid
+          || resource.data.get('usuariosAsignados', []).hasAny([request.auth.uid])
+          || resource.data.get('paraTodaLaComunidad', false) == true
           || isAdminForCommunity(resource.data.comunidadId)
         );
-      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
-        && resource.data.idUsuario == request.auth.uid;
+      allow delete: if (
+        isMemberOfCommunity(resource.data.comunidadId)
+        && resource.data.idUsuario == request.auth.uid
+      ) || (
+        isAdminForCommunity(resource.data.comunidadId)
+        && resource.data.get('autorId', '') == request.auth.uid
+      );
       allow update: if isMemberOfCommunity(resource.data.comunidadId)
         && resource.data.idUsuario == request.auth.uid
         && request.resource.data.idUsuario == request.auth.uid
@@ -151,6 +214,19 @@ service cloud.firestore {
       allow create: if isMemberOfCommunity(request.resource.data.comunidadId)
         && request.resource.data.idUsuario == request.auth.uid
         && request.resource.data.comunidadId == currentUser().comunidadId;
+    }
+
+    // Registro de errores no controlados del cliente (ver GlobalErrorHandler).
+    // Solo escritura: nadie puede leer, modificar ni borrar desde el cliente;
+    // se consultan desde la consola de Firebase, que usa credenciales de
+    // proyecto y no pasa por estas reglas.
+    match /logs_errores/{logId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.mensaje is string
+        && request.resource.data.timestamp is string;
+
+      allow read, update, delete: if false;
     }
   }
 }

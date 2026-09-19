@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage';
 import {
+  AlertController,
   IonButton,
   IonContent,
   IonInput,
@@ -17,6 +18,7 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ImageOptimizerService } from '../../services/image-optimizer.service';
 import { LocalNotificationService } from '../../services/local-notification.service';
+import { ToastService } from '../../services/toast.service';
 
 const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
 const MAX_ORIGINAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -46,11 +48,14 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly imageOptimizer = inject(ImageOptimizerService);
   private readonly localNotificationService = inject(LocalNotificationService);
+  private readonly alertController = inject(AlertController);
+  private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
   avisos: Aviso[] = [];
   avisosAdministrativos: Aviso[] = [];
   alertasSos: Aviso[] = [];
+  historialAlertasSos: Aviso[] = [];
   idEditando: string | null = null;
   titulo = '';
   tipo = '';
@@ -61,8 +66,14 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   compressionInfo = '';
   imagenExistente: string | null = null;
   isLoading = false;
+  // Separado de isLoading (compartido con firestoreService.isLoading$ y con
+  // "guardando el formulario"): reusarlo para el skeleton de la lista la
+  // haría parpadear cada vez que se guarda o edita un aviso, no solo en la
+  // carga inicial.
+  isLoadingLista = true;
   avisoError = '';
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3];
   private currentComunidadId = '';
 
   ngOnInit(): void {
@@ -77,10 +88,12 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     ).subscribe({
       next: data => {
         this.organizarAvisos(data);
+        this.isLoadingLista = false;
       },
       error: error => {
         console.error('Error cargando avisos:', error);
         this.cargaError = 'No se pudieron cargar los avisos. Revisa tu conexión e intenta de nuevo.';
+        this.isLoadingLista = false;
       },
     });
 
@@ -208,6 +221,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
         avisoData.imagen = urlImagen;
       }
 
+      const estabaEditando = !!this.idEditando;
+
       if (this.idEditando) {
         await firstValueFrom(this.firestoreService.updateAviso(this.idEditando, avisoData));
         this.idEditando = null;
@@ -222,6 +237,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       }
 
       this.limpiarFormulario();
+      await this.toastService.success(estabaEditando ? 'Aviso actualizado' : 'Aviso publicado');
     } catch (error) {
       console.error('Error guardando aviso:', error);
       this.avisoError = 'No se pudo guardar el aviso. Intenta nuevamente.';
@@ -248,11 +264,25 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       return;
     }
 
+    const alerta = await this.alertController.create({
+      header: 'Eliminar aviso',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este aviso?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAviso(id) },
+      ],
+    });
+    await alerta.present();
+  }
+
+  private async confirmarEliminarAviso(id: string): Promise<void> {
     try {
       await firstValueFrom(this.firestoreService.deleteAviso(id));
+      await this.toastService.success('Aviso eliminado');
     } catch (error) {
       console.error('Error eliminando aviso:', error);
       this.avisoError = 'No se pudo eliminar el aviso.';
+      await this.toastService.error('No se pudo eliminar el aviso.');
     }
   }
 
@@ -275,17 +305,70 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   organizarAvisos(avisos: Aviso[]): void {
     this.avisos = avisos;
     this.avisosAdministrativos = avisos.filter(aviso => ALLOWED_AVISO_TYPES.includes(aviso.tipoAviso));
-    this.alertasSos = avisos
-      .filter(aviso => aviso.tipoAviso === 'alerta')
+
+    // Una alerta validada sigue activa (el admin la está atendiendo): solo
+    // sale de la lista activa cuando se rechaza, ya sea porque era inválida
+    // o porque ya se atendió y se quiere cerrar. Ahí pasa al historial.
+    const alertas = avisos.filter(aviso => aviso.tipoAviso === 'alerta');
+    this.alertasSos = alertas
+      .filter(alerta => alerta.estado !== 'rechazado')
+      .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''));
+    this.historialAlertasSos = alertas
+      .filter(alerta => alerta.estado === 'rechazado')
       .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''));
   }
 
-  async descartarAlertaSos(alerta: Aviso): Promise<void> {
-    if (alerta.tipoAviso !== 'alerta') {
+  async validarAlertaSos(alerta: Aviso): Promise<void> {
+    await this.cambiarEstadoAlertaSos(alerta, 'validado');
+  }
+
+  async rechazarAlertaSos(alerta: Aviso): Promise<void> {
+    await this.cambiarEstadoAlertaSos(alerta, 'rechazado');
+  }
+
+  private async cambiarEstadoAlertaSos(alerta: Aviso, estado: 'validado' | 'rechazado'): Promise<void> {
+    if (alerta.tipoAviso !== 'alerta' || !alerta.idAviso || this.authService.getCurrentUser()?.rol !== 'admin') {
       return;
     }
 
-    await this.eliminarAviso(alerta.idAviso);
+    try {
+      await firstValueFrom(this.firestoreService.updateAviso(alerta.idAviso, { estado }));
+    } catch (error) {
+      console.error('Error actualizando estado de la alerta SOS:', error);
+      this.avisoError = 'No se pudo actualizar el estado de la alerta.';
+      await this.toastService.error('No se pudo actualizar el estado de la alerta.');
+    }
+  }
+
+  // Borrado físico, solo administrador (ya lo exige deleteAviso() vía la
+  // regla de Firestore isAdminForCommunity): para reportes duplicados o
+  // generados por error, donde no tiene sentido dejar registro en el
+  // historial. "Rechazar" sigue siendo la forma normal de cerrar una alerta
+  // atendida sin borrar su registro.
+  async eliminarAlertaSos(alerta: Aviso): Promise<void> {
+    if (!alerta.idAviso || this.authService.getCurrentUser()?.rol !== 'admin') {
+      return;
+    }
+
+    const confirmacion = await this.alertController.create({
+      header: 'Eliminar alerta SOS',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar permanentemente esta alerta?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAlertaSos(alerta.idAviso as string) },
+      ],
+    });
+    await confirmacion.present();
+  }
+
+  private async confirmarEliminarAlertaSos(id: string): Promise<void> {
+    try {
+      await firstValueFrom(this.firestoreService.deleteAviso(id));
+      await this.toastService.success('Alerta SOS eliminada');
+    } catch (error) {
+      console.error('Error eliminando alerta SOS:', error);
+      await this.toastService.error('No se pudo eliminar la alerta.');
+    }
   }
 
   trackByAvisoId(_: number, aviso: Aviso): string {

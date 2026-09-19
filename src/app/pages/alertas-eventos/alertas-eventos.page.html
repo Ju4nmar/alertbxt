@@ -24,7 +24,22 @@
     </div>
   </div>
 
-  <div class="cards-grid" *ngIf="tarjetasVisibles.length">
+  <div class="cards-grid" *ngIf="isLoading" aria-hidden="true">
+    <div class="card skeleton-card" *ngFor="let placeholder of skeletonPlaceholders">
+      <div class="card-header">
+        <div class="skeleton-line skeleton-line--short"></div>
+        <div class="skeleton-line skeleton-line--wide"></div>
+      </div>
+      <div class="card-body">
+        <div class="skeleton-line skeleton-line--medium"></div>
+        <div class="skeleton-block"></div>
+        <div class="skeleton-line skeleton-line--wide"></div>
+        <div class="skeleton-line skeleton-line--medium"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards-grid" *ngIf="!isLoading && tarjetasVisibles.length">
     <div
       class="card"
       [ngClass]="tarjeta.tipo === 'recordatorio' ? 'reminder-card' : 'tipo-' + (tarjeta.aviso?.tipoAviso || 'informativo')"
@@ -40,6 +55,7 @@
           <p class="card-date">
             <ion-icon name="time-outline"></ion-icon>
             {{ aviso.fechaPublicacion | date: 'short' }}
+            <span class="card-date-relativo">(publicado {{ aviso.fechaPublicacion | tiempoRelativo }})</span>
           </p>
           <p class="card-date" *ngIf="aviso.ubicacionAviso">
             <ion-icon name="location-outline"></ion-icon>
@@ -73,6 +89,7 @@
             <p class="card-date">
               <ion-icon name="calendar-outline"></ion-icon>
               {{ recordatorio.fechaHora | date: 'medium' }}
+              <span class="card-date-relativo">({{ esFuturo(recordatorio.fechaHora) ? 'vence' : 'venció' }} {{ recordatorio.fechaHora | tiempoRelativo }})</span>
             </p>
             <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripción') | slice:0:140 }}</p>
             <div class="reminder-mark" [class.completed]="isReminderCompleted(recordatorio)">

@@ -2,6 +2,41 @@ ion-content {
   --background: var(--ion-background-color);
 }
 
+.filtro-usuarios {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 16px 16px;
+}
+
+.filtro-usuarios ion-button {
+  flex-shrink: 0;
+}
+
+.filtro-input {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 1rem;
+  transition: border-color 150ms ease;
+}
+
+.filtro-input::placeholder {
+  color: var(--ab-text-secondary);
+}
+
+.filtro-input:focus {
+  outline: none;
+  border-color: var(--ion-color-primary);
+}
+
 .usuarios-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -32,10 +67,76 @@ ion-content {
   box-shadow: var(--ab-shadow-md);
 }
 
+.usuario-item--seleccionado {
+  --background: rgba(var(--ion-color-tertiary-rgb), 0.08);
+  border-color: var(--ion-color-tertiary);
+}
+
+.usuario-item--no-seleccionable {
+  opacity: 0.5;
+}
+
+.usuario-checkbox {
+  width: 22px;
+  height: 22px;
+  margin-right: 12px;
+  accent-color: var(--ion-color-tertiary);
+  flex-shrink: 0;
+}
+
+.seleccion-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1180px;
+  margin: 12px auto 0;
+  padding: 12px 16px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  box-shadow: var(--ab-shadow-lg);
+  font-weight: 600;
+  color: var(--ab-text-primary);
+}
+
 .usuario-icon {
   font-size: 2.5rem;
   color: var(--ion-color-primary);
   margin-right: 10px;
+}
+
+/* .usuario-item real es un ion-item: sus --background/--padding-* solo
+   afectan las partes internas de su Shadow DOM. El skeleton es un <div>
+   plano, así que necesita el mismo aspecto declarado con propiedades CSS
+   normales en vez de esas variables. */
+.skeleton-item {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 16px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  box-shadow: var(--ab-shadow-sm);
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+.skeleton-item .usuario-info {
+  flex: 1;
+  gap: 8px;
+}
+
+.skeleton-item .skeleton-line--medium {
+  height: 15px;
 }
 
 .usuario-info {

@@ -2,75 +2,70 @@
   <h2 class="page-title">Estadísticas</h2>
 
   <div class="page-shell">
-    <div *ngIf="isLoading" class="loading-spinner">
-      Cargando estadísticas...
+    <div class="periodo-tabs" role="radiogroup" aria-label="Período de las estadísticas">
+      <button
+        *ngFor="let p of periodos"
+        type="button"
+        class="periodo-chip"
+        role="radio"
+        [attr.aria-checked]="periodo === p.valor"
+        [class.active]="periodo === p.valor"
+        (click)="elegirPeriodo(p.valor)"
+      >{{ p.etiqueta }}</button>
     </div>
+    <p class="periodo-nota" *ngIf="!isLoading && !cargaError">
+      El período filtra avisos y recordatorios; los vecinos se muestran siempre completos.
+    </p>
 
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
     </div>
 
+    <ng-container *ngIf="isLoading">
+      <section class="stats-section skeleton-section" aria-hidden="true" *ngFor="let seccion of skeletonPlaceholders">
+        <div class="skeleton-line skeleton-line--short skeleton-section-title"></div>
+        <div class="chart-row">
+          <div class="stats-mini-grid">
+            <div class="stat-card skeleton-stat-card" *ngFor="let tarjeta of [1, 2]">
+              <div class="skeleton-line skeleton-line--short"></div>
+              <div class="skeleton-line skeleton-line--wide"></div>
+            </div>
+          </div>
+          <div class="chart-card skeleton-chart-card">
+            <div class="skeleton-circle skeleton-donut"></div>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+
     <ng-container *ngIf="!isLoading && !cargaError">
       <section class="stats-section">
         <h3>Vecinos</h3>
         <div class="chart-row">
-          <div class="headline-stack">
-            <div class="stat-card stat-card--wide">
-              <span class="stat-value">{{ resumen.usuarios.total }}</span>
+          <div class="stats-mini-grid">
+            <button type="button" class="stat-card stat-card--link" (click)="ir('/gestion-usuarios')">
+              <span class="stat-value" [appContador]="resumen.usuarios.total"></span>
               <span class="stat-label">Total registrados</span>
-            </div>
-            <div class="stat-card stat-card--wide stat-card--success">
-              <span class="stat-value">{{ resumen.usuarios.activos }}</span>
-              <span class="stat-label">Activos</span>
-            </div>
+              <span class="stat-go">Ver vecinos →</span>
+            </button>
+            <button type="button" class="stat-card stat-card--success stat-card--link" (click)="ir('/gestion-usuarios')">
+              <span class="stat-value" [appContador]="resumen.usuarios.activos"></span>
+              <span class="stat-label">Activos · {{ porcentaje(resumen.usuarios.activos, resumen.usuarios.total) }}%</span>
+              <span class="progreso" role="progressbar" aria-label="Porcentaje de vecinos activos" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje(resumen.usuarios.activos, resumen.usuarios.total)">
+                <span class="progreso-relleno progreso-relleno--success" [style.width.%]="porcentaje(resumen.usuarios.activos, resumen.usuarios.total)"></span>
+              </span>
+            </button>
+            <button type="button" class="stat-card stat-card--tertiary stat-card--link" (click)="ir('/gestion-usuarios')">
+              <span class="stat-value" [appContador]="resumen.usuarios.admins"></span>
+              <span class="stat-label">Administradores</span>
+            </button>
+            <button type="button" class="stat-card stat-card--primary stat-card--link" (click)="ir('/gestion-usuarios')">
+              <span class="stat-value" [appContador]="resumen.usuarios.residentes"></span>
+              <span class="stat-label">Residentes</span>
+            </button>
           </div>
 
-          <div class="chart-card">
-            <div class="donut-wrap">
-              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutVecinos.length; else donutVecinosVacio">
-                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
-                <circle
-                  *ngFor="let seg of donutVecinos"
-                  class="donut-segment"
-                  cx="50" cy="50" [attr.r]="donutRadio"
-                  [attr.stroke]="seg.color"
-                  [attr.stroke-dasharray]="seg.dasharray"
-                  [attr.stroke-dashoffset]="seg.dashoffset"
-                ></circle>
-              </svg>
-              <ng-template #donutVecinosVacio>
-                <svg viewBox="0 0 100 100" class="donut-svg">
-                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
-                </svg>
-              </ng-template>
-              <div class="donut-center">
-                <span class="donut-center-value">{{ resumen.usuarios.total }}</span>
-                <span class="donut-center-label">vecinos</span>
-              </div>
-            </div>
-
-            <ul class="chart-legend" *ngIf="donutVecinos.length; else legendVecinosVacia">
-              <li *ngFor="let seg of donutVecinos">
-                <span class="legend-dot" [style.background]="seg.color"></span>
-                {{ seg.etiqueta }}
-                <span class="legend-value">{{ seg.valor }}</span>
-              </li>
-            </ul>
-            <ng-template #legendVecinosVacia>
-              <p class="chart-empty">Aún no hay vecinos registrados.</p>
-            </ng-template>
-          </div>
-        </div>
-
-        <div class="stats-grid stats-grid--compact">
-          <div class="stat-card stat-card--tertiary">
-            <span class="stat-value">{{ resumen.usuarios.admins }}</span>
-            <span class="stat-label">Administradores</span>
-          </div>
-          <div class="stat-card stat-card--primary">
-            <span class="stat-value">{{ resumen.usuarios.residentes }}</span>
-            <span class="stat-label">Residentes</span>
-          </div>
+          <ng-container *ngTemplateOutlet="donutTpl; context: { donut: donuts.vecinos }"></ng-container>
         </div>
       </section>
 
@@ -78,51 +73,17 @@
         <h3>Avisos y alertas</h3>
         <div class="chart-row">
           <div class="headline-stack">
-            <div class="stat-card stat-card--wide">
-              <span class="stat-value">{{ resumen.avisos.total }}</span>
+            <button type="button" class="stat-card stat-card--wide stat-card--link" (click)="ir('/gestion-avisos')">
+              <span class="stat-value" [appContador]="resumen.avisos.total"></span>
               <span class="stat-label">Total publicados</span>
-            </div>
-            <div class="stat-card stat-card--wide stat-card--secondary">
-              <span class="stat-value">{{ resumen.avisos.alertaSos }}</span>
+            </button>
+            <button type="button" class="stat-card stat-card--wide stat-card--secondary stat-card--link" (click)="ir('/gestion-avisos')">
+              <span class="stat-value" [appContador]="resumen.avisos.alertaSos"></span>
               <span class="stat-label">Alertas SOS</span>
-            </div>
+            </button>
           </div>
 
-          <div class="chart-card">
-            <div class="donut-wrap">
-              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutAvisos.length; else donutAvisosVacio">
-                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
-                <circle
-                  *ngFor="let seg of donutAvisos"
-                  class="donut-segment"
-                  cx="50" cy="50" [attr.r]="donutRadio"
-                  [attr.stroke]="seg.color"
-                  [attr.stroke-dasharray]="seg.dasharray"
-                  [attr.stroke-dashoffset]="seg.dashoffset"
-                ></circle>
-              </svg>
-              <ng-template #donutAvisosVacio>
-                <svg viewBox="0 0 100 100" class="donut-svg">
-                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
-                </svg>
-              </ng-template>
-              <div class="donut-center">
-                <span class="donut-center-value">{{ resumen.avisos.total }}</span>
-                <span class="donut-center-label">avisos</span>
-              </div>
-            </div>
-
-            <ul class="chart-legend" *ngIf="donutAvisos.length; else legendAvisosVacia">
-              <li *ngFor="let seg of donutAvisos">
-                <span class="legend-dot" [style.background]="seg.color"></span>
-                {{ seg.etiqueta }}
-                <span class="legend-value">{{ seg.valor }}</span>
-              </li>
-            </ul>
-            <ng-template #legendAvisosVacia>
-              <p class="chart-empty">Aún no hay avisos publicados.</p>
-            </ng-template>
-          </div>
+          <ng-container *ngTemplateOutlet="donutTpl; context: { donut: donuts.avisos }"></ng-container>
         </div>
       </section>
 
@@ -130,49 +91,89 @@
         <h3>Recordatorios</h3>
         <div class="chart-row">
           <div class="headline-stack">
-            <div class="stat-card stat-card--wide">
-              <span class="stat-value">{{ resumen.recordatorios.total }}</span>
+            <button type="button" class="stat-card stat-card--wide stat-card--link" (click)="ir('/recordatorios')">
+              <span class="stat-value" [appContador]="resumen.recordatorios.total"></span>
               <span class="stat-label">Total creados</span>
-            </div>
-          </div>
-
-          <div class="chart-card">
-            <div class="donut-wrap">
-              <svg viewBox="0 0 100 100" class="donut-svg" *ngIf="donutRecordatorios.length; else donutRecordatoriosVacio">
-                <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
-                <circle
-                  *ngFor="let seg of donutRecordatorios"
-                  class="donut-segment"
-                  cx="50" cy="50" [attr.r]="donutRadio"
-                  [attr.stroke]="seg.color"
-                  [attr.stroke-dasharray]="seg.dasharray"
-                  [attr.stroke-dashoffset]="seg.dashoffset"
-                ></circle>
-              </svg>
-              <ng-template #donutRecordatoriosVacio>
-                <svg viewBox="0 0 100 100" class="donut-svg">
-                  <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
-                </svg>
-              </ng-template>
-              <div class="donut-center">
-                <span class="donut-center-value">{{ resumen.recordatorios.total }}</span>
-                <span class="donut-center-label">total</span>
+            </button>
+            <div class="stat-card stat-card--success">
+              <div class="stat-inline">
+                <span class="stat-value" [appContador]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)" appContadorSufijo="%"></span>
+                <span class="stat-label">Cumplimiento</span>
               </div>
+              <span class="progreso" role="progressbar" aria-label="Porcentaje de recordatorios completados" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)">
+                <span class="progreso-relleno progreso-relleno--success" [style.width.%]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)"></span>
+              </span>
             </div>
-
-            <ul class="chart-legend" *ngIf="donutRecordatorios.length; else legendRecordatoriosVacia">
-              <li *ngFor="let seg of donutRecordatorios">
-                <span class="legend-dot" [style.background]="seg.color"></span>
-                {{ seg.etiqueta }}
-                <span class="legend-value">{{ seg.valor }}</span>
-              </li>
-            </ul>
-            <ng-template #legendRecordatoriosVacia>
-              <p class="chart-empty">Aún no hay recordatorios creados.</p>
-            </ng-template>
           </div>
+
+          <ng-container *ngTemplateOutlet="donutTpl; context: { donut: donuts.recordatorios }"></ng-container>
         </div>
       </section>
     </ng-container>
   </div>
+
+  <ng-template #donutTpl let-d="donut">
+    <div class="chart-card">
+      <ng-container *ngIf="totalCategorias(d); else sinDatos">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 100 100" class="donut-svg">
+            <circle class="donut-track" cx="50" cy="50" [attr.r]="donutRadio" />
+            <circle
+              *ngFor="let seg of d.segmentos"
+              class="donut-segment"
+              [class.donut-segment--dim]="d.resaltada && d.resaltada !== seg.etiqueta"
+              [class.donut-segment--activo]="d.resaltada === seg.etiqueta"
+              cx="50" cy="50" [attr.r]="donutRadio"
+              [attr.stroke]="seg.color"
+              [attr.stroke-dasharray]="seg.dasharray"
+              [attr.stroke-dashoffset]="seg.dashoffset"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="seg.etiqueta + ': ' + seg.valor + ' (' + seg.porcentaje + '%)'"
+              (mouseenter)="resaltar(d, seg.etiqueta)"
+              (mouseleave)="resaltar(d, null)"
+              (focus)="resaltar(d, seg.etiqueta)"
+              (blur)="resaltar(d, null)"
+              (click)="resaltar(d, seg.etiqueta)"
+            ><title>{{ seg.etiqueta }}: {{ seg.valor }} ({{ seg.porcentaje }}%)</title></circle>
+          </svg>
+          <div class="donut-center">
+            <span class="donut-center-value" [appContador]="segmentoResaltado(d)?.valor ?? d.total"></span>
+            <span class="donut-center-label">
+              {{ segmentoResaltado(d) ? segmentoResaltado(d)?.etiqueta + ' · ' + segmentoResaltado(d)?.porcentaje + '%' : d.unidad }}
+            </span>
+          </div>
+        </div>
+
+        <div class="legend-col">
+          <ul class="chart-legend">
+            <ng-container *ngFor="let c of d.categorias">
+              <li *ngIf="c.valor > 0">
+                <button
+                  type="button"
+                  class="legend-btn"
+                  [class.legend-btn--off]="d.ocultas.has(c.etiqueta)"
+                  [attr.aria-pressed]="!d.ocultas.has(c.etiqueta)"
+                  [attr.aria-label]="(d.ocultas.has(c.etiqueta) ? 'Mostrar ' : 'Ocultar ') + c.etiqueta"
+                  (click)="alternarCategoria(d, c.etiqueta)"
+                  (mouseenter)="resaltar(d, d.ocultas.has(c.etiqueta) ? null : c.etiqueta)"
+                  (mouseleave)="resaltar(d, null)"
+                >
+                  <span class="legend-dot" [style.background]="c.color"></span>
+                  {{ c.etiqueta }}
+                  <span class="legend-value">{{ c.valor }}</span>
+                </button>
+              </li>
+            </ng-container>
+          </ul>
+          <p class="chart-hint" *ngIf="!d.segmentos.length">Activa alguna categoría para ver el gráfico.</p>
+          <p class="chart-hint" *ngIf="d.segmentos.length">Toca una categoría para ocultarla o mostrarla.</p>
+        </div>
+      </ng-container>
+
+      <ng-template #sinDatos>
+        <p class="chart-empty">{{ d.vacio }}</p>
+      </ng-template>
+    </div>
+  </ng-template>
 </ion-content>

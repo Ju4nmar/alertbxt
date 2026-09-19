@@ -43,6 +43,16 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
+    path: 'mensajes',
+    loadComponent: () => import('./pages/mensajes/mensajes.page').then(m => m.MensajesPage),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'guia-uso',
+    loadComponent: () => import('./pages/guia-uso/guia-uso.page').then(m => m.GuiaUsoPage),
+    canActivate: [AuthGuard],
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then(m => m.LoginPage),
     canActivate: [GuestGuard],
@@ -60,6 +70,10 @@ export const routes: Routes = [
     path: 'forgot-password',
     loadComponent: () => import('./pages/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage),
     canActivate: [GuestGuard],
+  },
+  {
+    path: 'privacidad',
+    loadComponent: () => import('./pages/privacidad/privacidad.page').then(m => m.PrivacidadPage),
   },
   { path: '**', redirectTo: 'alertas-eventos' },
 ];

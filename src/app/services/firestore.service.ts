@@ -8,14 +8,16 @@ import {
   doc,
   docData,
   limit,
+  orderBy,
   query,
   setDoc,
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
+import { Functions, httpsCallable } from '@angular/fire/functions';
+import { BehaviorSubject, Observable, combineLatest, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, Recordatorio, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -24,6 +26,7 @@ import { AuthService } from './auth.service';
 export class FirestoreService {
   private readonly injector = inject(Injector);
   private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
   private readonly isLoadingSubject = new BehaviorSubject<boolean>(false);
   public readonly isLoading$ = this.isLoadingSubject.asObservable();
 
@@ -217,21 +220,6 @@ export class FirestoreService {
     );
   }
 
-  getComunidades(): Observable<Comunidad[]> {
-    this.isLoadingSubject.next(true);
-    const col = this.inContext(() => collection(this.firestore, 'comunidades'));
-
-    return this.inContext(() => collectionData(col, { idField: 'idComunidad' })).pipe(
-      map(data => data as Comunidad[]),
-      tap(() => this.isLoadingSubject.next(false)),
-      catchError(error => {
-        console.error('Error obteniendo comunidades:', error);
-        this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar comunidades'));
-      })
-    );
-  }
-
   getComunidadById(idComunidad: string): Observable<Comunidad | null> {
     const docRef = this.inContext(() => doc(this.firestore, `comunidades/${idComunidad}`));
 
@@ -273,20 +261,52 @@ export class FirestoreService {
     );
   }
 
-  getComunidadByCodigoInvitacion(codigoInvitacion: string): Observable<Comunidad | null> {
+  // Validar un código de invitación ocurre ANTES de autenticarse (al
+  // registrarse, o al unirse con Google desde cero), así que no puede
+  // depender de una consulta a "comunidades" protegida por signedIn(): eso
+  // producía permission-denied y el mensaje "Error al validar código de
+  // invitación" siempre, incluso con un código correcto. En su lugar se lee
+  // un documento aparte en "codigos_invitacion" (doc id = el código),
+  // público solo para lectura puntual (get, nunca list), que solo contiene
+  // el id y nombre de la comunidad — nunca los datos del administrador.
+  getComunidadByCodigoInvitacion(codigoInvitacion: string): Observable<{ idComunidad: string; nombreComunidad: string; tipoComunidad?: TipoComunidad } | null> {
     this.isLoadingSubject.next(true);
-    const q = this.inContext(() => {
-      const col = collection(this.firestore, 'comunidades');
-      return query(col, where('codigoInvitacion', '==', codigoInvitacion), limit(1));
-    });
+    const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
 
-    return this.inContext(() => collectionData(q, { idField: 'idComunidad' })).pipe(
-      map(data => data.length > 0 ? data[0] as Comunidad : null),
+    return this.inContext(() => docData(ref)).pipe(
+      map(data => data ? {
+        idComunidad: data['comunidadId'] as string,
+        nombreComunidad: data['nombreComunidad'] as string,
+        tipoComunidad: data['tipoComunidad'] as TipoComunidad | undefined,
+      } : null),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
         console.error('Error obteniendo comunidad por código:', error);
         this.isLoadingSubject.next(false);
         return throwError(() => new Error('Error al validar código de invitación'));
+      })
+    );
+  }
+
+  // La Cloud Function onComunidadWrite (Admin SDK) debería mantener esto
+  // sincronizado sola, pero su trigger de Eventarc quedó sin dispararse
+  // pese a varios reintentos y redeploys (posible atasco de plataforma sin
+  // diagnóstico posible desde la CLI). El cliente también escribe aquí
+  // como respaldo, para no depender de un único mecanismo: si la función
+  // llega a funcionar más adelante, ambas escrituras son idénticas y no
+  // hay conflicto.
+  registrarCodigoInvitacion(codigoInvitacion: string, comunidadId: string, nombreComunidad: string, tipoComunidad?: TipoComunidad): Observable<void> {
+    const ref = this.inContext(() => doc(this.firestore, `codigos_invitacion/${codigoInvitacion}`));
+    const data: Record<string, unknown> = { comunidadId, nombreComunidad };
+    if (tipoComunidad) {
+      data['tipoComunidad'] = tipoComunidad;
+    }
+
+    return from(this.inContext(() => setDoc(ref, data))).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error registrando código de invitación:', error);
+        return throwError(() => new Error('Error al registrar código de invitación'));
       })
     );
   }
@@ -320,6 +340,111 @@ export class FirestoreService {
         console.error('Error obteniendo recordatorios:', error);
         this.isLoadingSubject.next(false);
         return throwError(() => new Error('Error al cargar recordatorios'));
+      })
+    );
+  }
+
+  // Recordatorios de grupo que un admin asignó puntualmente a este usuario
+  // (usuariosAsignados array-contains uid) — un solo documento compartido
+  // con otros destinatarios, no una copia propia. Ver getRecordatoriosByUsuario
+  // sobre por qué comunidadId también se filtra aquí.
+  getRecordatoriosAsignadosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, 'recordatorios');
+      return query(
+        col,
+        where('usuariosAsignados', 'array-contains', idUsuario),
+        where('comunidadId', '==', comunidadId),
+        limit(100)
+      );
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios asignados:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios asignados'));
+      })
+    );
+  }
+
+  // Recordatorios que un admin asignó a toda la comunidad (paraTodaLaComunidad).
+  getRecordatoriosParaTodaLaComunidad(comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, 'recordatorios');
+      return query(
+        col,
+        where('comunidadId', '==', comunidadId),
+        where('paraTodaLaComunidad', '==', true),
+        limit(100)
+      );
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios de la comunidad:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios de la comunidad'));
+      })
+    );
+  }
+
+  // Todo lo que un usuario debe ver como "sus" recordatorios: los personales,
+  // los que un admin le asignó (o asignó a toda la comunidad) y, si es admin,
+  // los que él mismo asignó a otros — así conserva el registro de que
+  // llegaron y de si ya se cumplieron. Son consultas separadas (una por
+  // regla de seguridad) que se unen aquí, sin repetidos.
+  getRecordatoriosVisibles(usuario: Usuario): Observable<Recordatorio[]> {
+    const idUsuario = usuario.idUsuario || '';
+    const fuentes = [
+      this.getRecordatoriosByUsuario(idUsuario, usuario.comunidadId),
+      this.getRecordatoriosAsignadosByUsuario(idUsuario, usuario.comunidadId),
+      this.getRecordatoriosParaTodaLaComunidad(usuario.comunidadId),
+    ];
+    if (usuario.rol === 'admin') {
+      fuentes.push(this.getRecordatoriosCreadosPor(idUsuario, usuario.comunidadId));
+    }
+
+    return combineLatest(fuentes).pipe(
+      map(listas => {
+        const porId = new Map<string, Recordatorio>();
+        ([] as Recordatorio[]).concat(...listas).forEach(recordatorio => {
+          porId.set(recordatorio.idRecordatorios || `${recordatorio.fechaHora}-${recordatorio.tituloRecordatorio}`, recordatorio);
+        });
+        return Array.from(porId.values()).sort((a, b) => (a.fechaHora || '').localeCompare(b.fechaHora || ''));
+      })
+    );
+  }
+
+  // Recordatorios de grupo que este admin creó (autorId).
+  getRecordatoriosCreadosPor(autorId: string, comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'recordatorios'),
+      where('autorId', '==', autorId),
+      where('comunidadId', '==', comunidadId),
+      limit(100)
+    ));
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios creados:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios creados'));
       })
     );
   }
@@ -386,6 +511,81 @@ export class FirestoreService {
     );
   }
 
+  // A diferencia de addRecordatorio (escritura directa del cliente, para
+  // recordatorios personales), esto pasa por una Cloud Function porque
+  // valida que quien asigna es admin y que los destinatarios pertenecen a
+  // su comunidad — la misma razón por la que enviarMensajeIndividual no es
+  // un simple addDoc.
+  crearRecordatorioAsignado(datos: {
+    titulo: string;
+    descripcion: string;
+    fechaHora: string;
+    usuarioIds?: string[];
+    paraTodos?: boolean;
+  }): Observable<void> {
+    const crear = httpsCallable<typeof datos, { recordatorioId: string }>(this.functions, 'crearRecordatorioAsignado');
+
+    return from(crear(datos)).pipe(
+      map(() => void 0),
+      catchError(error => {
+        console.error('Error creando recordatorio asignado:', error);
+        const mensaje = (error as { message?: string })?.message;
+        return throwError(() => new Error(mensaje || 'No se pudo crear el recordatorio.'));
+      })
+    );
+  }
+
+  getMensajesAdminByUsuario(idUsuario: string): Observable<MensajeAdmin[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, `usuarios/${idUsuario}/mensajes_admin`);
+      return query(col, orderBy('fecha', 'desc'), limit(100));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idMensaje' })).pipe(
+      map(data => data as MensajeAdmin[]),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo mensajes:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar mensajes'));
+      })
+    );
+  }
+
+  getMensajesEnviadosByUsuario(idUsuario: string): Observable<MensajeEnviado[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, `usuarios/${idUsuario}/mensajes_enviados`);
+      return query(col, orderBy('fecha', 'desc'), limit(100));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idMensaje' })).pipe(
+      map(data => data as MensajeEnviado[]),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo mensajes enviados:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar mensajes enviados'));
+      })
+    );
+  }
+
+  getRespuestasMensaje(idUsuarioDueno: string, mensajeId: string): Observable<RespuestaMensaje[]> {
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, `usuarios/${idUsuarioDueno}/mensajes_admin/${mensajeId}/respuestas`);
+      return query(col, orderBy('fecha', 'asc'));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRespuesta' })).pipe(
+      map(data => data as RespuestaMensaje[]),
+      catchError(error => {
+        console.error('Error obteniendo respuestas del mensaje:', error);
+        return throwError(() => new Error('Error al cargar las respuestas'));
+      })
+    );
+  }
+
   private normalizeAviso(data: Aviso & Record<string, unknown>): Aviso {
     return {
       idAviso: data.idAviso,
@@ -398,6 +598,7 @@ export class FirestoreService {
       autorNombre: data.autorNombre || String(data['autorNombre'] || ''),
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
       imagen: data.imagen || String(data['imagen'] || ''),
+      estado: data.estado,
     };
   }
 
@@ -411,7 +612,10 @@ export class FirestoreService {
       tituloRecordatorio: data.tituloRecordatorio || String(data['titulo'] || data['tituloRecordatorio'] || 'Recordatorio'),
       descripcionRecordatorio: data.descripcionRecordatorio || String(data['descripcion'] || ''),
       fechaHora: data.fechaHora || String(data['fecha'] || data['fechaHora'] || ''),
-      idUsuario: data.idUsuario || String(data['idUsuario'] || ''),
+      idUsuario: data.idUsuario || undefined,
+      usuariosAsignados: data.usuariosAsignados,
+      paraTodaLaComunidad: data.paraTodaLaComunidad,
+      autorId: data.autorId,
       comunidadId: data.comunidadId || String(data['comunidadId'] || ''),
       fechaCreacion: data.fechaCreacion || String(data['fechaCreacion'] || ''),
       estado: data.estado,

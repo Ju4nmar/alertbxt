@@ -6,6 +6,7 @@ import { firstValueFrom, of, Subject, filter, switchMap, takeUntil } from 'rxjs'
 import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { ToastService } from '../../services/toast.service';
 import { isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
@@ -19,14 +20,14 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly alertController = inject(AlertController);
+  private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
   usuario: Usuario | null = null;
   comunidad: Comunidad | null = null;
   enlaceInvitacion = '';
-  mensajeCopiado = '';
-  mensajeGuardado = '';
   isSaving = false;
+  isSavingVecindad = false;
   isRequestingDeletion = false;
   mensajeEliminacion = '';
 
@@ -34,8 +35,13 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   correo = '';
   telefono = '';
   numeroApartamento = '';
+  torre = '';
   rol: 'admin' | 'residente' = 'residente';
   nombreComunidad = '';
+
+  get esComunidadDeCasas(): boolean {
+    return this.comunidad?.tipoComunidad === 'casas';
+  }
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -46,6 +52,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
         this.correo = user!.correo;
         this.telefono = user!.telefono;
         this.numeroApartamento = user!.numeroApartamento || '';
+        this.torre = user!.torre || '';
         this.rol = user!.rol;
         if (!user!.comunidadId) {
           this.comunidad = null;
@@ -94,15 +101,14 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.mensajeGuardado = '';
     const nombre = this.nombre.trim();
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
     const numeroApartamento = this.numeroApartamento.trim();
-    const nombreComunidad = this.nombreComunidad.trim();
+    const torre = this.torre.trim();
 
     if (!this.usuario || !nombre || !correo || !telefono) {
-      this.mensajeGuardado = 'Completa todos los campos requeridos';
+      await this.toastService.error('Completa todos los campos requeridos');
       return;
     }
 
@@ -111,14 +117,14 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       correo.length > 120 ||
       telefono.length < 7 || telefono.length > 15 ||
       numeroApartamento.length > 20 ||
-      nombreComunidad.length > 60
+      torre.length > 20
     ) {
-      this.mensajeGuardado = 'Revisa la longitud de los campos';
+      await this.toastService.error('Revisa la longitud de los campos');
       return;
     }
 
     if (!isValidEmail(correo) || !isValidPhone(telefono)) {
-      this.mensajeGuardado = 'Revisa el formato del correo o del teléfono.';
+      await this.toastService.error('Revisa el formato del correo o del teléfono.');
       return;
     }
 
@@ -127,7 +133,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     // Sin este control, el intento fallaría en Firestore con un error
     // genérico que no explica la causa real.
     if (this.usuario.rol === 'admin' && this.rol !== this.usuario.rol) {
-      this.mensajeGuardado = 'No puedes cambiar tu propio rol. Pídele a otro administrador que lo haga desde Gestión de usuarios.';
+      await this.toastService.error('No puedes cambiar tu propio rol. Pídele a otro administrador que lo haga desde Gestión de usuarios.');
       return;
     }
 
@@ -139,6 +145,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       correo,
       telefono,
       numeroApartamento,
+      ...(this.esComunidadDeCasas ? {} : { torre }),
       rol: this.usuario.rol === 'admin' ? this.rol : this.usuario.rol,
     };
 
@@ -146,32 +153,73 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
       await firstValueFrom(this.firestoreService.addUsuario(updatedUser));
       this.authService.setCurrentUser(updatedUser);
       this.usuario = updatedUser;
-
-      if (this.usuario.rol === 'admin' && this.comunidad?.idComunidad && nombreComunidad) {
-        await firstValueFrom(this.firestoreService.updateComunidad(this.comunidad.idComunidad, {
-          nombreComunidad,
-        }));
-        this.comunidad = { ...this.comunidad, nombreComunidad };
-      }
-
-      this.mensajeGuardado = 'Perfil actualizado';
-      setTimeout(() => this.mensajeGuardado = '', 2500);
+      await this.toastService.success('Perfil actualizado');
     } catch (error) {
       console.error('Error guardando perfil:', error);
-      this.mensajeGuardado = 'No se pudo guardar';
+      await this.toastService.error('No se pudo guardar');
     } finally {
       this.isSaving = false;
+    }
+  }
+
+  // Aparte de guardarPerfil(): el nombre de la vecindad vive en su propia
+  // tarjeta ("Vecindad"), separada de "Datos personales" para que ambas
+  // quepan una junto a la otra en escritorio — así necesita su propio botón
+  // de guardar en vez de depender de uno en una tarjeta distinta.
+  async guardarVecindad(): Promise<void> {
+    if (this.isSavingVecindad || !this.comunidad?.idComunidad) {
+      return;
+    }
+
+    const nombreComunidad = this.nombreComunidad.trim();
+
+    if (!nombreComunidad) {
+      await this.toastService.error('El nombre de la vecindad es requerido');
+      return;
+    }
+
+    if (nombreComunidad.length > 60) {
+      await this.toastService.error('No debe superar 60 caracteres');
+      return;
+    }
+
+    this.isSavingVecindad = true;
+    const idComunidad = this.comunidad.idComunidad;
+    const codigoInvitacion = this.comunidad.codigoInvitacion;
+
+    try {
+      await firstValueFrom(this.firestoreService.updateComunidad(idComunidad, { nombreComunidad }));
+      this.comunidad = { ...this.comunidad, nombreComunidad };
+
+      // Backfill para comunidades creadas antes de que el cliente escribiera
+      // codigos_invitacion (ver comentario en
+      // FirestoreService.registrarCodigoInvitacion): re-escribirlo aquí
+      // también arregla las comunidades existentes a las que les falta,
+      // aprovechando que este botón ya está disponible para el admin.
+      if (codigoInvitacion) {
+        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(
+          codigoInvitacion,
+          idComunidad,
+          nombreComunidad
+        ));
+      }
+
+      await this.toastService.success('Vecindad actualizada');
+    } catch (error) {
+      console.error('Error guardando vecindad:', error);
+      await this.toastService.error('No se pudo guardar');
+    } finally {
+      this.isSavingVecindad = false;
     }
   }
 
   private async copiarTexto(texto: string, mensaje: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(texto);
-      this.mensajeCopiado = mensaje;
-      setTimeout(() => this.mensajeCopiado = '', 2500);
+      await this.toastService.success(mensaje);
     } catch (error) {
       console.error('Error copiando texto:', error);
-      this.mensajeCopiado = 'No se pudo copiar';
+      await this.toastService.error('No se pudo copiar');
     }
   }
 

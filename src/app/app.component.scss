@@ -168,6 +168,15 @@ ion-menu.ab-sidebar {
   background: var(--ion-background-color);
 }
 
+/* ion-split-pane ignora el --width del menú: por defecto reserva hasta el
+   28% del viewport para el panel lateral (min 270px), así que en pantallas
+   anchas (p. ej. 1440px) el sidebar terminaba ocupando ~403px en vez de los
+   264px que sí definía .ab-sidebar, robándole ancho real al contenido. */
+ion-split-pane {
+  --side-min-width: 264px;
+  --side-max-width: 264px;
+}
+
 .sidebar-content {
   --background: transparent;
   --padding-top: 16px;
@@ -289,6 +298,34 @@ ion-menu.ab-sidebar {
   color: var(--ab-text-primary);
 }
 
+.sidebar-theme {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: var(--ab-radius-sm);
+  background: transparent;
+  color: var(--ab-text-secondary);
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+
+  ion-icon {
+    font-size: 1.25rem;
+  }
+}
+
+.sidebar-theme--brand {
+  margin-left: auto;
+}
+
+.sidebar-theme:hover {
+  background: var(--ab-surface-muted);
+  color: var(--ion-color-primary);
+}
+
 .sidebar-logout {
   display: flex;
   align-items: center;
@@ -388,19 +425,20 @@ ion-menu.ab-sidebar {
   right: 24px;
   bottom: 28px;
   z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 64px;
   height: 64px;
   border: none;
   border-radius: 50%;
   background: linear-gradient(155deg, #d6503f 0%, #a93125 100%);
   color: #ffffff;
-  font-family: var(--ab-font-heading);
-  font-style: italic;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
   box-shadow: var(--ab-shadow-danger);
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
   animation: sos-pulse 2.2s ease-in-out infinite;
 }
 
@@ -410,12 +448,75 @@ ion-menu.ab-sidebar {
   cursor: not-allowed;
 }
 
+/* Al mantenerlo presionado se detiene el pulso ambiental (compite
+   visualmente con el anillo de progreso) y el botón se achica un poco,
+   como si se hundiera bajo el dedo — refuerza que el toque SÍ está siendo
+   detectado mientras se completa el gesto sostenido. */
+.sos-fab--sosteniendo {
+  animation-play-state: paused;
+  transform: scale(0.96);
+}
+
+.sos-fab-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.sos-fab-ring-track,
+.sos-fab-ring-progress {
+  fill: none;
+}
+
+.sos-fab-ring-track {
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 3;
+}
+
+.sos-fab-ring-progress {
+  stroke: #ffffff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 182.2;
+  stroke-dashoffset: 182.2;
+}
+
+.sos-fab--sosteniendo .sos-fab-ring-progress {
+  transition: stroke-dashoffset 1.4s linear;
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sos-fab {
+    animation: none;
+  }
+
+  .sos-fab--sosteniendo .sos-fab-ring-progress {
+    transition-duration: 0.1s;
+  }
+}
+
+.sos-fab-label {
+  position: relative;
+  font-family: var(--ab-font-heading);
+  font-style: italic;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 991px) {
   .sos-fab {
     right: 18px;
     bottom: calc(70px + max(14px, env(safe-area-inset-bottom)));
     width: 56px;
     height: 56px;
+  }
+
+  .sos-fab-label {
     font-size: 0.9rem;
   }
 }

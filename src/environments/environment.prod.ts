@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  useEmulators: false,
   firebaseConfig : {
   apiKey: "AIzaSyAgcluXkKPlYonfQSBDFqZUotBcyU-tpBA",
   authDomain: "alertbxt.firebaseapp.com",
@@ -10,5 +11,8 @@ export const environment = {
   measurementId: "G-Q8KNG7S9Q2"
 },
   // Pega aquí la clave pública VAPID de Firebase Cloud Messaging.
-  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE'
+  messagingVapidKey: 'BPFwLAG0d8tqH6UxM0hDSOprCfb3WZMGpAJRFSXwj1bgp8vaUfiobgH_B6gXw8VLkOKpW5UaNFDMmH0kOB0FywE',
+  // Site key "score-based" de reCAPTCHA Enterprise (clave web, registrada
+  // en Firebase Console > Build > App Check > Apps).
+  appCheckSiteKey: '6Le-vb0tAAAAADOp7of4o0YkRYjykWcQRDsExXp7'
 };

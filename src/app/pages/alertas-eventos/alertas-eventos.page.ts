@@ -13,8 +13,9 @@ import {
   personOutline,
   timeOutline,
 } from 'ionicons/icons';
-import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, map, of, switchMap, takeUntil } from 'rxjs';
+import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, interval, map, of, switchMap, takeUntil } from 'rxjs';
 import { Aviso, Recordatorio } from '../../models';
+import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 
@@ -45,7 +46,7 @@ type FiltroPanel = 'todos' | 'aviso' | 'recordatorio';
   styleUrls: ['./alertas-eventos.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonButton, IonIcon],
+  imports: [CommonModule, FormsModule, IonContent, IonButton, IonIcon, TiempoRelativoPipe],
 })
 export class AlertasEventosPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
@@ -75,6 +76,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   modalData: ModalData | null = null;
   isLoading = false;
   cargaError = '';
+  readonly skeletonPlaceholders = [1, 2, 3, 4, 5, 6];
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -91,7 +93,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
             return of([]);
           })
         ),
-        this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '', user!.comunidadId).pipe(
+        this.firestoreService.getRecordatoriosVisibles(user!).pipe(
           catchError(error => {
             console.error('Error cargando recordatorios:', error);
             this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
@@ -102,9 +104,12 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: ([avisos, recordatorios]) => {
-        this.avisos = avisos;
+        // Una alerta SOS rechazada por un administrador (falsa alarma) deja de
+        // mostrarse a los vecinos; pendiente y validada sí, para no retrasar
+        // el aviso mientras se confirma.
+        this.avisos = avisos.filter(aviso => !(aviso.tipoAviso === 'alerta' && aviso.estado === 'rechazado'));
         this.recordatorios = recordatorios;
-        this.tarjetas = this.crearTarjetas(avisos, recordatorios);
+        this.tarjetas = this.crearTarjetas(this.avisos, recordatorios);
         this.aplicarFiltro();
         this.cdr.markForCheck();
       },
@@ -118,6 +123,15 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     this.firestoreService.isLoading$.pipe(takeUntil(this.destroy$)).subscribe(loading => {
       this.isLoading = loading;
     });
+
+    // La página usa OnPush: sin este tick, "hace 2 minutos" se queda
+    // congelado hasta la próxima carga de datos o interacción del usuario,
+    // en vez de ir avanzando por sí solo mientras la pantalla está abierta.
+    interval(60_000).pipe(takeUntil(this.destroy$)).subscribe(() => this.cdr.markForCheck());
+  }
+
+  esFuturo(fecha: string | undefined): boolean {
+    return !!fecha && new Date(fecha).getTime() > Date.now();
   }
 
   ngOnDestroy(): void {

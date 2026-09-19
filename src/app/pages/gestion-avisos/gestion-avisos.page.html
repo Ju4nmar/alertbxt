@@ -75,6 +75,17 @@
 
     <div class="lista-avisos">
       <h3>Avisos existentes</h3>
+
+      <ng-container *ngIf="isLoadingLista">
+        <div class="aviso-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+          <div class="aviso-info">
+            <div class="skeleton-line skeleton-line--short"></div>
+            <div class="skeleton-line skeleton-line--wide"></div>
+            <div class="skeleton-line skeleton-line--medium"></div>
+          </div>
+        </div>
+      </ng-container>
+
       <div *ngFor="let aviso of avisosAdministrativos; trackBy: trackByAvisoId" class="aviso-item" [ngClass]="'tipo-' + (aviso.tipoAviso || 'informativo')">
         <div class="aviso-info">
           <span class="ab-badge" [ngClass]="'ab-badge--' + (aviso.tipoAviso || 'informativo')">{{ aviso.tipoAviso || 'informativo' }}</span>
@@ -87,7 +98,7 @@
         </div>
       </div>
 
-      <p *ngIf="!avisosAdministrativos.length" class="empty-list">No hay avisos administrativos publicados.</p>
+      <p *ngIf="!isLoadingLista && !avisosAdministrativos.length" class="empty-list">No hay avisos administrativos publicados.</p>
     </div>
 
     <div class="lista-avisos lista-alertas-sos">
@@ -95,16 +106,43 @@
 
       <div *ngFor="let alerta of alertasSos; trackBy: trackByAvisoId" class="aviso-item alerta-sos-item">
         <div class="alerta-sos-content">
-          <h4 class="aviso-titulo">{{ alerta.tituloAviso }}</h4>
+          <div class="alerta-sos-header">
+            <h4 class="aviso-titulo">{{ alerta.tituloAviso }}</h4>
+            <span class="estado-pill" [ngClass]="'estado-pill--' + (alerta.estado || 'pendiente')">
+              {{ alerta.estado === 'validado' ? 'Validada' : alerta.estado === 'rechazado' ? 'Rechazada' : 'Pendiente' }}
+            </span>
+          </div>
           <p class="alerta-sos-description">{{ alerta.descripcionAviso }}</p>
           <small>{{ alerta.autorNombre || 'Residente' }} · {{ alerta.fechaPublicacion | date: 'medium' }}</small>
         </div>
         <div class="acciones">
-          <ion-button class="btn-eliminar-aviso" (click)="descartarAlertaSos(alerta)">Descartar</ion-button>
+          <ion-button class="btn-validar-aviso" *ngIf="alerta.estado !== 'validado'" (click)="validarAlertaSos(alerta)">Validar</ion-button>
+          <ion-button class="btn-rechazar-aviso" (click)="rechazarAlertaSos(alerta)">Rechazar</ion-button>
+          <ion-button class="btn-eliminar-aviso" (click)="eliminarAlertaSos(alerta)">Eliminar</ion-button>
         </div>
       </div>
 
-      <p *ngIf="!alertasSos.length" class="empty-list">No hay alertas SOS pendientes de moderación.</p>
+      <p *ngIf="!isLoadingLista && !alertasSos.length" class="empty-list">No hay alertas SOS pendientes de moderación.</p>
+    </div>
+
+    <div class="lista-avisos lista-alertas-sos">
+      <h3>Historial de alertas SOS</h3>
+
+      <div *ngFor="let alerta of historialAlertasSos; trackBy: trackByAvisoId" class="aviso-item alerta-sos-item">
+        <div class="alerta-sos-content">
+          <div class="alerta-sos-header">
+            <h4 class="aviso-titulo">{{ alerta.tituloAviso }}</h4>
+            <span class="estado-pill estado-pill--rechazado">Rechazada</span>
+          </div>
+          <p class="alerta-sos-description">{{ alerta.descripcionAviso }}</p>
+          <small>{{ alerta.autorNombre || 'Residente' }} · {{ alerta.fechaPublicacion | date: 'medium' }}</small>
+        </div>
+        <div class="acciones">
+          <ion-button class="btn-eliminar-aviso" (click)="eliminarAlertaSos(alerta)">Eliminar</ion-button>
+        </div>
+      </div>
+
+      <p *ngIf="!isLoadingLista && !historialAlertasSos.length" class="empty-list">Aún no hay alertas SOS en el historial.</p>
     </div>
   </div>
   </div>

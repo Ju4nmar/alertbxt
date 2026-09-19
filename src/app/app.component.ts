@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, download, logOut, notifications, notificationsOutline, people, person, statsChart } from 'ionicons/icons';
+import { alertCircle, calendar, chatbubbleEllipses, download, helpCircleOutline, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -26,6 +26,8 @@ import { FirestoreService } from './services/firestore.service';
 import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
+import { ThemeService } from './services/theme.service';
+import { TourService } from './services/tour.service';
 
 @Component({
   selector: 'app-root',
@@ -60,6 +62,8 @@ export class AppComponent implements OnDestroy {
   private readonly localNotificationService = inject(LocalNotificationService);
   private readonly fcmService = inject(FcmService);
   private readonly pwaInstallService = inject(PwaInstallService);
+  private readonly themeService = inject(ThemeService);
+  private readonly tourService = inject(TourService);
   private readonly destroy$ = new Subject<void>();
 
   nombreUsuario: string | null = null;
@@ -71,6 +75,8 @@ export class AppComponent implements OnDestroy {
   isMobileDevice = this.getIsMobileDevice();
   showSplash = true;
   currentUrl = this.router.url;
+  sosSosteniendo = false;
+  private sosHoldTimeoutId?: ReturnType<typeof setTimeout>;
 
   @HostListener('window:resize')
   onWindowResize(): void {
@@ -79,7 +85,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,logOut,download,statsChart});
+    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -91,6 +97,7 @@ export class AppComponent implements OnDestroy {
         this.currentUser = user;
         this.isLoggedIn = !!user;
         this.nombreUsuario = user?.nombre || null;
+        this.tourService.iniciarSiEsNuevo(user);
       });
 
     this.pwaInstallService.canInstall$
@@ -114,11 +121,20 @@ export class AppComponent implements OnDestroy {
       });
   }
 
+  get temaOscuro(): boolean {
+    return this.themeService.getPreference() === 'dark';
+  }
+
+  alternarTema(): void {
+    this.themeService.toggle();
+  }
+
   isActive(path: string): boolean {
     return this.currentUrl === path || this.currentUrl.startsWith(`${path}/`);
   }
 
   ngOnDestroy(): void {
+    this.cancelarSostenidoSos();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -132,51 +148,60 @@ export class AppComponent implements OnDestroy {
     }
   }
 
-  async generarAlerta(): Promise<void> {
-    const confirm = await this.alertCtrl.create({
-      header: 'Generar alerta de emergencia',
-      message: '¿Estás seguro de que deseas enviar una alerta SOS a los administradores y residentes de tu conjunto?',
+  // Mantener presionado ~1.4s (en vez de un solo toque) es la fricción
+  // intencional antes de abrir el formulario de la alerta: hace falta un
+  // gesto deliberado, sostenido, que un toque accidental (rozar el botón al
+  // hacer scroll, un bolsillo) no puede replicar. El diálogo de "¿Estás
+  // seguro?" que había antes quedaba redundante con ese mismo propósito —
+  // se quita para no sumar un paso más sin valor real sobre un botón de
+  // emergencia, donde cada segundo cuenta.
+  private static readonly SOS_HOLD_MS = 1400;
+
+  iniciarSostenidoSos(): void {
+    if (this.sosSosteniendo || !this.currentUser?.comunidadId) {
+      return;
+    }
+
+    this.sosSosteniendo = true;
+    this.sosHoldTimeoutId = setTimeout(() => {
+      this.sosSosteniendo = false;
+      void this.abrirFormularioAlerta();
+    }, AppComponent.SOS_HOLD_MS);
+  }
+
+  cancelarSostenidoSos(): void {
+    this.sosSosteniendo = false;
+    if (this.sosHoldTimeoutId) {
+      clearTimeout(this.sosHoldTimeoutId);
+      this.sosHoldTimeoutId = undefined;
+    }
+  }
+
+  private async abrirFormularioAlerta(): Promise<void> {
+    const form = await this.alertCtrl.create({
+      header: 'Detalles de la emergencia',
+      inputs: [
+        {
+          name: 'descripcion',
+          type: 'textarea',
+          placeholder: 'Describe brevemente lo que ocurre...',
+        },
+        {
+          name: 'lugar',
+          type: 'text',
+          placeholder: 'Lugar de la emergencia',
+        },
+      ],
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Enviar alerta SOS',
-          role: 'destructive',
-          handler: async () => {
-            // Ionic no cierra este alert hasta que el handler termine, así
-            // que sin este dismiss explícito el segundo diálogo se dibuja
-            // encima del primero (ambos visibles y superpuestos a la vez).
-            await confirm.dismiss();
-
-            const form = await this.alertCtrl.create({
-              header: 'Detalles de la emergencia',
-              inputs: [
-                {
-                  name: 'descripcion',
-                  type: 'textarea',
-                  placeholder: 'Describe brevemente lo que ocurre...',
-                },
-                {
-                  name: 'lugar',
-                  type: 'text',
-                  placeholder: 'Lugar de la emergencia',
-                },
-              ],
-              buttons: [
-                { text: 'Cancelar', role: 'cancel' },
-                {
-                  text: 'Enviar',
-                  handler: data => this.enviarAlertaSos(data),
-                },
-              ],
-            });
-
-            await form.present();
-          },
+          text: 'Enviar',
+          handler: data => this.enviarAlertaSos(data),
         },
       ],
     });
 
-    await confirm.present();
+    await form.present();
   }
 
   private async enviarAlertaSos(data: { descripcion?: string; lugar?: string }): Promise<boolean> {
@@ -211,6 +236,7 @@ export class AppComponent implements OnDestroy {
         autorId: currentUser.idUsuario || '',
         autorNombre: currentUser.nombre,
         comunidadId: currentUser.comunidadId,
+        estado: 'pendiente',
       };
 
       await firstValueFrom(this.firestoreService.addAviso(avisoData));
@@ -248,6 +274,14 @@ export class AppComponent implements OnDestroy {
 
   goToPerfilUsuario(){
     this.navigateTo('/perfil-usuario');
+  }
+
+  goToMensajes(){
+    this.navigateTo('/mensajes');
+  }
+
+  goToGuiaUso(){
+    this.navigateTo('/guia-uso');
   }
 
   goToUnirseVecindad(){

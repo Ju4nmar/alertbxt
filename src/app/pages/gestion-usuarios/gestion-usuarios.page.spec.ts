@@ -1,0 +1,171 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AlertController } from '@ionic/angular/standalone';
+import { of } from 'rxjs';
+import { Usuario } from '../../models';
+import { AuthService } from '../../services/auth.service';
+import { FirestoreService } from '../../services/firestore.service';
+import { MensajesService } from '../../services/mensajes.service';
+import { GestionUsuariosPage } from './gestion-usuarios.page';
+
+describe('GestionUsuariosPage', () => {
+  let component: GestionUsuariosPage;
+  let fixture: ComponentFixture<GestionUsuariosPage>;
+  let updateUsuarioEstadoSpy: jasmine.Spy;
+  let enviarMensajeIndividualSpy: jasmine.Spy;
+  let alertControllerSpy: jasmine.SpyObj<Pick<AlertController, 'create'>>;
+
+  const admin: Usuario = {
+    idUsuario: 'admin-1',
+    nombre: 'Admin',
+    correo: 'admin@alertbxt.test',
+    telefono: '3000000000',
+    rol: 'admin',
+    activo: true,
+    comunidadId: 'comunidad-1',
+  };
+
+  const residente: Usuario = {
+    idUsuario: 'residente-1',
+    nombre: 'Residente',
+    correo: 'residente@alertbxt.test',
+    telefono: '3000000001',
+    rol: 'residente',
+    activo: true,
+    comunidadId: 'comunidad-1',
+  };
+
+  beforeEach(async () => {
+    updateUsuarioEstadoSpy = jasmine.createSpy('updateUsuarioEstado').and.returnValue(of(void 0));
+    enviarMensajeIndividualSpy = jasmine.createSpy('enviarMensajeIndividual').and.returnValue(of(void 0));
+    alertControllerSpy = jasmine.createSpyObj('AlertController', ['create']);
+
+    await TestBed.configureTestingModule({
+      imports: [GestionUsuariosPage],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser$: of(admin),
+            getCurrentUser: () => admin,
+          },
+        },
+        {
+          provide: FirestoreService,
+          useValue: {
+            getUsuariosByComunidad: () => of([residente]),
+            getComunidadById: () => of(null),
+            updateUsuarioEstado: updateUsuarioEstadoSpy,
+          },
+        },
+        {
+          provide: MensajesService,
+          useValue: {
+            enviarMensajeIndividual: enviarMensajeIndividualSpy,
+          },
+        },
+        { provide: AlertController, useValue: alertControllerSpy },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GestionUsuariosPage);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('un administrador puede reactivar a un residente inactivo directamente', () => {
+    const residenteInactivo = { ...residente, activo: false };
+
+    component.alternarEstado(residenteInactivo);
+
+    expect(updateUsuarioEstadoSpy).toHaveBeenCalledWith('residente-1', { activo: true });
+    expect(alertControllerSpy.create).not.toHaveBeenCalled();
+  });
+
+  it('desactivar un residente activo pide confirmación antes de actualizar', async () => {
+    let manejadorDesactivar: (() => void) | undefined;
+    alertControllerSpy.create.and.callFake((opciones: unknown) => {
+      const config = opciones as { buttons: Array<{ role?: string; handler?: () => void }> };
+      manejadorDesactivar = config.buttons.find(boton => boton.role === 'destructive')?.handler;
+      return Promise.resolve({ present: () => Promise.resolve() } as never);
+    });
+
+    await component.alternarEstado(residente);
+
+    expect(alertControllerSpy.create).toHaveBeenCalled();
+    expect(updateUsuarioEstadoSpy).not.toHaveBeenCalled();
+
+    manejadorDesactivar?.();
+
+    expect(updateUsuarioEstadoSpy).toHaveBeenCalledWith('residente-1', { activo: false });
+  });
+
+  it('un administrador no puede gestionar su propia cuenta', () => {
+    expect(component.puedeGestionarUsuario(admin)).toBeFalse();
+  });
+
+  it('cambiarRol invierte el rol de un residente gestionable', () => {
+    component.cambiarRol(residente);
+
+    expect(updateUsuarioEstadoSpy).toHaveBeenCalledWith('residente-1', { rol: 'admin' });
+  });
+
+  it('enviarMensaje() pide el texto y llama a MensajesService con el destinatario correcto', async () => {
+    let manejadorEnviar: ((data: { mensaje: string }) => boolean) | undefined;
+    alertControllerSpy.create.and.callFake((opciones: unknown) => {
+      const config = opciones as { buttons: Array<{ text: string; handler?: (data: { mensaje: string }) => boolean }> };
+      manejadorEnviar = config.buttons.find(boton => boton.text === 'Enviar')?.handler;
+      return Promise.resolve({ present: () => Promise.resolve() } as never);
+    });
+
+    await component.enviarMensaje(residente);
+
+    expect(alertControllerSpy.create).toHaveBeenCalled();
+    expect(enviarMensajeIndividualSpy).not.toHaveBeenCalled();
+
+    manejadorEnviar?.({ mensaje: 'Recuerda pagar la administración' });
+
+    expect(enviarMensajeIndividualSpy).toHaveBeenCalledWith(['residente-1'], 'Recuerda pagar la administración');
+  });
+
+  it('enviarMensaje() no se puede usar sobre la propia cuenta del administrador', async () => {
+    await component.enviarMensaje(admin);
+
+    expect(alertControllerSpy.create).not.toHaveBeenCalled();
+  });
+
+  it('enviarMensajeSeleccionados() envía a todos los vecinos marcados en modo selección', async () => {
+    const residente2: Usuario = { ...residente, idUsuario: 'residente-2', nombre: 'Residente Dos' };
+    (component as unknown as { usuarios: Usuario[] }).usuarios = [residente, residente2];
+
+    let manejadorEnviar: ((data: { mensaje: string }) => boolean) | undefined;
+    alertControllerSpy.create.and.callFake((opciones: unknown) => {
+      const config = opciones as { buttons: Array<{ text: string; handler?: (data: { mensaje: string }) => boolean }> };
+      manejadorEnviar = config.buttons.find(boton => boton.text === 'Enviar')?.handler;
+      return Promise.resolve({ present: () => Promise.resolve() } as never);
+    });
+
+    component.activarModoSeleccion();
+    component.alternarSeleccion(residente);
+    component.alternarSeleccion(residente2);
+    expect(component.cantidadSeleccionados).toBe(2);
+
+    await component.enviarMensajeSeleccionados();
+    manejadorEnviar?.({ mensaje: 'Reunión de propietarios el sábado' });
+
+    expect(enviarMensajeIndividualSpy).toHaveBeenCalledWith(
+      jasmine.arrayWithExactContents(['residente-1', 'residente-2']),
+      'Reunión de propietarios el sábado'
+    );
+  });
+
+  it('alternarSeleccion() ignora al propio administrador', () => {
+    component.activarModoSeleccion();
+    component.alternarSeleccion(admin);
+
+    expect(component.cantidadSeleccionados).toBe(0);
+  });
+});

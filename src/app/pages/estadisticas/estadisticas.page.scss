@@ -29,12 +29,6 @@ ion-content {
 }
 
 /* ============== Tarjetas de conteo ============== */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
 .stat-card {
   display: flex;
   flex-direction: column;
@@ -78,23 +72,15 @@ ion-content {
 .stat-card--primary:hover { box-shadow: var(--ab-shadow-primary); }
 .stat-card--tertiary:hover { box-shadow: var(--ab-shadow-tertiary); }
 
-.stats-grid--compact {
-  margin-top: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-}
-
-.stats-grid--compact .stat-card {
-  padding: 12px 16px;
-}
-
-.stats-grid--compact .stat-value {
-  font-size: 1.4rem;
-}
-
 /* ============== Fila de tarjetas resumen + gráfico ============== */
 .chart-row {
   display: grid;
-  grid-template-columns: minmax(160px, 260px) 1fr;
+  /* La tarjeta del gráfico tenía un tope de 1fr (crecía a rellenar TODO el
+     ancho disponible), pero el donut adentro es de tamaño fijo — el
+     resultado era una tarjeta ancha con mucho aire vacío alrededor de un
+     gráfico chico. Con un tope razonable, la tarjeta y el donut (más
+     grande, ver .donut-wrap) usan mejor el espacio en vez de estirarse. */
+  grid-template-columns: minmax(220px, 320px) minmax(280px, 580px);
   gap: 12px;
   align-items: stretch;
 }
@@ -103,6 +89,25 @@ ion-content {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* La sección "Vecinos" tiene 4 tarjetas chicas (antes: 2 apiladas junto al
+   gráfico + 2 más anchas en una fila aparte debajo, con tamaños
+   inconsistentes entre sí). Con las 4 en una sola grilla 2x2 quedan todas
+   del mismo tamaño. */
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  align-content: start;
+}
+
+.stats-mini-grid .stat-card {
+  padding: 14px 16px;
+}
+
+.stats-mini-grid .stat-value {
+  font-size: 1.5rem;
 }
 
 .chart-card {
@@ -120,8 +125,24 @@ ion-content {
 .donut-wrap {
   position: relative;
   flex-shrink: 0;
+  width: 168px;
+  height: 168px;
+}
+
+.skeleton-section-title {
+  height: 18px;
   width: 140px;
-  height: 140px;
+  margin-bottom: var(--ab-space-3);
+}
+
+.skeleton-donut {
+  flex-shrink: 0;
+  width: 168px;
+  height: 168px;
+}
+
+.skeleton-chart-card {
+  justify-content: center;
 }
 
 .donut-svg {
@@ -133,14 +154,28 @@ ion-content {
 .donut-track {
   fill: none;
   stroke: var(--ab-surface-muted);
-  stroke-width: 14;
+  stroke-width: 16;
 }
 
 .donut-segment {
   fill: none;
-  stroke-width: 14;
+  stroke-width: 16;
   stroke-linecap: butt;
-  transition: stroke-dasharray 220ms ease;
+  cursor: pointer;
+  outline: none;
+  transition: stroke-dasharray 220ms ease, stroke-width 160ms ease, opacity 160ms ease;
+}
+
+.donut-segment--activo {
+  stroke-width: 19;
+}
+
+.donut-segment--dim {
+  opacity: 0.35;
+}
+
+.donut-segment:focus-visible {
+  stroke-width: 19;
 }
 
 .donut-center {
@@ -154,7 +189,7 @@ ion-content {
 
 .donut-center-value {
   font-family: var(--ab-font-heading);
-  font-size: 1.6rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--ab-text-primary);
   line-height: 1.1;
@@ -167,6 +202,11 @@ ion-content {
   letter-spacing: 0.04em;
 }
 
+.legend-col {
+  flex: 1;
+  min-width: 160px;
+}
+
 .chart-legend {
   display: flex;
   flex-direction: column;
@@ -174,17 +214,43 @@ ion-content {
   margin: 0;
   padding: 0;
   list-style: none;
-  flex: 1;
-  min-width: 160px;
 }
 
-.chart-legend li {
+.legend-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ab-radius-sm);
+  background: transparent;
   color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 0.9rem;
   font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.legend-btn:hover,
+.legend-btn:focus-visible {
+  background: var(--ab-surface-muted);
+  border-color: var(--ab-border);
+  outline: none;
+}
+
+.legend-btn--off {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.chart-hint {
+  margin: 8px 0 0;
+  color: var(--ab-text-secondary);
+  font-size: 0.78rem;
 }
 
 .legend-dot {
@@ -212,8 +278,99 @@ ion-content {
   }
 }
 
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+/* ============== Período ============== */
+.periodo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px 0 6px;
+}
+
+.periodo-chip {
+  min-height: 44px;
+  padding: 9px 18px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-surface);
+  color: var(--ab-text-secondary);
+  font-family: var(--ab-font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.periodo-chip.active {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.periodo-nota {
+  margin: 0 0 var(--ab-space-4);
+  text-align: center;
+  color: var(--ab-text-secondary);
+  font-size: 0.8rem;
+}
+
+/* ============== Tarjetas clicables y progreso ============== */
+button.stat-card {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.stat-card:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.stat-card--link:hover {
+  transform: translateY(-2px);
+  border-color: var(--ion-color-primary);
+}
+
+.stat-go {
+  margin-top: 2px;
+  color: var(--ion-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.stat-inline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.progreso {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-surface-muted);
+}
+
+.progreso-relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--ab-radius-pill);
+  transition: width 600ms ease;
+}
+
+.progreso-relleno--success {
+  background: var(--ion-color-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progreso-relleno,
+  .donut-segment {
+    transition: none;
   }
 }

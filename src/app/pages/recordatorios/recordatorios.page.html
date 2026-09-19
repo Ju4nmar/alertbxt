@@ -50,6 +50,32 @@
       </ion-button>
     </div>
 
+    <div class="asignacion-field" *ngIf="esAdmin && !idEditando">
+      <label class="asignacion-label">Asignar a</label>
+      <div class="asignacion-tabs" role="radiogroup" aria-label="Asignar recordatorio a">
+        <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'yo'" [class.active]="modoAsignacion === 'yo'" (click)="elegirModoAsignacion('yo')">Solo yo</button>
+        <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'elegir'" [class.active]="modoAsignacion === 'elegir'" (click)="elegirModoAsignacion('elegir')">Elegir vecinos</button>
+        <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'todos'" [class.active]="modoAsignacion === 'todos'" (click)="elegirModoAsignacion('todos')">Todos</button>
+      </div>
+
+      <div class="asignacion-lista" *ngIf="modoAsignacion === 'elegir'">
+        <p class="field-hint" *ngIf="!comunidadUsuarios.length">No hay otros vecinos en tu comunidad todavía.</p>
+        <ng-container *ngIf="comunidadUsuarios.length">
+          <input type="search" class="asignacion-buscador" name="filtroVecino" [(ngModel)]="filtroVecino" placeholder="Buscar por nombre, torre o apartamento" aria-label="Buscar vecino" />
+          <div class="asignacion-acciones">
+            <button type="button" class="asignacion-link" (click)="seleccionarVisibles()">Seleccionar {{ filtroVecino.trim() ? 'resultados' : 'todos' }}</button>
+            <button type="button" class="asignacion-link" *ngIf="cantidadAsignados" (click)="limpiarSeleccion()">Limpiar</button>
+          </div>
+          <p class="field-hint" *ngIf="!vecinosFiltrados.length">Ningún vecino coincide con "{{ filtroVecino }}".</p>
+        </ng-container>
+        <label class="asignacion-item" *ngFor="let vecino of vecinosFiltrados">
+          <input type="checkbox" [checked]="estaAsignado(vecino)" (change)="alternarAsignado(vecino)" [attr.aria-label]="'Asignar a ' + vecino.nombre" />
+          {{ vecino.nombre }}<span class="asignacion-unidad" *ngIf="vecino.numeroApartamento"> · {{ vecino.torre ? 'Torre ' + vecino.torre + ' - ' : '' }}{{ vecino.numeroApartamento }}</span>
+        </label>
+        <p class="field-hint" *ngIf="cantidadAsignados">{{ cantidadAsignados }} {{ cantidadAsignados === 1 ? 'vecino seleccionado' : 'vecinos seleccionados' }}</p>
+      </div>
+    </div>
+
     <div *ngIf="recordatorioError" class="error-message" role="alert">
       {{ recordatorioError }}
     </div>
@@ -62,20 +88,35 @@
       {{ cargaError }}
     </div>
 
+    <ng-container *ngIf="isLoadingLista">
+      <div class="recordatorio-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+        <div class="recordatorio-info">
+          <div class="skeleton-line skeleton-line--medium"></div>
+          <div class="recordatorio-meta">
+            <div class="skeleton-line skeleton-line--short"></div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
       <div class="recordatorio-info">
         <h4>{{ recordatorio.tituloRecordatorio }}</h4>
         <div class="recordatorio-meta">
-          <span class="recordatorio-fecha">{{ recordatorio.fechaHora | date: 'medium' }}</span>
+          <span class="recordatorio-fecha">
+            {{ recordatorio.fechaHora | date: 'medium' }}
+            <span class="recordatorio-fecha-relativo">({{ esFuturo(recordatorio.fechaHora) ? 'vence' : 'venció' }} {{ recordatorio.fechaHora | tiempoRelativo }})</span>
+          </span>
           <span class="estado-pill" [class.estado-pill--completado]="recordatorio.estado === 'completado'">
             {{ recordatorio.estado === 'completado' ? 'Completado' : 'Pendiente' }}
           </span>
+          <span class="origen-pill" *ngIf="origenRecordatorio(recordatorio) as origen">{{ origen }}</span>
         </div>
       </div>
 
-      <div class="acciones">
-        <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>
-        <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio.idRecordatorios)">Eliminar</button>
+      <div class="acciones" *ngIf="esPersonal(recordatorio) || esCreador(recordatorio)">
+        <button class="btn-editar" *ngIf="esPersonal(recordatorio)" (click)="editarRecordatorio(recordatorio)">Editar</button>
+        <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio)">Eliminar</button>
       </div>
     </div>
   </div>

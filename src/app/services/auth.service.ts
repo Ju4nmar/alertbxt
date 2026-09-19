@@ -1,16 +1,13 @@
-import { Injectable, Injector, NgZone, inject, runInInjectionContext } from '@angular/core';
-import {
-  Auth,
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-} from '@angular/fire/auth';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, from, throwError } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
-import { Comunidad, Usuario } from '../models';
+import { Comunidad, TipoComunidad, Usuario } from '../models';
+
+// Lo mínimo que necesitan los flujos de "unirse a una vecindad" (antes de
+// autenticarse no se puede leer más que esto, ver
+// FirestoreService.getComunidadByCodigoInvitacion).
+type ComunidadResumen = { idComunidad: string; nombreComunidad: string; tipoComunidad?: TipoComunidad };
+import { AuthClientService } from './auth-client.service';
 import { FirestoreService } from './firestore.service';
 import { FcmService } from './fcm.service';
 
@@ -18,8 +15,7 @@ import { FcmService } from './fcm.service';
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly injector = inject(Injector);
-  private readonly auth = inject(Auth);
+  private readonly authClient = inject(AuthClientService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly fcmService = inject(FcmService);
   private readonly ngZone = inject(NgZone);
@@ -33,12 +29,8 @@ export class AuthService {
     this.setupAuthState();
   }
 
-  private inContext<T>(callback: () => T): T {
-    return runInInjectionContext(this.injector, callback);
-  }
-
   private setupAuthState(): void {
-    this.inContext(() => onAuthStateChanged(this.auth, firebaseUser => {
+    this.authClient.onAuthStateChanged(firebaseUser => {
       this.ngZone.run(async () => {
         try {
           if (!firebaseUser) {
@@ -59,11 +51,25 @@ export class AuthService {
           this.authReadySubject.next(true);
         }
       });
-    }));
+    });
   }
 
   private loadUserData(uid: string): Promise<Usuario | null> {
     return firstValueFrom(this.firestoreService.getUsuarioById(uid).pipe(take(1)));
+  }
+
+  // signOut() puede fallar con un error transitorio del propio SDK de
+  // Firebase Auth (p. ej. auth/the-service-is-currently-unavailable) cuando
+  // coincide con el listener de onAuthStateChanged reaccionando al mismo
+  // inicio de sesión. Si eso ocurre, ese error de Firebase reemplazaba al
+  // error específico que queríamos lanzar (p. ej. "cuenta-desactivada"),
+  // y el usuario veía el mensaje crudo de Firebase en vez del nuestro.
+  private async signOutSilenciosamente(): Promise<void> {
+    try {
+      await this.authClient.signOut();
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
+    }
   }
 
   // Una cuenta desactivada puede autenticarse en Firebase Auth (eso no lo
@@ -73,17 +79,17 @@ export class AuthService {
   // permisos silenciosos en la consola, sin ninguna explicación.
   private async rechazarSiCuentaDesactivada(userData: Usuario): Promise<void> {
     if (userData.activo === false) {
-      await this.inContext(() => signOut(this.auth));
+      await this.signOutSilenciosamente();
       throw new Error('cuenta-desactivada');
     }
   }
 
   login(email: string, password: string): Observable<Usuario> {
-    return from(this.inContext(() => signInWithEmailAndPassword(this.auth, email.trim(), password))).pipe(
+    return from(this.authClient.signInWithEmailAndPassword(email.trim(), password)).pipe(
       switchMap(async result => {
         const userData = await this.loadUserData(result.user.uid);
         if (!userData) {
-          await this.inContext(() => signOut(this.auth));
+          await this.signOutSilenciosamente();
           throw new Error('Usuario no encontrado en la base de datos');
         }
 
@@ -99,51 +105,20 @@ export class AuthService {
     );
   }
 
-  register(userData: {
-    email: string;
-    password: string;
-    nombre: string;
-    comunidadId?: string;
-    telefono: string;
-  }): Observable<Usuario> {
-    return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, userData.email.trim(), userData.password))).pipe(
-      switchMap(async result => {
-        const newUser: Usuario = {
-          idUsuario: result.user.uid,
-          nombre: userData.nombre.trim(),
-          correo: userData.email.trim(),
-          telefono: userData.telefono.trim(),
-          rol: 'residente',
-          activo: true,
-          comunidadId: userData.comunidadId || '',
-          fechaRegistro: new Date().toISOString(),
-        };
-
-        await firstValueFrom(this.firestoreService.addUsuario(newUser));
-        this.currentUserSubject.next(newUser);
-        this.authReadySubject.next(true);
-        return newUser;
-      }),
-      catchError(error => {
-        console.error('Error en registro:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
   registerAdminAndCreateComunidad(data: {
     nombreComunidad: string;
     administradorNombre: string;
     administradorCorreo: string;
     administradorCelular: string;
     contrasena: string;
+    tipoComunidad: TipoComunidad;
     aceptaTerminos: boolean;
   }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
     if (!data.aceptaTerminos) {
-      return throwError(() => new Error('Debe aceptar los términos y condiciones'));
+      return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
     }
 
-    return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.administradorCorreo.trim(), data.contrasena))).pipe(
+    return from(this.authClient.createUserWithEmailAndPassword(data.administradorCorreo.trim(), data.contrasena)).pipe(
       switchMap(async result => {
         const codigoInvitacion = this.generateCodigoInvitacion();
         const comunidadData: Omit<Comunidad, 'idComunidad'> = {
@@ -152,10 +127,14 @@ export class AuthService {
           administradorCorreo: data.administradorCorreo.trim(),
           administradorCelular: data.administradorCelular.trim(),
           codigoInvitacion,
+          tipoComunidad: data.tipoComunidad,
           fechaCreacion: new Date().toISOString(),
         };
 
         const comunidadId = await firstValueFrom(this.firestoreService.addComunidad(comunidadData));
+        // Respaldo del cliente además de la Cloud Function onComunidadWrite
+        // (ver comentario en FirestoreService.registrarCodigoInvitacion).
+        await firstValueFrom(this.firestoreService.registrarCodigoInvitacion(codigoInvitacion, comunidadId, comunidadData.nombreComunidad, data.tipoComunidad));
         const newUser: Usuario = {
           idUsuario: result.user.uid,
           nombre: data.administradorNombre.trim(),
@@ -184,11 +163,11 @@ export class AuthService {
   }
 
   loginWithGoogle(): Observable<Usuario> {
-    return from(this.inContext(() => signInWithPopup(this.auth, new GoogleAuthProvider()))).pipe(
+    return from(this.authClient.signInWithGoogle()).pipe(
       switchMap(async result => {
         const userData = await this.loadUserData(result.user.uid);
         if (!userData) {
-          await this.inContext(() => signOut(this.auth));
+          await this.signOutSilenciosamente();
           throw new Error('No existe una cuenta con este usuario de Google. Regístrate o únete con un código de invitación.');
         }
 
@@ -204,7 +183,11 @@ export class AuthService {
     );
   }
 
-  joinComunidadWithGoogle(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+  joinComunidadWithGoogle(codigoInvitacion: string, aceptaTerminos: boolean): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
+    if (!aceptaTerminos) {
+      return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
+    }
+
     const codigo = codigoInvitacion.trim().toUpperCase();
 
     return this.firestoreService.getComunidadByCodigoInvitacion(codigo).pipe(
@@ -214,7 +197,7 @@ export class AuthService {
           throw new Error('Código de invitación inválido');
         }
 
-        return from(this.inContext(() => signInWithPopup(this.auth, new GoogleAuthProvider()))).pipe(
+        return from(this.authClient.signInWithGoogle()).pipe(
           switchMap(async result => {
             const existente = await this.loadUserData(result.user.uid);
 
@@ -256,7 +239,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return from(this.inContext(() => signOut(this.auth))).pipe(
+    return from(this.authClient.signOut()).pipe(
       map(() => {
         this.currentUserSubject.next(null);
         this.fcmService.detener();
@@ -302,7 +285,7 @@ export class AuthService {
     );
   }
 
-  joinComunidad(codigoInvitacion: string): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+  joinComunidad(codigoInvitacion: string): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
     return this.firestoreService.getComunidadByCodigoInvitacion(codigoInvitacion.trim().toUpperCase()).pipe(
       take(1),
       switchMap(comunidad => {
@@ -344,9 +327,15 @@ export class AuthService {
     correo: string;
     telefono: string;
     numeroApartamento: string;
+    torre?: string;
     password: string;
     codigoInvitacion: string;
-  }): Observable<{ comunidad: Comunidad; usuario: Usuario }> {
+    aceptaTerminos: boolean;
+  }): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
+    if (!data.aceptaTerminos) {
+      return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
+    }
+
     const codigoInvitacion = data.codigoInvitacion.trim().toUpperCase();
 
     return this.firestoreService.getComunidadByCodigoInvitacion(codigoInvitacion).pipe(
@@ -356,7 +345,7 @@ export class AuthService {
           throw new Error('Código de invitación inválido');
         }
 
-        return from(this.inContext(() => createUserWithEmailAndPassword(this.auth, data.correo.trim(), data.password))).pipe(
+        return from(this.authClient.createUserWithEmailAndPassword(data.correo.trim(), data.password)).pipe(
           switchMap(async result => {
             const newUser: Usuario = {
               idUsuario: result.user.uid,
@@ -364,6 +353,7 @@ export class AuthService {
               correo: data.correo.trim(),
               telefono: data.telefono.trim(),
               numeroApartamento: data.numeroApartamento.trim(),
+              ...(data.torre?.trim() ? { torre: data.torre.trim() } : {}),
               rol: 'residente',
               activo: true,
               comunidadId: comunidad.idComunidad || '',

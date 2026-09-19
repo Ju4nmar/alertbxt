@@ -3,9 +3,11 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { IonButton, IonContent, IonInput, IonItem } from '@ionic/angular/standalone';
+import { IonButton, IonCheckbox, IonContent, IonInput, IonItem, IonLabel } from '@ionic/angular/standalone';
 import { combineLatest, filter, firstValueFrom, take } from 'rxjs';
+import { TipoComunidad } from '../../models';
 import { AuthService } from '../../services/auth.service';
+import { FirestoreService } from '../../services/firestore.service';
 import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
@@ -13,10 +15,11 @@ import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/au
   templateUrl: './unirse-vecindad.page.html',
   styleUrls: ['./unirse-vecindad.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem],
+  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonCheckbox, IonLabel],
 })
 export class UnirseVecindadPage implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly firestoreService = inject(FirestoreService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -24,16 +27,45 @@ export class UnirseVecindadPage implements OnInit {
   correo = '';
   telefono = '';
   numeroApartamento = '';
+  torre = '';
   password = '';
   confirmPassword = '';
   codigoInvitacion = '';
+  aceptaTerminos = false;
   isLoading = false;
   isGoogleLoading = false;
   isLoggedIn = false;
   joinError = '';
 
+  // Se resuelve en cuanto el código tiene 8 caracteres, para saber si pedir
+  // "Torre y Apartamento" o "Número de casa" antes de que el residente
+  // termine de llenar el resto del formulario. null = aún sin resolver o
+  // código inválido — en ese caso se asume "apartamentos" (comportamiento
+  // previo a esta funcionalidad).
+  tipoComunidadPreview: TipoComunidad | null = null;
+
+  get esComunidadDeCasas(): boolean {
+    return this.tipoComunidadPreview === 'casas';
+  }
+
+  onCodigoInvitacionChange(): void {
+    this.joinError = '';
+    const codigo = this.codigoInvitacion.trim().toUpperCase();
+
+    if (!/^[A-Z0-9]{8}$/.test(codigo)) {
+      this.tipoComunidadPreview = null;
+      return;
+    }
+
+    this.firestoreService.getComunidadByCodigoInvitacion(codigo).pipe(take(1)).subscribe({
+      next: comunidad => this.tipoComunidadPreview = comunidad?.tipoComunidad || null,
+      error: () => this.tipoComunidadPreview = null,
+    });
+  }
+
   ngOnInit(): void {
     this.codigoInvitacion = this.route.snapshot.queryParamMap.get('codigo') || '';
+    this.onCodigoInvitacionChange();
 
     // Espera a que Firebase Auth resuelva la sesión antes de decidir si el
     // usuario ya está autenticado: en una carga de página fresca,
@@ -49,6 +81,7 @@ export class UnirseVecindadPage implements OnInit {
       this.correo = currentUser?.correo || '';
       this.telefono = currentUser?.telefono || '';
       this.numeroApartamento = currentUser?.numeroApartamento || '';
+      this.torre = currentUser?.torre || '';
     });
   }
 
@@ -78,8 +111,10 @@ export class UnirseVecindadPage implements OnInit {
           correo: this.correo.trim(),
           telefono: this.telefono.trim(),
           numeroApartamento: this.numeroApartamento.trim(),
+          torre: this.esComunidadDeCasas ? undefined : this.torre.trim(),
           password: this.password,
           codigoInvitacion,
+          aceptaTerminos: this.aceptaTerminos,
         }));
       }
 
@@ -104,9 +139,14 @@ export class UnirseVecindadPage implements OnInit {
       return;
     }
 
+    if (!this.aceptaTerminos) {
+      this.joinError = 'Debes aceptar el tratamiento de tus datos personales.';
+      return;
+    }
+
     this.isGoogleLoading = true;
     try {
-      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion));
+      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion, this.aceptaTerminos));
       this.router.navigate(['/alertas-eventos']);
     } catch (error) {
       console.error('Error uniéndose con Google:', error);
@@ -125,9 +165,15 @@ export class UnirseVecindadPage implements OnInit {
     const correo = this.correo.trim();
     const telefono = this.telefono.trim();
     const numeroApartamento = this.numeroApartamento.trim();
+    const torre = this.torre.trim();
 
     if (!nombre || !correo || !telefono || !numeroApartamento || !this.password || !this.confirmPassword) {
       this.joinError = 'Completa todos los campos requeridos.';
+      return false;
+    }
+
+    if (!this.esComunidadDeCasas && !torre) {
+      this.joinError = 'Ingresa la torre de tu apartamento.';
       return false;
     }
 
@@ -136,6 +182,7 @@ export class UnirseVecindadPage implements OnInit {
       correo.length > 120 ||
       telefono.length < 7 || telefono.length > 15 ||
       numeroApartamento.length > 20 ||
+      torre.length > 20 ||
       this.password.length < 8 || this.password.length > 40
     ) {
       this.joinError = 'Revisa la longitud de los campos del formulario.';
@@ -149,6 +196,11 @@ export class UnirseVecindadPage implements OnInit {
 
     if (this.password !== this.confirmPassword) {
       this.joinError = 'Las contraseñas no coinciden.';
+      return false;
+    }
+
+    if (!this.aceptaTerminos) {
+      this.joinError = 'Debes aceptar el tratamiento de tus datos personales.';
       return false;
     }
 

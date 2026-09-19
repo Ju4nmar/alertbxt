@@ -80,19 +80,30 @@
           Las contraseñas no coinciden.
         </div>
 
+        <div class="tipo-comunidad-field">
+          <label class="tipo-comunidad-label">Tipo de vecindad</label>
+          <div class="tipo-tabs" role="radiogroup" aria-label="Tipo de vecindad">
+            <button type="button" class="tipo-chip" role="radio" [attr.aria-checked]="tipoComunidad === 'apartamentos'" [class.active]="tipoComunidad === 'apartamentos'" (click)="elegirTipoComunidad('apartamentos')">Apartamentos</button>
+            <button type="button" class="tipo-chip" role="radio" [attr.aria-checked]="tipoComunidad === 'casas'" [class.active]="tipoComunidad === 'casas'" (click)="elegirTipoComunidad('casas')">Casas</button>
+          </div>
+          <p class="field-hint">Define si a tus vecinos les pediremos torre y apartamento, o número de casa.</p>
+        </div>
+
         <ion-item class="chekbox">
           <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
-          <ion-label>Acepto los términos y condiciones del servicio.</ion-label>
+          <ion-label>
+            Acepto el <a href="/privacidad" target="_blank" rel="noopener">tratamiento de mis datos personales</a> conforme a la Ley 1581 de 2012.
+          </ion-label>
         </ion-item>
         <div *ngIf="terminosInput.invalid && (terminosInput.dirty || terminosInput.touched)" class="field-error">
-          Debes aceptar los términos y condiciones.
+          Debes aceptar el tratamiento de tus datos personales.
         </div>
 
         <div *ngIf="registroError" class="error-message" role="alert">
           {{ registroError }}
         </div>
 
-        <ion-button expand="block" type="submit" [disabled]="registroForm.invalid || password !== confirmPassword || isLoading" class="confirm-btn">
+        <ion-button expand="block" type="submit" [disabled]="registroForm.invalid || password !== confirmPassword || !tipoComunidad || isLoading" class="confirm-btn">
           {{ isLoading ? 'Creando...' : 'Confirmar' }}
         </ion-button>
       </form>
