@@ -20,12 +20,40 @@
 
     <ng-container *ngIf="!isLoading && vista === 'recibidos'">
       <div *ngFor="let mensaje of mensajesRecibidos" class="mensaje-item">
-        <div class="mensaje-header">
+        <button type="button" class="mensaje-header mensaje-header-btn" [attr.aria-expanded]="hiloEstaAbierto(usuarioId, mensaje.idMensaje)" (click)="toggleHilo(usuarioId, mensaje.idMensaje)">
           <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
           <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
-        </div>
+        </button>
         <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
+
+        <div class="hilo" *ngIf="hiloEstaAbierto(usuarioId, mensaje.idMensaje)">
+          <p *ngIf="cargandoRespuestas" class="hilo-cargando">Cargando respuestas...</p>
+
+          <ng-container *ngIf="!cargandoRespuestas">
+            <div *ngFor="let respuesta of respuestasDe(usuarioId, mensaje.idMensaje)" class="respuesta-item">
+              <span class="respuesta-autor">{{ respuesta.autorNombre }}</span>
+              <span class="respuesta-fecha">{{ respuesta.fecha | date: 'medium' }}</span>
+              <p class="respuesta-texto">{{ respuesta.texto }}</p>
+            </div>
+
+            <p *ngIf="!respuestasDe(usuarioId, mensaje.idMensaje).length" class="hilo-vacio">Aún no has respondido este mensaje.</p>
+          </ng-container>
+
+          <div class="hilo-responder" *ngIf="!esAdmin">
+            <textarea
+              class="respuesta-input"
+              [(ngModel)]="textoRespuesta"
+              maxlength="500"
+              placeholder="Escribe tu respuesta..."
+              [disabled]="enviandoRespuesta"
+              aria-label="Escribe tu respuesta"
+            ></textarea>
+            <button type="button" class="respuesta-enviar-btn" [disabled]="!textoRespuesta.trim() || enviandoRespuesta" (click)="enviarRespuesta(mensaje)">
+              {{ enviandoRespuesta ? 'Enviando...' : 'Responder' }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div *ngIf="!cargaError && !mensajesRecibidos.length" class="empty-state">
@@ -42,6 +70,31 @@
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
         </div>
         <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
+
+        <div class="destinatarios-lista">
+          <ng-container *ngFor="let destinatario of mensaje.destinatarios">
+            <button type="button" class="destinatario-chip" [attr.aria-expanded]="hiloEstaAbierto(destinatario.id, destinatario.mensajeId)" (click)="toggleHilo(destinatario.id, destinatario.mensajeId)">
+              {{ destinatario.nombre }}
+              <span class="destinatario-chip-count" *ngIf="respuestasDe(destinatario.id, destinatario.mensajeId).length">
+                {{ respuestasDe(destinatario.id, destinatario.mensajeId).length }}
+              </span>
+            </button>
+
+            <div class="hilo" *ngIf="hiloEstaAbierto(destinatario.id, destinatario.mensajeId)">
+              <p *ngIf="cargandoRespuestas" class="hilo-cargando">Cargando respuestas...</p>
+
+              <ng-container *ngIf="!cargandoRespuestas">
+                <div *ngFor="let respuesta of respuestasDe(destinatario.id, destinatario.mensajeId)" class="respuesta-item">
+                  <span class="respuesta-autor">{{ respuesta.autorNombre }}</span>
+                  <span class="respuesta-fecha">{{ respuesta.fecha | date: 'medium' }}</span>
+                  <p class="respuesta-texto">{{ respuesta.texto }}</p>
+                </div>
+
+                <p *ngIf="!respuestasDe(destinatario.id, destinatario.mensajeId).length" class="hilo-vacio">{{ destinatario.nombre }} todavía no ha respondido.</p>
+              </ng-container>
+            </div>
+          </ng-container>
+        </div>
       </div>
 
       <div *ngIf="!mensajesEnviados.length" class="empty-state">

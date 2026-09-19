@@ -328,11 +328,20 @@ export const enviarMensajeIndividual = onCall<EnviarMensajeIndividualRequest>(as
   const fecha = new Date().toISOString();
   const autorNombre = autor.nombre || 'Administrador';
 
+  // A cada destinatario le corresponde un mensajeId propio en su
+  // usuarios/{id}/mensajes_admin (autogenerado, distinto del mensajeEnviadoId
+  // del remitente). Se guarda aquí junto al nombre para que, desde
+  // "Enviados", el admin pueda abrir el hilo de respuestas de cada
+  // destinatario sin tener que adivinar o buscar ese id.
   const batch = db.batch();
   const mensajeEnviadoRef = db.collection(`usuarios/${uid}/mensajes_enviados`).doc();
-  batch.set(mensajeEnviadoRef, { destinatarios: destinatariosValidos, mensaje, fecha });
-  destinatariosValidos.forEach(destinatario => {
-    const ref = db.collection(`usuarios/${destinatario.id}/mensajes_admin`).doc();
+  const destinatariosConMensajeId = destinatariosValidos.map(destinatario => ({
+    ...destinatario,
+    mensajeId: db.collection(`usuarios/${destinatario.id}/mensajes_admin`).doc().id,
+  }));
+  batch.set(mensajeEnviadoRef, { destinatarios: destinatariosConMensajeId, mensaje, fecha });
+  destinatariosConMensajeId.forEach(destinatario => {
+    const ref = db.doc(`usuarios/${destinatario.id}/mensajes_admin/${destinatario.mensajeId}`);
     batch.set(ref, { autorId: uid, autorNombre, mensaje, fecha });
   });
   await batch.commit();
@@ -379,4 +388,89 @@ export const enviarMensajeIndividual = onCall<EnviarMensajeIndividualRequest>(as
   });
 
   return { mensajeId: mensajeEnviadoRef.id, enviados: destinatariosValidos.length };
+});
+
+interface ResponderMensajeRequest {
+  mensajeId?: string;
+  texto?: string;
+}
+
+const RESPUESTA_MAX_LENGTH = 500;
+
+// Solo el residente dueño del mensaje puede responder aquí (no hay una
+// función equivalente para que el admin conteste dentro del mismo hilo: si
+// quiere seguir la conversación usa "Enviar mensaje" de nuevo, que abre un
+// mensaje nuevo). Igual que enviarMensajeIndividual, escribe con el SDK de
+// administrador para no depender de una regla de Firestore que valide la
+// pertenencia del mensaje original desde el cliente.
+export const responderMensajeAdmin = onCall<ResponderMensajeRequest>(async request => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+
+  const mensajeId = (request.data.mensajeId || '').trim();
+  const texto = (request.data.texto || '').trim();
+
+  if (!mensajeId || !texto) {
+    throw new HttpsError('invalid-argument', 'Falta el mensaje original o el texto de la respuesta.');
+  }
+
+  if (texto.length > RESPUESTA_MAX_LENGTH) {
+    throw new HttpsError('invalid-argument', `La respuesta no debe superar ${RESPUESTA_MAX_LENGTH} caracteres.`);
+  }
+
+  const db = getFirestore();
+  const mensajeRef = db.doc(`usuarios/${uid}/mensajes_admin/${mensajeId}`);
+  const mensajeSnap = await mensajeRef.get();
+  const mensajeOriginal = mensajeSnap.data() as { autorId?: string } | undefined;
+
+  if (!mensajeOriginal?.autorId) {
+    throw new HttpsError('not-found', 'No se encontró el mensaje original.');
+  }
+
+  const residenteSnap = await db.doc(`usuarios/${uid}`).get();
+  const residente = residenteSnap.data() as UsuarioData | undefined;
+  const autorNombre = residente?.nombre || 'Vecino';
+  const fecha = new Date().toISOString();
+
+  const respuestaRef = mensajeRef.collection('respuestas').doc();
+  await respuestaRef.set({ autorId: uid, autorNombre, texto, fecha, esAdmin: false });
+
+  const dispositivosSnap = await db.collection(`usuarios/${mensajeOriginal.autorId}/dispositivos`).get();
+  const tokens = dispositivosSnap.docs.map(doc => doc.id);
+
+  if (tokens.length) {
+    const messaging = getMessaging();
+    const response = await messaging.sendEachForMulticast({
+      tokens,
+      notification: {
+        title: `${autorNombre} respondió tu mensaje`,
+        body: texto,
+      },
+      data: { tipo: 'respuesta_mensaje' },
+      webpush: {
+        fcmOptions: { link: '/mensajes' },
+      },
+    });
+
+    await Promise.all(response.responses.map(async (result, index) => {
+      if (result.success) {
+        return;
+      }
+
+      const code = result.error?.code;
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+        await db.doc(`usuarios/${mensajeOriginal.autorId}/dispositivos/${tokens[index]}`).delete();
+      }
+    }));
+  }
+
+  logger.info('Respuesta a mensaje individual enviada', {
+    mensajeId,
+    autorId: uid,
+    destinatarioId: mensajeOriginal.autorId,
+  });
+
+  return { respuestaId: respuestaRef.id };
 });

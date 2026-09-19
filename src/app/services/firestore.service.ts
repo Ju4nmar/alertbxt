@@ -16,7 +16,7 @@ import {
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, TipoComunidad, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -436,6 +436,21 @@ export class FirestoreService {
         console.error('Error obteniendo mensajes enviados:', error);
         this.isLoadingSubject.next(false);
         return throwError(() => new Error('Error al cargar mensajes enviados'));
+      })
+    );
+  }
+
+  getRespuestasMensaje(idUsuarioDueno: string, mensajeId: string): Observable<RespuestaMensaje[]> {
+    const q = this.inContext(() => {
+      const col = collection(this.firestore, `usuarios/${idUsuarioDueno}/mensajes_admin/${mensajeId}/respuestas`);
+      return query(col, orderBy('fecha', 'asc'));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idRespuesta' })).pipe(
+      map(data => data as RespuestaMensaje[]),
+      catchError(error => {
+        console.error('Error obteniendo respuestas del mensaje:', error);
+        return throwError(() => new Error('Error al cargar las respuestas'));
       })
     );
   }
