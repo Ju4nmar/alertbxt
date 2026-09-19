@@ -98,7 +98,6 @@ export class AppComponent implements OnDestroy {
         this.currentUser = user;
         this.isLoggedIn = !!user;
         this.nombreUsuario = user?.nombre || null;
-        this.mostrarGuiaSiEsNueva(user);
       });
 
     this.pwaInstallService.canInstall$
@@ -330,28 +329,6 @@ export class AppComponent implements OnDestroy {
       buttons: ['OK'],
     });
     await alert.present();
-  }
-
-  // Muestra la guía de uso una sola vez, justo cuando un vecino ya pertenece
-  // a una comunidad (evita interrumpir el flujo de "Unirme a una vecindad").
-  // La marca queda en localStorage por uid, así que también se le muestra
-  // una vez a las cuentas que ya existían antes de agregar esta guía.
-  private mostrarGuiaSiEsNueva(user: Usuario | null): void {
-    if (!user?.idUsuario || !user.comunidadId) {
-      return;
-    }
-
-    const clave = `ab_guia_vista_${user.idUsuario}`;
-    try {
-      if (localStorage.getItem(clave)) {
-        return;
-      }
-      localStorage.setItem(clave, '1');
-    } catch {
-      return;
-    }
-
-    void this.navigateTo('/guia-uso');
   }
 
   private async navigateTo(path: string): Promise<void> {
