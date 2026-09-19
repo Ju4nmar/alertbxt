@@ -161,7 +161,21 @@ ion-content {
   fill: none;
   stroke-width: 16;
   stroke-linecap: butt;
-  transition: stroke-dasharray 220ms ease;
+  cursor: pointer;
+  outline: none;
+  transition: stroke-dasharray 220ms ease, stroke-width 160ms ease, opacity 160ms ease;
+}
+
+.donut-segment--activo {
+  stroke-width: 19;
+}
+
+.donut-segment--dim {
+  opacity: 0.35;
+}
+
+.donut-segment:focus-visible {
+  stroke-width: 19;
 }
 
 .donut-center {
@@ -188,6 +202,11 @@ ion-content {
   letter-spacing: 0.04em;
 }
 
+.legend-col {
+  flex: 1;
+  min-width: 160px;
+}
+
 .chart-legend {
   display: flex;
   flex-direction: column;
@@ -195,17 +214,43 @@ ion-content {
   margin: 0;
   padding: 0;
   list-style: none;
-  flex: 1;
-  min-width: 160px;
 }
 
-.chart-legend li {
+.legend-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ab-radius-sm);
+  background: transparent;
   color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 0.9rem;
   font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.legend-btn:hover,
+.legend-btn:focus-visible {
+  background: var(--ab-surface-muted);
+  border-color: var(--ab-border);
+  outline: none;
+}
+
+.legend-btn--off {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.chart-hint {
+  margin: 8px 0 0;
+  color: var(--ab-text-secondary);
+  font-size: 0.78rem;
 }
 
 .legend-dot {
@@ -230,5 +275,102 @@ ion-content {
 @media (max-width: 640px) {
   .chart-row {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============== Período ============== */
+.periodo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px 0 6px;
+}
+
+.periodo-chip {
+  min-height: 44px;
+  padding: 9px 18px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-surface);
+  color: var(--ab-text-secondary);
+  font-family: var(--ab-font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.periodo-chip.active {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.periodo-nota {
+  margin: 0 0 var(--ab-space-4);
+  text-align: center;
+  color: var(--ab-text-secondary);
+  font-size: 0.8rem;
+}
+
+/* ============== Tarjetas clicables y progreso ============== */
+button.stat-card {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.stat-card:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.stat-card--link:hover {
+  transform: translateY(-2px);
+  border-color: var(--ion-color-primary);
+}
+
+.stat-go {
+  margin-top: 2px;
+  color: var(--ion-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.stat-inline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.progreso {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-surface-muted);
+}
+
+.progreso-relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--ab-radius-pill);
+  transition: width 600ms ease;
+}
+
+.progreso-relleno--success {
+  background: var(--ion-color-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progreso-relleno,
+  .donut-segment {
+    transition: none;
   }
 }
