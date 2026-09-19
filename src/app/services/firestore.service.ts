@@ -15,7 +15,7 @@ import {
   where,
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
@@ -395,6 +395,56 @@ export class FirestoreService {
         console.error('Error obteniendo recordatorios de la comunidad:', error);
         this.isLoadingSubject.next(false);
         return throwError(() => new Error('Error al cargar recordatorios de la comunidad'));
+      })
+    );
+  }
+
+  // Todo lo que un usuario debe ver como "sus" recordatorios: los personales,
+  // los que un admin le asignó (o asignó a toda la comunidad) y, si es admin,
+  // los que él mismo asignó a otros — así conserva el registro de que
+  // llegaron y de si ya se cumplieron. Son consultas separadas (una por
+  // regla de seguridad) que se unen aquí, sin repetidos.
+  getRecordatoriosVisibles(usuario: Usuario): Observable<Recordatorio[]> {
+    const idUsuario = usuario.idUsuario || '';
+    const fuentes = [
+      this.getRecordatoriosByUsuario(idUsuario, usuario.comunidadId),
+      this.getRecordatoriosAsignadosByUsuario(idUsuario, usuario.comunidadId),
+      this.getRecordatoriosParaTodaLaComunidad(usuario.comunidadId),
+    ];
+    if (usuario.rol === 'admin') {
+      fuentes.push(this.getRecordatoriosCreadosPor(idUsuario, usuario.comunidadId));
+    }
+
+    return combineLatest(fuentes).pipe(
+      map(listas => {
+        const porId = new Map<string, Recordatorio>();
+        ([] as Recordatorio[]).concat(...listas).forEach(recordatorio => {
+          porId.set(recordatorio.idRecordatorios || `${recordatorio.fechaHora}-${recordatorio.tituloRecordatorio}`, recordatorio);
+        });
+        return Array.from(porId.values()).sort((a, b) => (a.fechaHora || '').localeCompare(b.fechaHora || ''));
+      })
+    );
+  }
+
+  // Recordatorios de grupo que este admin creó (autorId).
+  getRecordatoriosCreadosPor(autorId: string, comunidadId: string): Observable<Recordatorio[]> {
+    this.isLoadingSubject.next(true);
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'recordatorios'),
+      where('autorId', '==', autorId),
+      where('comunidadId', '==', comunidadId),
+      limit(100)
+    ));
+
+    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
+      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
+        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+      ),
+      tap(() => this.isLoadingSubject.next(false)),
+      catchError(error => {
+        console.error('Error obteniendo recordatorios creados:', error);
+        this.isLoadingSubject.next(false);
+        return throwError(() => new Error('Error al cargar recordatorios creados'));
       })
     );
   }

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AlertController, IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
-import { Subject, combineLatest, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
+import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Recordatorio, Usuario } from '../../models';
 import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { AuthService } from '../../services/auth.service';
@@ -54,6 +54,26 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     return this.usuario?.rol === 'admin';
   }
 
+  filtroVecino = '';
+
+  get vecinosFiltrados(): Usuario[] {
+    const texto = this.filtroVecino.trim().toLowerCase();
+    if (!texto) {
+      return this.comunidadUsuarios;
+    }
+    return this.comunidadUsuarios.filter(vecino =>
+      `${vecino.nombre || ''} ${vecino.torre || ''} ${vecino.numeroApartamento || ''}`.toLowerCase().includes(texto)
+    );
+  }
+
+  seleccionarVisibles(): void {
+    this.vecinosFiltrados.forEach(vecino => vecino.idUsuario && this.idsAsignados.add(vecino.idUsuario));
+  }
+
+  limpiarSeleccion(): void {
+    this.idsAsignados.clear();
+  }
+
   get cantidadAsignados(): number {
     return this.idsAsignados.size;
   }
@@ -74,17 +94,12 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
         distinctUntilChanged((previous, current) =>
           previous?.idUsuario === current?.idUsuario && previous?.comunidadId === current?.comunidadId
         ),
-        switchMap(user => combineLatest([
-          this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario!, user!.comunidadId),
-          this.firestoreService.getRecordatoriosAsignadosByUsuario(user!.idUsuario!, user!.comunidadId),
-          this.firestoreService.getRecordatoriosParaTodaLaComunidad(user!.comunidadId),
-        ])),
+        switchMap(user => this.firestoreService.getRecordatoriosVisibles(user!)),
         takeUntil(this.destroy$)
       )
       .subscribe({
-        next: ([personales, asignados, comunidad]) => {
-          this.recordatorios = [...personales, ...asignados, ...comunidad]
-            .sort((a, b) => (a.fechaHora || '').localeCompare(b.fechaHora || ''));
+        next: recordatorios => {
+          this.recordatorios = recordatorios;
           this.isLoading = false;
           this.isLoadingLista = false;
         },
@@ -122,9 +137,19 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     return !!recordatorio.idUsuario && recordatorio.idUsuario === this.usuario?.idUsuario;
   }
 
+  esCreador(recordatorio: Recordatorio): boolean {
+    return !recordatorio.idUsuario && !!recordatorio.autorId && recordatorio.autorId === this.usuario?.idUsuario;
+  }
+
   origenRecordatorio(recordatorio: Recordatorio): string | null {
     if (recordatorio.idUsuario) {
       return null;
+    }
+    if (this.esCreador(recordatorio)) {
+      const cantidad = recordatorio.usuariosAsignados?.length || 0;
+      return recordatorio.paraTodaLaComunidad
+        ? 'Asignado por ti a toda la comunidad'
+        : `Asignado por ti a ${cantidad} ${cantidad === 1 ? 'vecino' : 'vecinos'}`;
     }
     return recordatorio.paraTodaLaComunidad ? 'Para toda la comunidad' : 'Asignado por el administrador';
   }
@@ -260,7 +285,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   }
 
   async eliminarRecordatorio(recordatorio: Recordatorio): Promise<void> {
-    if (!recordatorio.idRecordatorios || !this.esPersonal(recordatorio)) {
+    if (!recordatorio.idRecordatorios || !(this.esPersonal(recordatorio) || this.esCreador(recordatorio))) {
       return;
     }
 
@@ -320,5 +345,6 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     this.recordatorioError = '';
     this.modoAsignacion = 'yo';
     this.idsAsignados.clear();
+    this.filtroVecino = '';
   }
 }

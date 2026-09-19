@@ -35,6 +35,7 @@ describe('RecordatoriosPage', () => {
           provide: FirestoreService,
           useValue: {
             getRecordatoriosByUsuario: () => of([]),
+            getRecordatoriosVisibles: () => of([]),
             addRecordatorio: addRecordatorioSpy,
             updateRecordatorio: () => of(void 0),
             deleteRecordatorio: () => of(void 0),
