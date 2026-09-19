@@ -55,6 +55,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   avisos: Aviso[] = [];
   avisosAdministrativos: Aviso[] = [];
   alertasSos: Aviso[] = [];
+  historialAlertasSos: Aviso[] = [];
   idEditando: string | null = null;
   titulo = '';
   tipo = '';
@@ -304,8 +305,16 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   organizarAvisos(avisos: Aviso[]): void {
     this.avisos = avisos;
     this.avisosAdministrativos = avisos.filter(aviso => ALLOWED_AVISO_TYPES.includes(aviso.tipoAviso));
-    this.alertasSos = avisos
-      .filter(aviso => aviso.tipoAviso === 'alerta')
+
+    // Una alerta validada sigue activa (el admin la está atendiendo): solo
+    // sale de la lista activa cuando se rechaza, ya sea porque era inválida
+    // o porque ya se atendió y se quiere cerrar. Ahí pasa al historial.
+    const alertas = avisos.filter(aviso => aviso.tipoAviso === 'alerta');
+    this.alertasSos = alertas
+      .filter(alerta => alerta.estado !== 'rechazado')
+      .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''));
+    this.historialAlertasSos = alertas
+      .filter(alerta => alerta.estado === 'rechazado')
       .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''));
   }
 
@@ -328,6 +337,37 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       console.error('Error actualizando estado de la alerta SOS:', error);
       this.avisoError = 'No se pudo actualizar el estado de la alerta.';
       await this.toastService.error('No se pudo actualizar el estado de la alerta.');
+    }
+  }
+
+  // Borrado físico, solo administrador (ya lo exige deleteAviso() vía la
+  // regla de Firestore isAdminForCommunity): para reportes duplicados o
+  // generados por error, donde no tiene sentido dejar registro en el
+  // historial. "Rechazar" sigue siendo la forma normal de cerrar una alerta
+  // atendida sin borrar su registro.
+  async eliminarAlertaSos(alerta: Aviso): Promise<void> {
+    if (!alerta.idAviso || this.authService.getCurrentUser()?.rol !== 'admin') {
+      return;
+    }
+
+    const confirmacion = await this.alertController.create({
+      header: 'Eliminar alerta SOS',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar permanentemente esta alerta?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAlertaSos(alerta.idAviso as string) },
+      ],
+    });
+    await confirmacion.present();
+  }
+
+  private async confirmarEliminarAlertaSos(id: string): Promise<void> {
+    try {
+      await firstValueFrom(this.firestoreService.deleteAviso(id));
+      await this.toastService.success('Alerta SOS eliminada');
+    } catch (error) {
+      console.error('Error eliminando alerta SOS:', error);
+      await this.toastService.error('No se pudo eliminar la alerta.');
     }
   }
 
