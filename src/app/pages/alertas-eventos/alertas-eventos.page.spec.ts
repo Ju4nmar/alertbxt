@@ -23,6 +23,7 @@ describe('AlertasEventosPage', () => {
             isLoading$: of(false),
             getAvisosByComunidad: () => of([]),
             getRecordatoriosByUsuario: () => of([]),
+            getRecordatoriosVisibles: () => of([]),
             getUsuarioById: () => of(null),
           },
         },

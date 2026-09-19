@@ -153,6 +153,45 @@ ion-textarea {
   overflow-y: auto;
 }
 
+.asignacion-buscador {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  font-family: var(--ab-font-body);
+  font-size: 0.95rem;
+}
+
+.asignacion-buscador:focus {
+  outline: none;
+  border-color: var(--ion-color-primary);
+}
+
+.asignacion-acciones {
+  display: flex;
+  gap: 14px;
+  margin: 8px 0 4px;
+}
+
+.asignacion-link {
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--ion-color-primary);
+  font-family: var(--ab-font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.asignacion-unidad {
+  color: var(--ab-text-secondary);
+  font-size: 0.82rem;
+}
+
 .asignacion-item {
   display: flex;
   align-items: center;

@@ -93,7 +93,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
             return of([]);
           })
         ),
-        this.firestoreService.getRecordatoriosByUsuario(user!.idUsuario || '', user!.comunidadId).pipe(
+        this.firestoreService.getRecordatoriosVisibles(user!).pipe(
           catchError(error => {
             console.error('Error cargando recordatorios:', error);
             this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';

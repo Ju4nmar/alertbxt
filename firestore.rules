@@ -200,8 +200,13 @@ service cloud.firestore {
           || resource.data.get('paraTodaLaComunidad', false) == true
           || isAdminForCommunity(resource.data.comunidadId)
         );
-      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
-        && resource.data.idUsuario == request.auth.uid;
+      allow delete: if (
+        isMemberOfCommunity(resource.data.comunidadId)
+        && resource.data.idUsuario == request.auth.uid
+      ) || (
+        isAdminForCommunity(resource.data.comunidadId)
+        && resource.data.get('autorId', '') == request.auth.uid
+      );
       allow update: if isMemberOfCommunity(resource.data.comunidadId)
         && resource.data.idUsuario == request.auth.uid
         && request.resource.data.idUsuario == request.auth.uid
