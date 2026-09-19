@@ -12,6 +12,10 @@ import { ToastService } from '../../services/toast.service';
 
 type Vista = 'recibidos' | 'enviados';
 
+// Por encima de estos límites el texto se recorta y aparece "Ver más".
+const UMBRAL_TEXTO_LARGO = 280;
+const LINEAS_TEXTO_LARGO = 5;
+
 @Component({
   selector: 'app-mensajes',
   templateUrl: './mensajes.page.html',
@@ -40,6 +44,7 @@ export class MensajesPage implements OnInit, OnDestroy {
   respuestasPorHilo: Record<string, RespuestaMensaje[]> = {};
   textoRespuesta = '';
   enviandoRespuesta = false;
+  readonly textosExpandidos = new Set<string>();
 
   get esAdmin(): boolean {
     return this.usuario?.rol === 'admin';
@@ -169,6 +174,26 @@ export class MensajesPage implements OnInit, OnDestroy {
           this.toastService.error(error?.message || 'No se pudo enviar la respuesta.');
         },
       });
+  }
+
+  esTextoLargo(texto: string | undefined): boolean {
+    if (!texto) {
+      return false;
+    }
+    return texto.length > UMBRAL_TEXTO_LARGO || texto.split('\n').length > LINEAS_TEXTO_LARGO;
+  }
+
+  textoExpandido(clave: string | undefined): boolean {
+    return !!clave && this.textosExpandidos.has(clave);
+  }
+
+  alternarTexto(clave: string | undefined): void {
+    if (!clave) {
+      return;
+    }
+    if (!this.textosExpandidos.delete(clave)) {
+      this.textosExpandidos.add(clave);
+    }
   }
 
   private cerrarHilo(): void {

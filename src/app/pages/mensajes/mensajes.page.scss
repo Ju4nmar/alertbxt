@@ -125,6 +125,28 @@ ion-content {
   color: var(--ab-text-primary);
   line-height: 1.5;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  &.recortado {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    overflow: hidden;
+  }
+}
+
+.ver-mas-btn {
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 0 4px;
+  background: transparent;
+  border: none;
+  color: var(--ion-color-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 /* ============== Hilo de respuestas ============== */
