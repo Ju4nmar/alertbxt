@@ -70,6 +70,9 @@
               <ion-icon name="person-circle" class="sidebar-user-icon"></ion-icon>
               <span class="sidebar-user-name">{{ nombreUsuario || 'Usuario' }}</span>
             </div>
+            <button type="button" class="sidebar-theme" (click)="alternarTema()" [attr.aria-label]="temaOscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
+              <ion-icon [name]="temaOscuro ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+            </button>
             <button type="button" class="sidebar-logout" (click)="logout()" aria-label="Cerrar sesión">
               <ion-icon name="log-out"></ion-icon>
             </button>
@@ -87,6 +90,9 @@
           </div>
 
           <ion-buttons slot="end" class="user-info">
+            <ion-button fill="clear" (click)="alternarTema()" [attr.aria-label]="temaOscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
+              <ion-icon [name]="temaOscuro ? 'sunny-outline' : 'moon-outline'" slot="icon-only"></ion-icon>
+            </ion-button>
             <ion-button fill="clear" (click)="goToGuiaUso()" aria-label="Ver guía de uso">
               <ion-icon name="help-circle-outline" slot="icon-only"></ion-icon>
             </ion-button>

@@ -298,6 +298,30 @@ ion-split-pane {
   color: var(--ab-text-primary);
 }
 
+.sidebar-theme {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: var(--ab-radius-sm);
+  background: transparent;
+  color: var(--ab-text-secondary);
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+
+  ion-icon {
+    font-size: 1.25rem;
+  }
+}
+
+.sidebar-theme:hover {
+  background: var(--ab-surface-muted);
+  color: var(--ion-color-primary);
+}
+
 .sidebar-logout {
   display: flex;
   align-items: center;

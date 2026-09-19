@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = 'light' | 'dark';
 
 const STORAGE_KEY = 'ab-theme-preference';
 
@@ -29,23 +29,35 @@ export class ThemeService {
     this.applyToDocument();
   }
 
+  toggle(): void {
+    this.setPreference(this.preference === 'dark' ? 'light' : 'dark');
+  }
+
+  // Sin opción "Automático": el tema es 100% manual desde el primer
+  // arranque, pero la primera vez (nada guardado todavía) toma el tema del
+  // sistema operativo como punto de partida en vez de asumir claro siempre.
   private readStoredPreference(): ThemePreference {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      if (stored === 'light' || stored === 'dark') {
         return stored;
       }
     } catch {
-      // ignorar y usar 'system' por defecto
+      // ignorar y calcular el valor por defecto abajo
     }
-    return 'system';
+
+    return this.prefiereOscuroElSistema() ? 'dark' : 'light';
+  }
+
+  private prefiereOscuroElSistema(): boolean {
+    try {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
   }
 
   private applyToDocument(): void {
-    if (this.preference === 'system') {
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', this.preference);
-    }
+    document.documentElement.setAttribute('data-theme', this.preference);
   }
 }

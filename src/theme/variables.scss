@@ -171,10 +171,10 @@
    MODO OSCURO — "noche de barrio": pizarra profunda, el latón
    y el ámbar hacen de luz de farol.
 
-   Se define como mixin para poder aplicar exactamente los mismos
-   valores tanto por preferencia del sistema (@media) como por el
-   switch manual de tema en Perfil (atributo [data-theme] que
-   escribe ThemeService) sin duplicar la paleta en dos lugares.
+   Se define como mixin porque ThemeService siempre escribe
+   [data-theme="light"] o [data-theme="dark"] explícitamente (no hay
+   modo "Automático"): un solo bloque @include más abajo basta, sin
+   necesitar una copia aparte reaccionando a prefers-color-scheme.
    ============================================================ */
 @mixin farol-dark-theme {
   --ion-color-primary: #7ca6d6;
@@ -214,18 +214,6 @@
   --ab-shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.5);
 }
 
-/* Sistema en oscuro, sin override manual a claro */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    @include farol-dark-theme;
-  }
-
-  :root:not([data-theme="light"]) ion-item {
-    --background: var(--ab-surface);
-  }
-}
-
-/* Override manual a oscuro (ThemeService), sin importar el sistema */
 :root[data-theme="dark"] {
   @include farol-dark-theme;
 }

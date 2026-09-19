@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, chatbubbleEllipses, download, helpCircleOutline, logOut, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
+import { alertCircle, calendar, chatbubbleEllipses, download, helpCircleOutline, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -61,9 +61,6 @@ export class AppComponent implements OnDestroy {
   private readonly localNotificationService = inject(LocalNotificationService);
   private readonly fcmService = inject(FcmService);
   private readonly pwaInstallService = inject(PwaInstallService);
-  // Se inyecta aunque no se use directamente aquí: su constructor aplica el
-  // atributo data-theme antes del primer render, para que ninguna pantalla
-  // parpadee con el tema equivocado mientras el usuario navega a Perfil.
   private readonly themeService = inject(ThemeService);
   private readonly destroy$ = new Subject<void>();
 
@@ -86,7 +83,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline});
+    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -119,6 +116,14 @@ export class AppComponent implements OnDestroy {
       .subscribe(event => {
         this.currentUrl = event.urlAfterRedirects;
       });
+  }
+
+  get temaOscuro(): boolean {
+    return this.themeService.getPreference() === 'dark';
+  }
+
+  alternarTema(): void {
+    this.themeService.toggle();
   }
 
   isActive(path: string): boolean {
