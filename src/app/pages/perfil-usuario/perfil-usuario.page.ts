@@ -6,7 +6,6 @@ import { firstValueFrom, of, Subject, filter, switchMap, takeUntil } from 'rxjs'
 import { Comunidad, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
-import { ThemeService, ThemePreference } from '../../services/theme.service';
 import { ToastService } from '../../services/toast.service';
 import { isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
@@ -22,13 +21,11 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
   private readonly alertController = inject(AlertController);
   private readonly toastService = inject(ToastService);
-  private readonly themeService = inject(ThemeService);
   private readonly destroy$ = new Subject<void>();
 
   usuario: Usuario | null = null;
   comunidad: Comunidad | null = null;
   enlaceInvitacion = '';
-  temaActual: ThemePreference = this.themeService.getPreference();
   isSaving = false;
   isSavingVecindad = false;
   isRequestingDeletion = false;
@@ -214,15 +211,6 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
     } finally {
       this.isSavingVecindad = false;
     }
-  }
-
-  establecerTema(preferencia: ThemePreference): void {
-    if (preferencia === this.temaActual) {
-      return;
-    }
-
-    this.temaActual = preferencia;
-    this.themeService.setPreference(preferencia);
   }
 
   private async copiarTexto(texto: string, mensaje: string): Promise<void> {

@@ -2,16 +2,6 @@
   <h2 class="page-title">Perfil de usuario</h2>
 
   <div class="page-shell">
-  <section class="perfil-panel full-span appearance-panel">
-    <h3>Apariencia</h3>
-    <div class="theme-tabs" role="radiogroup" aria-label="Tema de la aplicación">
-      <button type="button" class="theme-chip" role="radio" [attr.aria-checked]="temaActual === 'system'" [class.active]="temaActual === 'system'" (click)="establecerTema('system')">Automático</button>
-      <button type="button" class="theme-chip" role="radio" [attr.aria-checked]="temaActual === 'light'" [class.active]="temaActual === 'light'" (click)="establecerTema('light')">Claro</button>
-      <button type="button" class="theme-chip" role="radio" [attr.aria-checked]="temaActual === 'dark'" [class.active]="temaActual === 'dark'" (click)="establecerTema('dark')">Oscuro</button>
-    </div>
-    <p class="field-hint">"Automático" sigue el tema de tu sistema operativo.</p>
-  </section>
-
   <section class="perfil-panel">
     <h3>Datos personales</h3>
 
