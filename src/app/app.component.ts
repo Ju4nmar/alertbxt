@@ -26,6 +26,7 @@ import { FirestoreService } from './services/firestore.service';
 import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
+import { TIPOS_ALERTA_SOS, formatearUnidad, obtenerPosicion } from './utils/ubicacion.utils';
 import { ThemeService } from './services/theme.service';
 import { TourService } from './services/tour.service';
 
@@ -178,25 +179,24 @@ export class AppComponent implements OnDestroy {
   }
 
   private async abrirFormularioAlerta(): Promise<void> {
+    // El GPS empieza a buscar mientras el usuario elige el tipo, para que al
+    // enviar ya esté listo (o se descarte solo tras unos segundos).
+    const posicion = obtenerPosicion();
+
     const form = await this.alertCtrl.create({
-      header: 'Detalles de la emergencia',
-      inputs: [
-        {
-          name: 'descripcion',
-          type: 'textarea',
-          placeholder: 'Describe brevemente lo que ocurre...',
-        },
-        {
-          name: 'lugar',
-          type: 'text',
-          placeholder: 'Lugar de la emergencia',
-        },
-      ],
+      header: 'Tipo de emergencia',
+      subHeader: 'Se enviará tu ubicación, torre y apartamento.',
+      inputs: TIPOS_ALERTA_SOS.map((tipo, index) => ({
+        type: 'radio' as const,
+        label: tipo,
+        value: tipo,
+        checked: index === 0,
+      })),
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Enviar',
-          handler: data => this.enviarAlertaSos(data),
+          text: 'Enviar alerta',
+          handler: tipo => this.enviarAlertaSos(tipo as string, posicion),
         },
       ],
     });
@@ -204,11 +204,11 @@ export class AppComponent implements OnDestroy {
     await form.present();
   }
 
-  private async enviarAlertaSos(data: { descripcion?: string; lugar?: string }): Promise<boolean> {
-    if (!data?.descripcion?.trim() || !data?.lugar?.trim()) {
+  private async enviarAlertaSos(tipo: string | undefined, posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<boolean> {
+    if (!tipo) {
       const warning = await this.alertCtrl.create({
-        header: 'Datos incompletos',
-        message: 'Por favor, ingresa descripción y lugar.',
+        header: 'Elige un tipo',
+        message: 'Selecciona el tipo de emergencia para enviar la alerta.',
         buttons: ['OK'],
       });
       await warning.present();
@@ -227,9 +227,15 @@ export class AppComponent implements OnDestroy {
     }
 
     try {
+      const [posicion, comunidad] = await Promise.all([
+        posicionPendiente,
+        firstValueFrom(this.firestoreService.getComunidadById(currentUser.comunidadId)).catch(() => null),
+      ]);
+      const unidad = formatearUnidad(currentUser, comunidad?.tipoComunidad === 'casas');
+
       const avisoData: Omit<Aviso, 'idAviso'> = {
         tituloAviso: 'Alerta SOS',
-        descripcionAviso: `${data.descripcion.trim()}\nLugar: ${data.lugar.trim()}`,
+        descripcionAviso: tipo,
         tipoAviso: 'alerta',
         fechaPublicacion: new Date().toISOString(),
         imagen: 'assets/sirena-alerta.webp',
@@ -237,13 +243,17 @@ export class AppComponent implements OnDestroy {
         autorNombre: currentUser.nombre,
         comunidadId: currentUser.comunidadId,
         estado: 'pendiente',
+        ...(unidad ? { ubicacionAviso: unidad } : {}),
+        ...(posicion ? { latitud: posicion.latitud, longitud: posicion.longitud, precisionMetros: posicion.precisionMetros } : {}),
       };
 
       await firstValueFrom(this.firestoreService.addAviso(avisoData));
 
       const ok = await this.alertCtrl.create({
         header: 'Alerta SOS enviada correctamente.',
-        message: 'Los usuarios correspondientes han sido notificados.',
+        message: posicion
+          ? 'Tu comunidad fue notificada con tu ubicación.'
+          : 'Tu comunidad fue notificada. No se pudo obtener tu ubicación GPS (revisa el permiso del navegador).',
         buttons: ['OK'],
       });
       await ok.present();

@@ -19,6 +19,7 @@ import { FirestoreService } from '../../services/firestore.service';
 import { ImageOptimizerService } from '../../services/image-optimizer.service';
 import { LocalNotificationService } from '../../services/local-notification.service';
 import { ToastService } from '../../services/toast.service';
+import { enlaceMapa as enlaceMapaUrl } from '../../utils/ubicacion.utils';
 
 const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
 const MAX_ORIGINAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -369,6 +370,10 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       console.error('Error eliminando alerta SOS:', error);
       await this.toastService.error('No se pudo eliminar la alerta.');
     }
+  }
+
+  enlaceMapa(aviso: Aviso): string | null {
+    return aviso.latitud !== undefined && aviso.longitud !== undefined ? enlaceMapaUrl(aviso.latitud, aviso.longitud) : null;
   }
 
   trackByAvisoId(_: number, aviso: Aviso): string {
