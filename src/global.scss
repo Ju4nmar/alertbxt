@@ -567,3 +567,62 @@ ion-alert [aria-checked="true"] .alert-radio-icon {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ============== Recorrido guiado (Shepherd.js) ============== */
+.shepherd-modal-overlay-container.shepherd-modal-is-visible path {
+  fill: rgba(10, 14, 20, 0.72);
+}
+
+.shepherd-element.ab-tour-step {
+  max-width: min(360px, calc(100vw - 32px));
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-lg);
+  background: var(--ab-surface);
+  color: var(--ab-text-primary);
+  box-shadow: var(--ab-shadow-lg);
+}
+
+.ab-tour-step .shepherd-arrow:before {
+  background: var(--ab-surface);
+}
+
+.shepherd-element.ab-tour-step.shepherd-has-title .shepherd-content .shepherd-header {
+  padding: 16px 18px 0;
+  background: transparent;
+}
+
+.ab-tour-step .shepherd-title {
+  font-family: var(--ab-font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ab-text-primary);
+}
+
+.ab-tour-step .shepherd-text {
+  padding: 10px 18px 14px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ab-text-primary);
+}
+
+.ab-tour-step .shepherd-footer {
+  gap: 8px;
+  padding: 0 18px 16px;
+}
+
+.ab-tour-step .shepherd-button {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-family: var(--ab-font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.ab-tour-step .shepherd-button.shepherd-button-secondary {
+  background: transparent;
+  color: var(--ab-text-secondary);
+  border: 1.5px solid var(--ab-border);
+}

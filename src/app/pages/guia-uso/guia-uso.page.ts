@@ -13,6 +13,7 @@ import {
 } from 'ionicons/icons';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { TourService } from '../../services/tour.service';
 
 @Component({
   selector: 'app-guia-uso',
@@ -23,6 +24,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class GuiaUsoPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
+  private readonly tourService = inject(TourService);
   private readonly destroy$ = new Subject<void>();
 
   esAdmin = false;
@@ -45,6 +47,10 @@ export class GuiaUsoPage implements OnInit, OnDestroy {
       .subscribe(user => {
         this.esAdmin = user?.rol === 'admin';
       });
+  }
+
+  verRecorrido(): void {
+    this.tourService.iniciar(this.authService.getCurrentUser());
   }
 
   ngOnDestroy(): void {

@@ -48,3 +48,17 @@ ion-content {
 .guia-accordion [slot='content'] p:last-child {
   margin-bottom: 0;
 }
+
+.recorrido-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: var(--ab-space-4);
+  border: none;
+  border-radius: var(--ab-radius-md);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-family: var(--ab-font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
