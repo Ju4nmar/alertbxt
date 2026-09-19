@@ -32,7 +32,7 @@ describe('Unirse a una vecindad con código de invitación', () => {
     cy.get('ion-checkbox[name="aceptaTerminos"]').click();
     cy.get('.confirm-btn').click();
 
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/alertas-eventos');
+    cy.location('pathname', { timeout: 30000 }).should('eq', '/alertas-eventos');
   });
 
   it('muestra un error claro cuando el código de invitación no existe', () => {

@@ -11,6 +11,8 @@ declare global {
       registrarCodigoInvitacion(codigo: string, comunidadId: string, nombreComunidad: string): Chainable<unknown>;
       /** Borra todos los usuarios y documentos de los emuladores locales. */
       limpiarEmuladores(): Chainable<unknown>;
+      /** Hace un primer alta y escritura contra los emuladores en frío y los limpia. */
+      calentarEmuladores(): Chainable<unknown>;
     }
   }
 }

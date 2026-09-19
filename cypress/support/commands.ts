@@ -113,3 +113,45 @@ Cypress.Commands.add('registrarCodigoInvitacion', (codigo: string, comunidadId: 
     body: { fields: aFirestoreFields({ comunidadId, nombreComunidad }) },
   });
 });
+
+// Los emuladores (JVM) arrancan en frío: la primera escritura evaluada por
+// reglas de seguridad y el primer alta en Auth pueden tardar varios segundos
+// en CI, y el primer test que las usa (registrarse como residente nuevo)
+// fallaba de forma intermitente por vencer su límite de espera. Este
+// comando hace, antes de los tests, exactamente ese recorrido —alta en
+// Auth y escritura de usuarios/{uid} con el token del propio usuario, así
+// se evalúan las reglas de create— y luego limpia todo.
+Cypress.Commands.add('calentarEmuladores', () => {
+  const correo = 'calentamiento.e2e@alertbxt.test';
+
+  cy.request('POST', `${authUrl()}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey()}`, {
+    email: correo,
+    password: 'password123',
+    returnSecureToken: true,
+  }).then(respuesta => {
+    const uid = respuesta.body.localId as string;
+    const idToken = respuesta.body.idToken as string;
+    const url = `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/usuarios/${uid}`;
+
+    cy.request({
+      method: 'PATCH',
+      url,
+      headers: { Authorization: `Bearer ${idToken}` },
+      body: {
+        fields: aFirestoreFields({
+          idUsuario: uid,
+          nombre: 'Calentamiento',
+          correo,
+          telefono: '3000000000',
+          rol: 'residente',
+          activo: true,
+          comunidadId: '',
+        }),
+      },
+      failOnStatusCode: false,
+      timeout: 60000,
+    });
+  });
+
+  cy.limpiarEmuladores();
+});

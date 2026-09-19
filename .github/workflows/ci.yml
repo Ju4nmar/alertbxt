@@ -65,3 +65,11 @@ jobs:
 
       - name: Ejecutar pruebas E2E contra los emuladores de Firebase
         run: npm run e2e
+
+      - name: Guardar capturas de los tests E2E fallidos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-capturas
+          path: cypress/screenshots
+          if-no-files-found: ignore
