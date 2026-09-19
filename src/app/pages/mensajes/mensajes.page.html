@@ -26,7 +26,10 @@
           <span class="mensaje-etiqueta" *ngIf="mensaje.esRespuesta">Respuesta</span>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
         </button>
-        <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
+        <p class="mensaje-texto" [class.recortado]="esTextoLargo(mensaje.mensaje) && !textoExpandido('r-' + mensaje.idMensaje)">{{ mensaje.mensaje }}</p>
+        <button type="button" class="ver-mas-btn" *ngIf="esTextoLargo(mensaje.mensaje)" [attr.aria-expanded]="textoExpandido('r-' + mensaje.idMensaje)" (click)="alternarTexto('r-' + mensaje.idMensaje)">
+          {{ textoExpandido('r-' + mensaje.idMensaje) ? 'Ver menos' : 'Ver más' }}
+        </button>
 
         <div class="hilo" *ngIf="hiloEstaAbierto(usuarioId, mensaje.idMensaje)">
           <p *ngIf="cargandoRespuestas" class="hilo-cargando">Cargando respuestas...</p>
@@ -70,7 +73,10 @@
           <span class="mensaje-autor">Para {{ formatearDestinatarios(mensaje) }}</span>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
         </div>
-        <p class="mensaje-texto">{{ mensaje.mensaje }}</p>
+        <p class="mensaje-texto" [class.recortado]="esTextoLargo(mensaje.mensaje) && !textoExpandido('e-' + mensaje.idMensaje)">{{ mensaje.mensaje }}</p>
+        <button type="button" class="ver-mas-btn" *ngIf="esTextoLargo(mensaje.mensaje)" [attr.aria-expanded]="textoExpandido('e-' + mensaje.idMensaje)" (click)="alternarTexto('e-' + mensaje.idMensaje)">
+          {{ textoExpandido('e-' + mensaje.idMensaje) ? 'Ver menos' : 'Ver más' }}
+        </button>
 
         <div class="destinatarios-lista">
           <ng-container *ngFor="let destinatario of mensaje.destinatarios">
