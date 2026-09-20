@@ -15,8 +15,20 @@ ion-content {
   flex-shrink: 0;
 }
 
+/* En pantallas angostas el botón baja a su propia fila en vez de salirse. */
+@media (max-width: 520px) {
+  .filtro-usuarios {
+    flex-wrap: wrap;
+  }
+
+  .filtro-usuarios ion-button {
+    flex: 1 1 100%;
+  }
+}
+
 .filtro-input {
   flex: 1;
+  min-width: 0;
   min-height: 48px;
   padding: 0 16px;
   border: 1.5px solid var(--ab-border);
