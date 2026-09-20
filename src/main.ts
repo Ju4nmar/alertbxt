@@ -5,7 +5,11 @@ import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalo
 import { getApp, provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { ReCaptchaEnterpriseProvider, initializeAppCheck, provideAppCheck } from '@angular/fire/app-check';
 import { connectFirestoreEmulator, provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { browserLocalPersistence, connectAuthEmulator, getAuth, provideAuth, setPersistence } from '@angular/fire/auth';
+import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
+// setPersistence y browserLocalPersistence se importan del SDK directo: la
+// versión envuelta por @angular/fire convierte la clase en una función que ya
+// no se puede instanciar ("t is not a constructor").
+import { browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { provideFunctions, getFunctions } from '@angular/fire/functions';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -58,7 +62,9 @@ bootstrapApplication(AppComponent, {
       if (environment.useEmulators) {
         connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
       } else {
-        void setPersistence(auth, browserLocalPersistence);
+        setPersistence(auth, browserLocalPersistence).catch(error => {
+          console.warn('No se pudo fijar la persistencia de sesión:', error);
+        });
       }
       return auth;
     }),
