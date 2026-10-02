@@ -196,12 +196,55 @@ export class AppComponent implements OnDestroy {
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Enviar alerta',
-          handler: tipo => this.enviarAlertaSos(tipo as string, posicion),
+          handler: tipo => this.manejarTipoSeleccionado(tipo as string | undefined, posicion),
         },
       ],
     });
 
     await form.present();
+  }
+
+  // 'Otra emergencia' no tiene texto libre en la lista (sería un campo de
+  // SOS sin cerrar, más lento de usar en una emergencia real): en vez de
+  // eso, se abre un segundo paso puntual para describirla.
+  private manejarTipoSeleccionado(tipo: string | undefined, posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<boolean> {
+    if (tipo === TIPOS_ALERTA_SOS[TIPOS_ALERTA_SOS.length - 1]) {
+      void this.pedirDescripcionOtraEmergencia(posicionPendiente);
+      return Promise.resolve(true);
+    }
+
+    return this.enviarAlertaSos(tipo, posicionPendiente);
+  }
+
+  private async pedirDescripcionOtraEmergencia(posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<void> {
+    const prompt = await this.alertCtrl.create({
+      header: 'Describe la emergencia',
+      subHeader: 'Cuéntanos brevemente qué está pasando.',
+      inputs: [
+        {
+          name: 'descripcion',
+          type: 'textarea',
+          placeholder: 'Ej: Fuga de agua en el parqueadero...',
+          attributes: { maxlength: 200 },
+        },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Enviar alerta',
+          handler: (data: { descripcion?: string }) => {
+            const descripcion = (data?.descripcion || '').trim();
+            if (!descripcion) {
+              return false;
+            }
+            void this.enviarAlertaSos(`Otra emergencia: ${descripcion}`, posicionPendiente);
+            return true;
+          },
+        },
+      ],
+    });
+
+    await prompt.present();
   }
 
   private async enviarAlertaSos(tipo: string | undefined, posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<boolean> {
