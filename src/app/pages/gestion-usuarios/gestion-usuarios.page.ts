@@ -10,12 +10,14 @@ import {
   IonLabel,
   IonList,
   IonModal,
+  IonSelect,
+  IonSelectOption,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { close, personCircle } from 'ionicons/icons';
 import { Subject, distinctUntilChanged, filter, finalize, switchMap, take, takeUntil } from 'rxjs';
-import { Comunidad, Usuario } from '../../models';
+import { Comunidad, Rol, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { MensajesService } from '../../services/mensajes.service';
@@ -34,6 +36,8 @@ import { ToastService } from '../../services/toast.service';
     IonLabel,
     IonList,
     IonModal,
+    IonSelect,
+    IonSelectOption,
     IonToolbar,
     CommonModule,
     FormsModule,
@@ -190,7 +194,7 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
     const activo = usuario.activo !== false;
     if (activo) {
       const alerta = await this.alertController.create({
-        header: 'Desactivar residente',
+        header: 'Desactivar vecino',
         message: `¿Deseas desactivar a ${usuario.nombre}? No podrá acceder a los avisos ni recordatorios de la comunidad.`,
         buttons: [
           { text: 'Cancelar', role: 'cancel' },
@@ -204,9 +208,9 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
     this.actualizarUsuario(usuario, { activo: true });
   }
 
-  cambiarRol(usuario: Usuario): void {
-    if (this.puedeGestionarUsuario(usuario)) {
-      this.actualizarUsuario(usuario, { rol: usuario.rol === 'admin' ? 'residente' : 'admin' });
+  cambiarRol(usuario: Usuario, nuevoRol: Rol): void {
+    if (this.puedeGestionarUsuario(usuario) && nuevoRol !== usuario.rol) {
+      this.actualizarUsuario(usuario, { rol: nuevoRol });
     }
   }
 
@@ -307,10 +311,17 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
   }
 
   obtenerBadgeRol(rol?: string): { label: string; clase: string } {
-    if (rol === 'admin') {
-      return { label: 'Administrador', clase: 'badge-admin' };
+    switch (rol) {
+      case 'admin':
+        return { label: 'Administrador', clase: 'badge-admin' };
+      case 'arrendatario':
+        return { label: 'Arrendatario', clase: 'badge-arrendatario' };
+      case 'guarda':
+        return { label: 'Guarda', clase: 'badge-guarda' };
+      default:
+        // 'propietario' y el valor histórico 'residente' comparten etiqueta.
+        return { label: 'Propietario', clase: 'badge-residente' };
     }
-    return { label: 'Residente', clase: 'badge-residente' };
   }
 
   trackByUsuarioId(_: number, usuario: Usuario): string {

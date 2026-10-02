@@ -3,7 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { IonButton, IonCheckbox, IonContent, IonInput, IonItem, IonLabel } from '@ionic/angular/standalone';
+import { IonButton, IonCheckbox, IonContent, IonInput, IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { combineLatest, filter, firstValueFrom, take } from 'rxjs';
 import { TipoComunidad } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -15,7 +15,7 @@ import { getFirebaseErrorCode, isValidEmail, isValidPhone } from '../../utils/au
   templateUrl: './unirse-vecindad.page.html',
   styleUrls: ['./unirse-vecindad.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonCheckbox, IonLabel],
+  imports: [CommonModule, FormsModule, IonContent, IonInput, IonButton, IonItem, IonCheckbox, IonLabel, IonSelect, IonSelectOption],
 })
 export class UnirseVecindadPage implements OnInit {
   private readonly authService = inject(AuthService);
@@ -31,6 +31,7 @@ export class UnirseVecindadPage implements OnInit {
   password = '';
   confirmPassword = '';
   codigoInvitacion = '';
+  rolElegido: 'propietario' | 'arrendatario' = 'propietario';
   aceptaTerminos = false;
   isLoading = false;
   isGoogleLoading = false;
@@ -115,6 +116,7 @@ export class UnirseVecindadPage implements OnInit {
           password: this.password,
           codigoInvitacion,
           aceptaTerminos: this.aceptaTerminos,
+          rolElegido: this.rolElegido,
         }));
       }
 
@@ -146,7 +148,7 @@ export class UnirseVecindadPage implements OnInit {
 
     this.isGoogleLoading = true;
     try {
-      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion, this.aceptaTerminos));
+      await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion, this.aceptaTerminos, this.rolElegido));
       this.router.navigate(['/alertas-eventos']);
     } catch (error) {
       console.error('Error uniéndose con Google:', error);

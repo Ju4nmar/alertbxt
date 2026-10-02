@@ -5,9 +5,11 @@ import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage
 import {
   AlertController,
   IonButton,
+  IonCheckbox,
   IonContent,
   IonInput,
   IonItem,
+  IonLabel,
   IonSelect,
   IonSelectOption,
   IonTextarea,
@@ -33,7 +35,9 @@ const ALLOWED_AVISO_TYPES = ['emergencia', 'mantenimiento', 'informativo'];
   standalone: true,
   imports: [
     IonButton,
+    IonCheckbox,
     IonInput,
+    IonLabel,
     IonSelect,
     IonTextarea,
     IonItem,
@@ -63,6 +67,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   descripcion = '';
   fechaAviso = this.todayDateString();
   ubicacion = '';
+  soloPropietarios = false;
   archivo: File | null = null;
   compressionInfo = '';
   imagenExistente: string | null = null;
@@ -218,6 +223,10 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
         avisoData.ubicacionAviso = ubicacion;
       }
 
+      // Explícito (no condicional): al editar, desmarcar la casilla debe
+      // borrar la restricción, no dejar el valor anterior en Firestore.
+      avisoData.soloPropietarios = this.soloPropietarios;
+
       if (urlImagen) {
         avisoData.imagen = urlImagen;
       }
@@ -254,6 +263,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     this.descripcion = '';
     this.fechaAviso = this.todayDateString();
     this.ubicacion = '';
+    this.soloPropietarios = false;
     this.archivo = null;
     this.compressionInfo = '';
     this.imagenExistente = null;
@@ -289,7 +299,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
 
   editarAviso(aviso: Aviso): void {
     if (!ALLOWED_AVISO_TYPES.includes(aviso.tipoAviso)) {
-      this.avisoError = 'Las alertas SOS son reportes de residentes y no se pueden editar.';
+      this.avisoError = 'Las alertas SOS son reportes de vecinos y no se pueden editar.';
       return;
     }
 
@@ -300,6 +310,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     this.descripcion = aviso.descripcionAviso;
     this.fechaAviso = aviso.fechaPublicacion ? aviso.fechaPublicacion.slice(0, 10) : this.todayDateString();
     this.ubicacion = aviso.ubicacionAviso || '';
+    this.soloPropietarios = aviso.soloPropietarios === true;
     this.imagenExistente = aviso.imagen || null;
   }
 

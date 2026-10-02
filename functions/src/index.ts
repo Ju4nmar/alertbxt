@@ -4,7 +4,8 @@ import { getFunctions } from 'firebase-admin/functions';
 import { getMessaging } from 'firebase-admin/messaging';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 
 initializeApp();
@@ -26,6 +27,7 @@ interface AvisoData {
   tipoAviso?: string;
   comunidadId?: string;
   autorId?: string;
+  soloPropietarios?: boolean;
 }
 
 interface TokenRef {
@@ -101,7 +103,18 @@ export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event =
     .where('activo', '==', true)
     .get();
 
-  const destinatarios = usuariosSnap.docs.filter(doc => doc.id !== aviso.autorId);
+  // Un aviso "solo propietarios" (p. ej. convocatoria de asamblea) no se
+  // notifica a los arrendatarios.
+  const destinatarios = usuariosSnap.docs.filter(doc => {
+    if (doc.id === aviso.autorId) {
+      return false;
+    }
+    if (aviso.soloPropietarios) {
+      const rol = (doc.data() as UsuarioData).rol;
+      return rol !== 'arrendatario';
+    }
+    return true;
+  });
   if (!destinatarios.length) {
     return;
   }
@@ -172,6 +185,7 @@ interface RecordatorioData {
   idUsuario?: string;
   usuariosAsignados?: string[];
   paraTodaLaComunidad?: boolean;
+  soloPropietarios?: boolean;
   comunidadId?: string;
   estado?: string;
 }
@@ -251,7 +265,11 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
         .where('comunidadId', '==', data.comunidadId)
         .where('activo', '==', true)
         .get();
-      destinatarioIds = usuariosSnap.docs.map(doc => doc.id);
+      // Un recordatorio "solo propietarios" (p. ej. convocatoria de
+      // asamblea) no se notifica a los arrendatarios.
+      destinatarioIds = usuariosSnap.docs
+        .filter(doc => !data.soloPropietarios || (doc.data() as UsuarioData).rol !== 'arrendatario')
+        .map(doc => doc.id);
     } else if (data.usuariosAsignados?.length) {
       destinatarioIds = data.usuariosAsignados;
     } else {
@@ -620,4 +638,59 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
   });
 
   return { recordatorioId: ref.id };
+});
+
+// ---------------------------------------------------------------------
+// Migración temporal: 'residente' -> 'propietario' (ver PR de roles).
+// Protegida por un secreto que vive en Secret Manager (nunca en el
+// código/repositorio) — hay que crearlo una vez antes de desplegar:
+//
+//   firebase functions:secrets:set MIGRACION_ROLES_SECRETO
+//   (pide un valor; cualquier cadena larga sirve, ej. generada con
+//    `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`)
+//
+// Luego, tras `npx firebase deploy --only functions`, se visita una vez
+// desde el navegador. Borrar esta función del código en cuanto se
+// confirme que la migración corrió bien.
+//
+//   https://.../migrarRolesResidenteAPropietario?secreto=<el valor que pusiste>
+//     (sin &confirmar=si: solo muestra cuántos usuarios cambiarían)
+//   https://.../migrarRolesResidenteAPropietario?secreto=<...>&confirmar=si
+//     (aplica el cambio)
+// ---------------------------------------------------------------------
+const migracionRolesSecreto = defineSecret('MIGRACION_ROLES_SECRETO');
+
+export const migrarRolesResidenteAPropietario = onRequest({ secrets: [migracionRolesSecreto] }, async (req, res) => {
+  if (!req.query['secreto'] || req.query['secreto'] !== migracionRolesSecreto.value()) {
+    res.status(403).send('No autorizado.');
+    return;
+  }
+
+  const db = getFirestore();
+  const snap = await db.collection('usuarios').where('rol', '==', 'residente').get();
+
+  if (snap.empty) {
+    res.status(200).send('No hay usuarios con rol "residente". No hay nada que migrar.');
+    return;
+  }
+
+  if (req.query['confirmar'] !== 'si') {
+    const lista = snap.docs.map(doc => `${doc.id} (${doc.data()['nombre'] || 'sin nombre'})`).join('\n');
+    res.status(200).send(
+      `Corrida en seco: no se escribió nada.\n${snap.size} usuarios cambiarían de "residente" a "propietario":\n\n${lista}\n\n` +
+      'Para aplicar el cambio real, agrega &confirmar=si a esta misma URL.'
+    );
+    return;
+  }
+
+  const BATCH_SIZE = 400;
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const lote = db.batch();
+    docs.slice(i, i + BATCH_SIZE).forEach(doc => lote.update(doc.ref, { rol: 'propietario' }));
+    await lote.commit();
+  }
+
+  logger.info('Migración de roles completada', { usuariosMigrados: docs.length });
+  res.status(200).send(`Listo. ${docs.length} usuarios migrados de "residente" a "propietario".`);
 });

@@ -61,7 +61,15 @@
             </button>
             <button type="button" class="stat-card stat-card--primary stat-card--link" (click)="ir('/gestion-usuarios')">
               <span class="stat-value" [appContador]="resumen.usuarios.residentes"></span>
-              <span class="stat-label">Residentes</span>
+              <span class="stat-label">Propietarios</span>
+            </button>
+            <button type="button" class="stat-card stat-card--secondary stat-card--link" (click)="ir('/gestion-usuarios')">
+              <span class="stat-value" [appContador]="resumen.usuarios.arrendatarios"></span>
+              <span class="stat-label">Arrendatarios</span>
+            </button>
+            <button type="button" class="stat-card stat-card--secondary stat-card--link" (click)="ir('/gestion-usuarios')">
+              <span class="stat-value" [appContador]="resumen.usuarios.guardas"></span>
+              <span class="stat-label">Guardas</span>
             </button>
           </div>
 
