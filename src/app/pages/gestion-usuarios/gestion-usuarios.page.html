@@ -141,11 +141,16 @@
               {{ enviandoMensaje ? 'Enviando...' : 'Enviar mensaje' }}
             </ion-button>
             <ion-button expand="block" [disabled]="actualizandoUsuario" (click)="alternarEstado(usuarioSeleccionado)">
-              {{ usuarioSeleccionado.activo === false ? 'Activar residente' : 'Desactivar residente' }}
+              {{ usuarioSeleccionado.activo === false ? 'Activar vecino' : 'Desactivar vecino' }}
             </ion-button>
-            <ion-button expand="block" fill="outline" [disabled]="actualizandoUsuario" (click)="cambiarRol(usuarioSeleccionado)">
-              {{ usuarioSeleccionado.rol === 'admin' ? 'Convertir en residente' : 'Convertir en administrador' }}
-            </ion-button>
+            <ion-item>
+              <ion-select label="Rol" label-placement="floating" [ngModel]="usuarioSeleccionado.rol" (ionChange)="cambiarRol(usuarioSeleccionado, $event.detail.value)" [disabled]="actualizandoUsuario" interface="popover">
+                <ion-select-option value="propietario">Propietario</ion-select-option>
+                <ion-select-option value="arrendatario">Arrendatario</ion-select-option>
+                <ion-select-option value="guarda">Guarda</ion-select-option>
+                <ion-select-option value="admin">Administrador</ion-select-option>
+              </ion-select>
+            </ion-item>
           </div>
         </div>
       </div>

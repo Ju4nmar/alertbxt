@@ -26,6 +26,7 @@ interface AvisoData {
   tipoAviso?: string;
   comunidadId?: string;
   autorId?: string;
+  soloPropietarios?: boolean;
 }
 
 interface TokenRef {
@@ -101,7 +102,18 @@ export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event =
     .where('activo', '==', true)
     .get();
 
-  const destinatarios = usuariosSnap.docs.filter(doc => doc.id !== aviso.autorId);
+  // Un aviso "solo propietarios" (p. ej. convocatoria de asamblea) no se
+  // notifica a los arrendatarios.
+  const destinatarios = usuariosSnap.docs.filter(doc => {
+    if (doc.id === aviso.autorId) {
+      return false;
+    }
+    if (aviso.soloPropietarios) {
+      const rol = (doc.data() as UsuarioData).rol;
+      return rol !== 'arrendatario';
+    }
+    return true;
+  });
   if (!destinatarios.length) {
     return;
   }
@@ -172,6 +184,7 @@ interface RecordatorioData {
   idUsuario?: string;
   usuariosAsignados?: string[];
   paraTodaLaComunidad?: boolean;
+  soloPropietarios?: boolean;
   comunidadId?: string;
   estado?: string;
 }
@@ -251,7 +264,11 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
         .where('comunidadId', '==', data.comunidadId)
         .where('activo', '==', true)
         .get();
-      destinatarioIds = usuariosSnap.docs.map(doc => doc.id);
+      // Un recordatorio "solo propietarios" (p. ej. convocatoria de
+      // asamblea) no se notifica a los arrendatarios.
+      destinatarioIds = usuariosSnap.docs
+        .filter(doc => !data.soloPropietarios || (doc.data() as UsuarioData).rol !== 'arrendatario')
+        .map(doc => doc.id);
     } else if (data.usuariosAsignados?.length) {
       destinatarioIds = data.usuariosAsignados;
     } else {

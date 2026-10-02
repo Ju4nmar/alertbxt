@@ -16,9 +16,19 @@ export interface Aviso {
   comunidadId: string;
   imagen?: string;
   estado?: 'pendiente' | 'validado' | 'rechazado';
+  // Cuando es true, solo lo ven/reciben notificación los propietarios,
+  // guardas y el administrador — no los arrendatarios (p. ej. convocatorias
+  // de asamblea, que son asunto del propietario).
+  soloPropietarios?: boolean;
 }
 
 export type TipoComunidad = 'apartamentos' | 'casas';
+
+// 'residente' se conserva como valor histórico: usuarios creados antes de
+// esta migración pueden tenerlo momentáneamente mientras corre el script de
+// migración (ver scripts/migrar-roles.js). El código nuevo nunca debe
+// escribir 'residente'; usa 'propietario' en su lugar.
+export type Rol = 'admin' | 'propietario' | 'arrendatario' | 'guarda' | 'residente';
 
 export interface Usuario {
   idUsuario?: string;
@@ -31,7 +41,7 @@ export interface Usuario {
   // tipoComunidad (se tratan como "apartamentos" por compatibilidad).
   numeroApartamento?: string;
   torre?: string;
-  rol: 'admin' | 'residente';
+  rol: Rol;
   activo: boolean;
   pendienteEliminacion?: boolean;
   fechaSolicitudEliminacion?: string;
@@ -74,6 +84,9 @@ export interface Recordatorio {
   comunidadId: string;
   fechaCreacion?: string;
   estado?: 'pendiente' | 'completado';
+  // Igual que en Aviso: oculta el recordatorio a los arrendatarios cuando
+  // es información reservada al propietario.
+  soloPropietarios?: boolean;
 }
 
 export interface Dispositivo {

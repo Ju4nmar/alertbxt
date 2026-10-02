@@ -222,6 +222,16 @@ ion-content {
   color: var(--ion-color-primary);
 }
 
+.badge-arrendatario {
+  background: var(--ab-tipo-mantenimiento-bg, rgba(var(--ion-color-warning-rgb), 0.15));
+  color: var(--ion-color-warning-shade, var(--ion-color-warning));
+}
+
+.badge-guarda {
+  background: rgba(var(--ion-color-secondary-rgb), 0.15);
+  color: var(--ion-color-secondary);
+}
+
 .loading-spinner,
 .empty-state {
   display: flex;
@@ -338,7 +348,9 @@ ion-content {
 }
 
 .detalle-valor.badge-admin,
-.detalle-valor.badge-residente {
+.detalle-valor.badge-residente,
+.detalle-valor.badge-arrendatario,
+.detalle-valor.badge-guarda {
   padding: 4px 10px;
   border-radius: var(--ab-radius-pill);
   text-align: center;

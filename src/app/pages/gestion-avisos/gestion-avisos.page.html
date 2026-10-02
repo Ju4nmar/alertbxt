@@ -49,6 +49,11 @@
       <span *ngIf="ubicacionInput.errors?.['maxlength']">No debe superar 120 caracteres.</span>
     </div>
 
+    <ion-item lines="none" class="solo-propietarios-item">
+      <ion-checkbox [(ngModel)]="soloPropietarios" name="soloPropietarios" slot="start"></ion-checkbox>
+      <ion-label>Solo propietarios (no visible para arrendatarios)</ion-label>
+    </ion-item>
+
     <div class="upload-container">
       <label class="custom-file-upload">
         <input type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" />

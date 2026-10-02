@@ -33,6 +33,20 @@ service cloud.firestore {
         && currentUser().comunidadId == comunidadId;
     }
 
+    // 'residente' se mantiene como valor válido mientras corre la migración
+    // a 'propietario' (ver scripts/migrar-roles.js); el cliente ya no lo
+    // escribe para cuentas nuevas.
+    function isRolValido(rol) {
+      return rol in ['admin', 'propietario', 'arrendatario', 'guarda', 'residente'];
+    }
+
+    // Un arrendatario no ve contenido marcado "solo propietarios" (p. ej.
+    // convocatorias de asamblea); todos los demás roles sí.
+    function puedeVerSoloPropietarios(comunidadId) {
+      return isAdminForCommunity(comunidadId)
+        || (isMemberOfCommunity(comunidadId) && currentUser().rol != 'arrendatario');
+    }
+
     function isValidCommunity(comunidadId) {
       return comunidadId is string
         && comunidadId != ''
@@ -50,7 +64,7 @@ service cloud.firestore {
         && request.resource.data.activo == true
         && request.resource.data.get('pendienteEliminacion', false) == false
         && (
-          request.resource.data.rol == 'residente'
+          request.resource.data.rol in ['propietario', 'arrendatario']
           || (
             request.resource.data.rol == 'admin'
             && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
@@ -63,7 +77,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'torre', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
         && request.resource.data.rol == resource.data.rol
-        && request.resource.data.rol in ['admin', 'residente']
+        && isRolValido(request.resource.data.rol)
         && (
           request.resource.data.activo == resource.data.get('activo', true)
           || (!resource.data.keys().hasAll(['activo']) && request.resource.data.activo == true)
@@ -90,7 +104,7 @@ service cloud.firestore {
         && request.resource.data.idUsuario == resource.data.idUsuario
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activo', 'rol'])
         && request.resource.data.get('activo', true) is bool
-        && request.resource.data.rol in ['admin', 'residente'];
+        && isRolValido(request.resource.data.rol);
 
       allow delete: if false;
 
@@ -164,7 +178,9 @@ service cloud.firestore {
     }
 
     match /avisos/{avisoId} {
-      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+      allow read: if resource.data.get('soloPropietarios', false) == true
+        ? puedeVerSoloPropietarios(resource.data.comunidadId)
+        : isMemberOfCommunity(resource.data.comunidadId);
 
       allow create: if signedIn()
         && request.resource.data.autorId == request.auth.uid
@@ -197,7 +213,10 @@ service cloud.firestore {
         && (
           resource.data.idUsuario == request.auth.uid
           || resource.data.get('usuariosAsignados', []).hasAny([request.auth.uid])
-          || resource.data.get('paraTodaLaComunidad', false) == true
+          || (
+            resource.data.get('paraTodaLaComunidad', false) == true
+            && (resource.data.get('soloPropietarios', false) == false || puedeVerSoloPropietarios(resource.data.comunidadId))
+          )
           || isAdminForCommunity(resource.data.comunidadId)
         );
       allow delete: if (

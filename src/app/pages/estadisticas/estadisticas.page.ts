@@ -34,13 +34,13 @@ interface Donut {
 }
 
 interface Resumen {
-  usuarios: { total: number; activos: number; inactivos: number; admins: number; residentes: number };
+  usuarios: { total: number; activos: number; inactivos: number; admins: number; residentes: number; arrendatarios: number; guardas: number };
   avisos: { total: number; emergencia: number; mantenimiento: number; informativo: number; alertaSos: number };
   recordatorios: { total: number; completados: number; pendientes: number };
 }
 
 const RESUMEN_VACIO: Resumen = {
-  usuarios: { total: 0, activos: 0, inactivos: 0, admins: 0, residentes: 0 },
+  usuarios: { total: 0, activos: 0, inactivos: 0, admins: 0, residentes: 0, arrendatarios: 0, guardas: 0 },
   avisos: { total: 0, emergencia: 0, mantenimiento: 0, informativo: 0, alertaSos: 0 },
   recordatorios: { total: 0, completados: 0, pendientes: 0 },
 };
@@ -206,7 +206,9 @@ export class EstadisticasPage implements OnInit, OnDestroy {
         activos: usuarios.filter(u => u.activo !== false).length,
         inactivos: usuarios.filter(u => u.activo === false).length,
         admins: usuarios.filter(u => u.rol === 'admin').length,
-        residentes: usuarios.filter(u => u.rol === 'residente').length,
+        residentes: usuarios.filter(u => u.rol === 'propietario' || u.rol === 'residente').length,
+        arrendatarios: usuarios.filter(u => u.rol === 'arrendatario').length,
+        guardas: usuarios.filter(u => u.rol === 'guarda').length,
       },
       avisos: {
         total: avisos.length,
