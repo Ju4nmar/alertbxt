@@ -34,6 +34,10 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   fechaRecordatorio = '';
   horaRecordatorio = '';
   idEditando: string | null = null;
+  // true cuando se edita un recordatorio asignado por un admin (en vez de
+  // uno personal): el guardado no debe tocar usuariosAsignados/
+  // paraTodaLaComunidad, solo el contenido y la fecha/hora.
+  editandoAsignado = false;
   isLoading = false;
   // Separado de isLoading (que también cubre "guardando el formulario"):
   // reusarlo para el skeleton de la lista la haría parpadear cada vez que
@@ -238,21 +242,36 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
         return;
       }
 
-      const recordatorio: Omit<Recordatorio, 'idRecordatorios'> = {
-        tituloRecordatorio: titulo,
-        descripcionRecordatorio: descripcion,
-        fechaHora: fechaHoraLocal.toISOString(),
-        idUsuario: currentUser.idUsuario,
-        comunidadId: currentUser.comunidadId,
-        fechaCreacion: new Date().toISOString(),
-      };
-
       const estabaEditando = !!this.idEditando;
 
-      if (this.idEditando) {
-        await firstValueFrom(this.firestoreService.updateRecordatorio(this.idEditando, recordatorio));
+      if (this.idEditando && this.editandoAsignado) {
+        // Recordatorio asignado por un admin: solo se actualiza el
+        // contenido, nunca a quién está asignado.
+        await firstValueFrom(this.firestoreService.updateRecordatorio(this.idEditando, {
+          tituloRecordatorio: titulo,
+          descripcionRecordatorio: descripcion,
+          fechaHora: fechaHoraLocal.toISOString(),
+        }));
+        this.idEditando = null;
+      } else if (this.idEditando) {
+        await firstValueFrom(this.firestoreService.updateRecordatorio(this.idEditando, {
+          tituloRecordatorio: titulo,
+          descripcionRecordatorio: descripcion,
+          fechaHora: fechaHoraLocal.toISOString(),
+          idUsuario: currentUser.idUsuario,
+          comunidadId: currentUser.comunidadId,
+        }));
         this.idEditando = null;
       } else {
+        const recordatorio: Omit<Recordatorio, 'idRecordatorios'> = {
+          tituloRecordatorio: titulo,
+          descripcionRecordatorio: descripcion,
+          fechaHora: fechaHoraLocal.toISOString(),
+          idUsuario: currentUser.idUsuario,
+          comunidadId: currentUser.comunidadId,
+          fechaCreacion: new Date().toISOString(),
+        };
+
         await firstValueFrom(this.firestoreService.addRecordatorio(recordatorio));
         // Notificar nuevo recordatorio creado
         this.localNotificationService.showNotification('Recordatorio creado', {
@@ -271,7 +290,8 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
   }
 
   editarRecordatorio(recordatorio: Recordatorio): void {
-    if (!this.esPersonal(recordatorio)) {
+    const esAsignado = this.esCreador(recordatorio);
+    if (!this.esPersonal(recordatorio) && !esAsignado) {
       return;
     }
 
@@ -282,6 +302,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     this.fechaRecordatorio = this.toLocalDateInputValue(fechaHora);
     this.horaRecordatorio = this.toLocalTimeInputValue(fechaHora);
     this.idEditando = recordatorio.idRecordatorios || null;
+    this.editandoAsignado = esAsignado;
   }
 
   async eliminarRecordatorio(recordatorio: Recordatorio): Promise<void> {
@@ -338,6 +359,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
   private resetForm(): void {
     this.idEditando = null;
+    this.editandoAsignado = false;
     this.tituloRecordatorio = '';
     this.descripcionRecordatorio = '';
     this.fechaRecordatorio = '';

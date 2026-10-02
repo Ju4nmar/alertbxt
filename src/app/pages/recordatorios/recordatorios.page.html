@@ -115,7 +115,7 @@
       </div>
 
       <div class="acciones" *ngIf="esPersonal(recordatorio) || esCreador(recordatorio)">
-        <button class="btn-editar" *ngIf="esPersonal(recordatorio)" (click)="editarRecordatorio(recordatorio)">Editar</button>
+        <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>
         <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio)">Eliminar</button>
       </div>
     </div>
