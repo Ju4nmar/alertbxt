@@ -46,6 +46,21 @@ export class MensajesPage implements OnInit, OnDestroy {
   enviandoRespuesta = false;
   readonly textosExpandidos = new Set<string>();
 
+  // Vista estilo correo: lista a la izquierda, detalle de lectura a la
+  // derecha (en móvil, una pantalla reemplaza a la otra).
+  mensajeRecibidoSeleccionado: MensajeAdmin | null = null;
+  mensajeEnviadoSeleccionado: MensajeEnviado | null = null;
+
+  get hayDetalleAbierto(): boolean {
+    return !!this.mensajeRecibidoSeleccionado || !!this.mensajeEnviadoSeleccionado;
+  }
+
+  // La bandeja no muestra las respuestas del propio residente como
+  // mensajes aparte: viven dentro del hilo del mensaje original.
+  get mensajesRecibidosLista(): MensajeAdmin[] {
+    return this.mensajesRecibidos.filter(mensaje => !mensaje.esRespuesta);
+  }
+
   get esAdmin(): boolean {
     return this.usuario?.rol === 'admin';
   }
@@ -105,6 +120,38 @@ export class MensajesPage implements OnInit, OnDestroy {
 
   cambiarVista(vista: Vista): void {
     this.vista = vista;
+    this.cerrarDetalle();
+  }
+
+  seleccionarRecibido(mensaje: MensajeAdmin): void {
+    if (mensaje.esRespuesta) {
+      return;
+    }
+    this.mensajeEnviadoSeleccionado = null;
+    this.mensajeRecibidoSeleccionado = mensaje;
+    this.abrirHilo(this.usuarioId, mensaje.idMensaje);
+  }
+
+  seleccionarEnviado(mensaje: MensajeEnviado): void {
+    this.mensajeRecibidoSeleccionado = null;
+    this.mensajeEnviadoSeleccionado = mensaje;
+    const primerDestinatario = mensaje.destinatarios[0];
+    if (primerDestinatario) {
+      this.abrirHilo(primerDestinatario.id, primerDestinatario.mensajeId);
+    }
+  }
+
+  esRecibidoSeleccionado(mensaje: MensajeAdmin): boolean {
+    return !!this.mensajeRecibidoSeleccionado?.idMensaje && this.mensajeRecibidoSeleccionado.idMensaje === mensaje.idMensaje;
+  }
+
+  esEnviadoSeleccionado(mensaje: MensajeEnviado): boolean {
+    return !!this.mensajeEnviadoSeleccionado?.idMensaje && this.mensajeEnviadoSeleccionado.idMensaje === mensaje.idMensaje;
+  }
+
+  cerrarDetalle(): void {
+    this.mensajeRecibidoSeleccionado = null;
+    this.mensajeEnviadoSeleccionado = null;
     this.cerrarHilo();
   }
 
@@ -127,13 +174,24 @@ export class MensajesPage implements OnInit, OnDestroy {
     return this.respuestasPorHilo[this.claveHilo(uidDueno, mensajeId)] || [];
   }
 
+  // Para los chips de destinatario dentro del detalle de un enviado: alternan
+  // entre mostrar y ocultar el hilo de ese destinatario.
   toggleHilo(uidDueno: string, mensajeId: string | undefined): void {
     if (!mensajeId) {
       return;
     }
 
     if (this.hiloEstaAbierto(uidDueno, mensajeId)) {
-      this.cerrarHilo();
+      this.hiloAbierto = null;
+      this.respuestasSub?.unsubscribe();
+      return;
+    }
+
+    this.abrirHilo(uidDueno, mensajeId);
+  }
+
+  private abrirHilo(uidDueno: string, mensajeId: string | undefined): void {
+    if (!mensajeId || this.hiloEstaAbierto(uidDueno, mensajeId)) {
       return;
     }
 

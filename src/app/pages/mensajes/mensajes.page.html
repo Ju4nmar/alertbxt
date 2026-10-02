@@ -1,37 +1,92 @@
 <ion-content>
   <h2 class="page-title">Mensajes</h2>
 
-  <div class="page-shell">
-    <div *ngIf="esAdmin" class="vista-tabs" role="tablist" aria-label="Bandeja de mensajes">
-      <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'recibidos'" [class.active]="vista === 'recibidos'" (click)="cambiarVista('recibidos')">Recibidos</button>
-      <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'enviados'" [class.active]="vista === 'enviados'" (click)="cambiarVista('enviados')">Enviados</button>
-    </div>
-
-    <div *ngIf="cargaError" class="error-message" role="alert">
-      {{ cargaError }}
-    </div>
-
-    <ng-container *ngIf="isLoading">
-      <div class="mensaje-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
-        <div class="skeleton-line skeleton-line--short"></div>
-        <div class="skeleton-line skeleton-line--wide"></div>
+  <div class="mail-shell" [class.detail-open]="hayDetalleAbierto">
+    <aside class="mail-list-pane">
+      <div *ngIf="esAdmin" class="vista-tabs" role="tablist" aria-label="Bandeja de mensajes">
+        <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'recibidos'" [class.active]="vista === 'recibidos'" (click)="cambiarVista('recibidos')">Recibidos</button>
+        <button type="button" class="vista-chip" role="tab" [attr.aria-selected]="vista === 'enviados'" [class.active]="vista === 'enviados'" (click)="cambiarVista('enviados')">Enviados</button>
       </div>
-    </ng-container>
 
-    <ng-container *ngIf="!isLoading && vista === 'recibidos'">
-      <div *ngFor="let mensaje of mensajesRecibidos" class="mensaje-item">
-        <button type="button" class="mensaje-header mensaje-header-btn" [disabled]="mensaje.esRespuesta" [attr.aria-expanded]="hiloEstaAbierto(usuarioId, mensaje.idMensaje)" (click)="toggleHilo(usuarioId, mensaje.idMensaje)">
+      <div *ngIf="cargaError" class="error-message" role="alert">
+        {{ cargaError }}
+      </div>
+
+      <ng-container *ngIf="isLoading">
+        <div class="mail-row skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+          <div class="skeleton-line skeleton-line--short"></div>
+          <div class="skeleton-line skeleton-line--wide"></div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!isLoading && vista === 'recibidos'">
+        <button
+          type="button"
+          class="mail-row"
+          *ngFor="let mensaje of mensajesRecibidosLista"
+          [class.active]="esRecibidoSeleccionado(mensaje)"
+          [attr.aria-current]="esRecibidoSeleccionado(mensaje) ? 'true' : null"
+          (click)="seleccionarRecibido(mensaje)"
+        >
           <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-          <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
-          <span class="mensaje-etiqueta" *ngIf="mensaje.esRespuesta">Respuesta</span>
-          <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
+          <div class="mail-row-texto">
+            <div class="mail-row-top">
+              <span class="mail-row-autor">{{ mensaje.autorNombre }}</span>
+              <span class="mail-row-fecha">{{ mensaje.fecha | date: 'short' }}</span>
+            </div>
+            <p class="mail-row-preview">{{ mensaje.mensaje }}</p>
+          </div>
         </button>
+
+        <div *ngIf="!cargaError && !mensajesRecibidosLista.length" class="empty-state">
+          <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+          <p>Todavía no tienes mensajes de tu administrador.</p>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!isLoading && vista === 'enviados'">
+        <button
+          type="button"
+          class="mail-row"
+          *ngFor="let mensaje of mensajesEnviados"
+          [class.active]="esEnviadoSeleccionado(mensaje)"
+          [attr.aria-current]="esEnviadoSeleccionado(mensaje) ? 'true' : null"
+          (click)="seleccionarEnviado(mensaje)"
+        >
+          <ion-icon name="paper-plane-outline"></ion-icon>
+          <div class="mail-row-texto">
+            <div class="mail-row-top">
+              <span class="mail-row-autor">Para {{ formatearDestinatarios(mensaje) }}</span>
+              <span class="mail-row-fecha">{{ mensaje.fecha | date: 'short' }}</span>
+            </div>
+            <p class="mail-row-preview">{{ mensaje.mensaje }}</p>
+          </div>
+        </button>
+
+        <div *ngIf="!mensajesEnviados.length" class="empty-state">
+          <ion-icon name="paper-plane-outline"></ion-icon>
+          <p>Todavía no le has enviado mensajes a ningún vecino.</p>
+        </div>
+      </ng-container>
+    </aside>
+
+    <section class="mail-detail-pane" *ngIf="hayDetalleAbierto">
+      <button type="button" class="mail-back-btn" (click)="cerrarDetalle()">
+        <ion-icon name="chatbubble-ellipses-outline" aria-hidden="true"></ion-icon>
+        Volver a la bandeja
+      </button>
+
+      <ng-container *ngIf="mensajeRecibidoSeleccionado as mensaje">
+        <header class="mail-detail-header">
+          <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
+          <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
+        </header>
         <p class="mensaje-texto" [class.recortado]="esTextoLargo(mensaje.mensaje) && !textoExpandido('r-' + mensaje.idMensaje)">{{ mensaje.mensaje }}</p>
         <button type="button" class="ver-mas-btn" *ngIf="esTextoLargo(mensaje.mensaje)" [attr.aria-expanded]="textoExpandido('r-' + mensaje.idMensaje)" (click)="alternarTexto('r-' + mensaje.idMensaje)">
           {{ textoExpandido('r-' + mensaje.idMensaje) ? 'Ver menos' : 'Ver más' }}
         </button>
 
-        <div class="hilo" *ngIf="hiloEstaAbierto(usuarioId, mensaje.idMensaje)">
+        <div class="hilo">
           <p *ngIf="cargandoRespuestas" class="hilo-cargando">Cargando respuestas...</p>
 
           <ng-container *ngIf="!cargandoRespuestas">
@@ -58,21 +113,13 @@
             </button>
           </div>
         </div>
-      </div>
+      </ng-container>
 
-      <div *ngIf="!cargaError && !mensajesRecibidos.length" class="empty-state">
-        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-        <p>Todavía no tienes mensajes de tu administrador.</p>
-      </div>
-    </ng-container>
-
-    <ng-container *ngIf="!isLoading && vista === 'enviados'">
-      <div *ngFor="let mensaje of mensajesEnviados" class="mensaje-item">
-        <div class="mensaje-header">
-          <ion-icon name="paper-plane-outline"></ion-icon>
+      <ng-container *ngIf="mensajeEnviadoSeleccionado as mensaje">
+        <header class="mail-detail-header">
           <span class="mensaje-autor">Para {{ formatearDestinatarios(mensaje) }}</span>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
-        </div>
+        </header>
         <p class="mensaje-texto" [class.recortado]="esTextoLargo(mensaje.mensaje) && !textoExpandido('e-' + mensaje.idMensaje)">{{ mensaje.mensaje }}</p>
         <button type="button" class="ver-mas-btn" *ngIf="esTextoLargo(mensaje.mensaje)" [attr.aria-expanded]="textoExpandido('e-' + mensaje.idMensaje)" (click)="alternarTexto('e-' + mensaje.idMensaje)">
           {{ textoExpandido('e-' + mensaje.idMensaje) ? 'Ver menos' : 'Ver más' }}
@@ -102,12 +149,12 @@
             </div>
           </ng-container>
         </div>
-      </div>
+      </ng-container>
+    </section>
 
-      <div *ngIf="!mensajesEnviados.length" class="empty-state">
-        <ion-icon name="paper-plane-outline"></ion-icon>
-        <p>Todavía no le has enviado mensajes a ningún vecino.</p>
-      </div>
-    </ng-container>
+    <div class="mail-empty-hint" *ngIf="!hayDetalleAbierto && !isLoading">
+      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+      <p>Selecciona un mensaje para leerlo.</p>
+    </div>
   </div>
 </ion-content>
