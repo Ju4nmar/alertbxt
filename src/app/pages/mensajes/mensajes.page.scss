@@ -2,10 +2,186 @@ ion-content {
   --background: var(--ion-background-color);
 }
 
-.page-shell {
-  max-width: 720px;
+/* ============== Layout estilo correo: lista + panel de lectura ============== */
+.mail-shell {
+  display: flex;
+  gap: var(--ab-space-4);
+  max-width: 1080px;
+  height: calc(100vh - 160px);
+  min-height: 420px;
   margin: 0 auto;
-  padding: 0 var(--ab-space-4) 40px;
+  padding: 0 var(--ab-space-4) 24px;
+}
+
+.mail-list-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 320px;
+  max-width: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.mail-detail-pane {
+  flex: 2 1 480px;
+  overflow-y: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  box-shadow: var(--ab-shadow-sm);
+}
+
+.mail-empty-hint {
+  display: none;
+  flex: 2 1 480px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--ab-text-secondary);
+  border: 1px dashed var(--ab-border);
+  border-radius: var(--ab-radius-md);
+
+  ion-icon {
+    font-size: 2.4rem;
+    color: var(--ion-color-medium-tint);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.mail-back-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ion-color-primary);
+  font-family: var(--ab-font-body);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  ion-icon {
+    transform: rotate(180deg);
+  }
+}
+
+/* En móvil: un panel a la vez, con botón para volver. */
+@media (max-width: 760px) {
+  .mail-shell {
+    height: auto;
+    min-height: 0;
+  }
+
+  .mail-list-pane,
+  .mail-detail-pane,
+  .mail-empty-hint {
+    max-width: none;
+  }
+
+  .mail-shell:not(.detail-open) .mail-detail-pane,
+  .mail-shell:not(.detail-open) .mail-empty-hint {
+    display: none;
+  }
+
+  .mail-shell.detail-open .mail-list-pane {
+    display: none;
+  }
+
+  .mail-back-btn {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 761px) {
+  .mail-empty-hint {
+    display: flex;
+  }
+}
+
+.mail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-md);
+  background: var(--ab-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  ion-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 1.1rem;
+    color: var(--ion-color-primary);
+  }
+}
+
+.mail-row:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.mail-row.active {
+  border-color: var(--ion-color-primary);
+  background: var(--ab-tipo-informativo-bg);
+}
+
+.mail-row-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.mail-row-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mail-row-autor {
+  overflow: hidden;
+  font-weight: 700;
+  color: var(--ab-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-row-fecha {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--ab-text-secondary);
+  font-size: 0.78rem;
+}
+
+.mail-row-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--ab-text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.mail-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--ab-text-secondary);
+  font-size: 0.85rem;
 }
 
 .vista-tabs {
@@ -53,61 +229,6 @@ ion-content {
     margin: 0;
     text-align: center;
   }
-}
-
-.mensaje-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--ab-border);
-  border-radius: var(--ab-radius-md);
-  background: var(--ab-surface);
-  box-shadow: var(--ab-shadow-sm);
-}
-
-.mensaje-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ab-text-secondary);
-  font-size: 0.85rem;
-
-  ion-icon {
-    font-size: 1.1rem;
-    color: var(--ion-color-primary);
-  }
-}
-
-.mensaje-header-btn {
-  width: 100%;
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.mensaje-header-btn:disabled {
-  cursor: default;
-}
-
-.mensaje-etiqueta {
-  padding: 2px 9px;
-  border-radius: var(--ab-radius-pill);
-  background: var(--ab-tipo-informativo-bg);
-  color: var(--ab-tipo-informativo);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.mensaje-header-btn:focus-visible {
-  outline: 2px solid var(--ion-color-primary);
-  outline-offset: 2px;
-  border-radius: var(--ab-radius-sm);
 }
 
 .mensaje-autor {
