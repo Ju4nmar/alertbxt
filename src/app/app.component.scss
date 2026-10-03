@@ -422,14 +422,16 @@ ion-split-pane {
 /* ================= BOTÓN SOS (flotante, siempre alcanzable) ================= */
 .sos-fab {
   position: fixed;
-  right: 24px;
-  bottom: 28px;
+  right: 32px;
+  bottom: 36px;
   z-index: 950;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  /* Más grande en escritorio (en móvil se reduce abajo): es el botón más
+     importante de la app y debe verse y alcanzarse sin esfuerzo. */
+  width: 92px;
+  height: 92px;
   border: none;
   border-radius: 50%;
   background: linear-gradient(155deg, #d6503f 0%, #a93125 100%);
@@ -503,7 +505,7 @@ ion-split-pane {
   position: relative;
   font-family: var(--ab-font-heading);
   font-style: italic;
-  font-size: 1rem;
+  font-size: 1.45rem;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
