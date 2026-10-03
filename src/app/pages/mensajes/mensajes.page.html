@@ -23,7 +23,7 @@
         <button
           type="button"
           class="mail-row"
-          *ngFor="let mensaje of mensajesRecibidosLista"
+          *ngFor="let mensaje of mensajesRecibidos"
           [class.active]="esRecibidoSeleccionado(mensaje)"
           [attr.aria-current]="esRecibidoSeleccionado(mensaje) ? 'true' : null"
           (click)="seleccionarRecibido(mensaje)"
@@ -32,13 +32,14 @@
           <div class="mail-row-texto">
             <div class="mail-row-top">
               <span class="mail-row-autor">{{ mensaje.autorNombre }}</span>
+              <span class="mensaje-etiqueta" *ngIf="mensaje.esRespuesta">Respuesta</span>
               <span class="mail-row-fecha">{{ mensaje.fecha | date: 'short' }}</span>
             </div>
             <p class="mail-row-preview">{{ mensaje.mensaje }}</p>
           </div>
         </button>
 
-        <div *ngIf="!cargaError && !mensajesRecibidosLista.length" class="empty-state">
+        <div *ngIf="!cargaError && !mensajesRecibidos.length" class="empty-state">
           <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
           <p>Todavía no tienes mensajes de tu administrador.</p>
         </div>
@@ -78,7 +79,11 @@
 
       <ng-container *ngIf="mensajeRecibidoSeleccionado as mensaje">
         <header class="mail-detail-header">
-          <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
+          <div class="mail-remitente">
+            <span class="mensaje-autor">{{ mensaje.autorNombre }}</span>
+            <span class="mensaje-etiqueta" *ngIf="mensaje.esRespuesta">Respuesta</span>
+            <span class="mail-contexto" *ngIf="contextoDe(mensaje.autorId) as contexto">{{ contexto }}</span>
+          </div>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
         </header>
         <p class="mensaje-texto" [class.recortado]="esTextoLargo(mensaje.mensaje) && !textoExpandido('r-' + mensaje.idMensaje)">{{ mensaje.mensaje }}</p>
@@ -86,7 +91,7 @@
           {{ textoExpandido('r-' + mensaje.idMensaje) ? 'Ver menos' : 'Ver más' }}
         </button>
 
-        <div class="hilo">
+        <div class="hilo" *ngIf="!mensaje.esRespuesta">
           <p *ngIf="cargandoRespuestas" class="hilo-cargando">Cargando respuestas...</p>
 
           <ng-container *ngIf="!cargandoRespuestas">
@@ -99,7 +104,7 @@
             <p *ngIf="!respuestasDe(usuarioId, mensaje.idMensaje).length" class="hilo-vacio">Aún no has respondido este mensaje.</p>
           </ng-container>
 
-          <div class="hilo-responder" *ngIf="!esAdmin">
+          <div class="hilo-responder">
             <textarea
               class="respuesta-input"
               [(ngModel)]="textoRespuesta"
@@ -117,9 +122,20 @@
 
       <ng-container *ngIf="mensajeEnviadoSeleccionado as mensaje">
         <header class="mail-detail-header">
-          <span class="mensaje-autor">Para {{ formatearDestinatarios(mensaje) }}</span>
+          <div class="mail-remitente">
+            <span class="mensaje-autor">Para:</span>
+          </div>
           <span class="mensaje-fecha">{{ mensaje.fecha | date: 'medium' }}</span>
         </header>
+        <ul class="mail-destinatarios-info">
+          <li *ngFor="let destinatario of destinatariosVisibles(mensaje)">
+            <span class="mail-dest-nombre">{{ destinatario.nombre }}</span>
+            <span class="mail-contexto" *ngIf="contextoDe(destinatario.id) as contexto">{{ contexto }}</span>
+          </li>
+          <li *ngIf="mensaje.destinatarios.length > maxDestinatariosVisibles" class="mail-contexto">
+            y {{ mensaje.destinatarios.length - maxDestinatariosVisibles }} más
+          </li>
+        </ul>
         <p class="mensaje-texto" [class.recortado]="esTextoLargo(mensaje.mensaje) && !textoExpandido('e-' + mensaje.idMensaje)">{{ mensaje.mensaje }}</p>
         <button type="button" class="ver-mas-btn" *ngIf="esTextoLargo(mensaje.mensaje)" [attr.aria-expanded]="textoExpandido('e-' + mensaje.idMensaje)" (click)="alternarTexto('e-' + mensaje.idMensaje)">
           {{ textoExpandido('e-' + mensaje.idMensaje) ? 'Ver menos' : 'Ver más' }}

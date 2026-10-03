@@ -111,7 +111,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
           console.error('Error cargando recordatorios:', error);
           this.isLoading = false;
           this.isLoadingLista = false;
-          this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
+          this.cargaError = 'No se pudieron cargar las notificaciones. Revisa tu conexión e intenta de nuevo.';
         },
       });
 
@@ -194,7 +194,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     }
 
     if (titulo.length < 3 || titulo.length > 80 || descripcion.length < 5 || descripcion.length > 300) {
-      this.recordatorioError = 'Revisa la longitud del recordatorio.';
+      this.recordatorioError = 'Revisa la longitud de la notificación.';
       return;
     }
 
@@ -205,7 +205,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     }
 
     if (fechaHoraLocal.getTime() < Date.now()) {
-      this.recordatorioError = 'La fecha y hora del recordatorio deben ser futuras.';
+      this.recordatorioError = 'La fecha y hora de la notificación deben ser futuras.';
       return;
     }
 
@@ -216,7 +216,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     }
 
     if (!currentUser.comunidadId) {
-      this.recordatorioError = 'Únete a una vecindad antes de crear recordatorios.';
+      this.recordatorioError = 'Únete a una vecindad antes de crear notificaciones.';
       return;
     }
 
@@ -238,7 +238,7 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
           paraTodos: this.modoAsignacion === 'todos',
         }));
         this.resetForm();
-        await this.toastService.success('Recordatorio asignado');
+        await this.toastService.success('Notificación asignada');
         return;
       }
 
@@ -274,16 +274,16 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
         await firstValueFrom(this.firestoreService.addRecordatorio(recordatorio));
         // Notificar nuevo recordatorio creado
-        this.localNotificationService.showNotification('Recordatorio creado', {
+        this.localNotificationService.showNotification('Notificación creada', {
           body: titulo,
           tag: `recordatorio-new-${Date.now()}`,
         });
       }
       this.resetForm();
-      await this.toastService.success(estabaEditando ? 'Recordatorio actualizado' : 'Recordatorio creado');
+      await this.toastService.success(estabaEditando ? 'Notificación actualizada' : 'Notificación creada');
     } catch (error) {
       console.error('Error guardando recordatorio:', error);
-      this.recordatorioError = error instanceof Error ? error.message : 'No se pudo guardar el recordatorio.';
+      this.recordatorioError = error instanceof Error ? error.message : 'No se pudo guardar la notificación.';
     } finally {
       this.isLoading = false;
     }
@@ -312,8 +312,8 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
 
     const id = recordatorio.idRecordatorios;
     const alerta = await this.alertController.create({
-      header: 'Eliminar recordatorio',
-      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este recordatorio?',
+      header: 'Eliminar notificación',
+      message: 'Esta acción no se puede deshacer. ¿Quieres eliminar esta notificación?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarRecordatorio(id) },
@@ -326,11 +326,11 @@ export class RecordatoriosPage implements OnInit, OnDestroy {
     this.isLoading = true;
     try {
       await firstValueFrom(this.firestoreService.deleteRecordatorio(id));
-      await this.toastService.success('Recordatorio eliminado');
+      await this.toastService.success('Notificación eliminada');
     } catch (error) {
       console.error('Error eliminando recordatorio:', error);
-      this.recordatorioError = 'No se pudo eliminar el recordatorio.';
-      await this.toastService.error('No se pudo eliminar el recordatorio.');
+      this.recordatorioError = 'No se pudo eliminar la notificación.';
+      await this.toastService.error('No se pudo eliminar la notificación.');
     } finally {
       this.isLoading = false;
     }

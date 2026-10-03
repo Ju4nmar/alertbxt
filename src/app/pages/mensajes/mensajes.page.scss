@@ -177,11 +177,58 @@ ion-content {
 
 .mail-detail-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 10px;
   color: var(--ab-text-secondary);
   font-size: 0.85rem;
+}
+
+.mail-remitente {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.mail-contexto {
+  color: var(--ab-text-secondary);
+  font-size: 0.8rem;
+}
+
+.mensaje-etiqueta {
+  padding: 2px 9px;
+  border-radius: var(--ab-radius-pill);
+  background: var(--ab-tipo-informativo-bg);
+  color: var(--ab-tipo-informativo);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mail-destinatarios-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  margin: 0 0 12px;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    align-items: baseline;
+  }
+}
+
+.mail-dest-nombre {
+  font-weight: 700;
+  color: var(--ab-text-primary);
 }
 
 .vista-tabs {

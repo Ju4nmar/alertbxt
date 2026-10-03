@@ -67,7 +67,7 @@ describe('RecordatoriosPage', () => {
 
     await component.guardarRecordatorio();
 
-    expect(component.recordatorioError).toBe('La fecha y hora del recordatorio deben ser futuras.');
+    expect(component.recordatorioError).toBe('La fecha y hora de la notificación deben ser futuras.');
     expect(addRecordatorioSpy).not.toHaveBeenCalled();
   });
 

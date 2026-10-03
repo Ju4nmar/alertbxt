@@ -356,6 +356,27 @@ ion-content {
   text-align: center;
 }
 
+/* El selector de rol se ve como el resto de valores de la fila: ocupa solo
+   lo que mide su texto y queda a la derecha (la fila reparte el espacio),
+   con la flecha como único indicio de que se puede cambiar. */
+.detalle-select {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-height: 0;
+  max-width: 70%;
+  margin-left: auto;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  color: var(--ab-text-primary);
+  font-weight: 600;
+}
+
+.detalle-select::part(icon) {
+  opacity: 0.7;
+}
+
 .estado-inactivo {
   color: var(--ion-color-danger);
 }
@@ -411,5 +432,10 @@ ion-content {
     margin-left: 0;
     margin-top: 6px;
     max-width: 100%;
+  }
+
+  .detalle-select {
+    max-width: 100%;
+    margin-left: 0;
   }
 }

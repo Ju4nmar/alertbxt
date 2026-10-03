@@ -3,14 +3,14 @@
 
   <div class="page-shell">
   <form class="recordatorio-form" (ngSubmit)="guardarRecordatorio()" #recordatorioForm="ngForm" novalidate>
-    <h3>{{ idEditando ? 'Editar recordatorio' : 'Crear recordatorio' }}</h3>
+    <h3>{{ idEditando ? 'Editar notificación' : 'Crear notificación' }}</h3>
 
     <div class="form-row">
       <ion-item>
         <ion-input id="titulo" label="Título" label-placement="floating" [(ngModel)]="tituloRecordatorio" name="tituloRecordatorio" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="recordatorioError = ''"></ion-input>
       </ion-item>
       <div *ngIf="tituloInput.invalid && (tituloInput.dirty || tituloInput.touched)" class="field-error">
-        <span *ngIf="tituloInput.errors?.['required']">El título del recordatorio es obligatorio.</span>
+        <span *ngIf="tituloInput.errors?.['required']">El título de la notificación es obligatorio.</span>
         <span *ngIf="tituloInput.errors?.['minlength']">Debe tener al menos 3 caracteres.</span>
         <span *ngIf="tituloInput.errors?.['maxlength']">No debe superar 80 caracteres.</span>
       </div>
@@ -52,7 +52,7 @@
 
     <div class="asignacion-field" *ngIf="esAdmin && !idEditando">
       <label class="asignacion-label">Asignar a</label>
-      <div class="asignacion-tabs" role="radiogroup" aria-label="Asignar recordatorio a">
+      <div class="asignacion-tabs" role="radiogroup" aria-label="Asignar notificación a">
         <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'yo'" [class.active]="modoAsignacion === 'yo'" (click)="elegirModoAsignacion('yo')">Solo yo</button>
         <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'elegir'" [class.active]="modoAsignacion === 'elegir'" (click)="elegirModoAsignacion('elegir')">Elegir vecinos</button>
         <button type="button" class="asignacion-chip" role="radio" [attr.aria-checked]="modoAsignacion === 'todos'" [class.active]="modoAsignacion === 'todos'" (click)="elegirModoAsignacion('todos')">Todos</button>
@@ -82,7 +82,7 @@
   </form>
 
   <div class="lista-recordatorios">
-    <h3>Lista de recordatorios</h3>
+    <h3>Lista de notificaciones</h3>
 
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
