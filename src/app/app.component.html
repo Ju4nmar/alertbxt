@@ -29,7 +29,7 @@
 
             <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/recordatorios')" (click)="goToRecordatorios()" data-tour="recordatorios">
               <ion-icon slot="start" name="calendar"></ion-icon>
-              <ion-label>Recordatorios</ion-label>
+              <ion-label>Notificaciones</ion-label>
             </ion-item>
 
             <ion-item *ngIf="currentUser?.rol === 'admin'" button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/gestion-usuarios')" (click)="goToGestionUsuarios()" data-tour="vecinos">
@@ -39,7 +39,7 @@
 
             <ion-item *ngIf="currentUser?.rol === 'admin'" button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/estadisticas')" (click)="goToEstadisticas()" data-tour="estadisticas">
               <ion-icon slot="start" name="stats-chart"></ion-icon>
-              <ion-label>Estadísticas</ion-label>
+              <ion-label>Métricas</ion-label>
             </ion-item>
 
             <ion-item *ngIf="!currentUser?.comunidadId" button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/unirse-vecindad')" (click)="goToUnirseVecindad()">
@@ -129,7 +129,7 @@
 
         <button type="button" class="tab-btn" [class.tab-active]="isActive('/recordatorios')" (click)="goToRecordatorios()" data-tour="recordatorios">
           <ion-icon name="calendar"></ion-icon>
-          <span>Recordar</span>
+          <span>Notific.</span>
         </button>
 
         <button *ngIf="currentUser?.rol === 'admin'" type="button" class="tab-btn" [class.tab-active]="isActive('/gestion-usuarios')" (click)="goToGestionUsuarios()" data-tour="vecinos">
@@ -139,7 +139,7 @@
 
         <button *ngIf="currentUser?.rol === 'admin'" type="button" class="tab-btn" [class.tab-active]="isActive('/estadisticas')" (click)="goToEstadisticas()" data-tour="estadisticas">
           <ion-icon name="stats-chart"></ion-icon>
-          <span>Estad.</span>
+          <span>Métricas</span>
         </button>
 
         <button *ngIf="!currentUser?.comunidadId" type="button" class="tab-btn" [class.tab-active]="isActive('/unirse-vecindad')" (click)="goToUnirseVecindad()">

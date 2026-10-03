@@ -13,9 +13,9 @@ interface PasoTour {
 const PASOS: PasoTour[] = [
   { id: 'alertas', titulo: 'Alertas y eventos', texto: 'Aquí ves los avisos de tu comunidad, las alertas SOS y tus recordatorios próximos.' },
   { id: 'avisos', titulo: 'Gestión de avisos', texto: 'Publica avisos para toda la comunidad y modera las alertas SOS.', soloAdmin: true },
-  { id: 'recordatorios', titulo: 'Recordatorios', texto: 'Crea recordatorios con fecha y hora; te avisaremos cuando lleguen.' },
+  { id: 'recordatorios', titulo: 'Notificaciones', texto: 'Crea recordatorios con fecha y hora; te avisaremos cuando lleguen.' },
   { id: 'vecinos', titulo: 'Gestión de vecinos', texto: 'Consulta a tus vecinos, activa o desactiva cuentas y envíales mensajes.', soloAdmin: true },
-  { id: 'estadisticas', titulo: 'Estadísticas', texto: 'Un resumen visual de vecinos, avisos y recordatorios.', soloAdmin: true },
+  { id: 'estadisticas', titulo: 'Métricas', texto: 'Un resumen visual de vecinos, avisos y recordatorios.', soloAdmin: true },
   { id: 'mensajes', titulo: 'Mensajes', texto: 'Lee los mensajes del administrador y respóndelos desde aquí.' },
   { id: 'perfil', titulo: 'Perfil', texto: 'Actualiza tus datos y consulta el código de invitación de tu vecindad.' },
   { id: 'guia', titulo: 'Guía de uso', texto: 'Si tienes dudas, aquí encuentras una explicación de cada función. Desde ahí también puedes volver a ver este recorrido.' },
