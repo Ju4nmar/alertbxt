@@ -124,14 +124,15 @@
             </span>
           </div>
 
-          <ion-item *ngIf="puedeGestionarUsuario(usuarioSeleccionado)">
-            <ion-select label="Rol" label-placement="floating" [ngModel]="usuarioSeleccionado.rol" (ionChange)="cambiarRol(usuarioSeleccionado, $event.detail.value)" [disabled]="actualizandoUsuario" interface="popover">
+          <div class="detalle-fila" *ngIf="puedeGestionarUsuario(usuarioSeleccionado)">
+            <span class="detalle-label">Rol:</span>
+            <ion-select class="detalle-select" aria-label="Rol" [ngModel]="usuarioSeleccionado.rol" (ionChange)="cambiarRol(usuarioSeleccionado, $event.detail.value)" [disabled]="actualizandoUsuario" interface="popover">
               <ion-select-option value="propietario">Propietario</ion-select-option>
               <ion-select-option value="arrendatario">Arrendatario</ion-select-option>
               <ion-select-option value="guarda">Guarda</ion-select-option>
               <ion-select-option value="admin">Administrador</ion-select-option>
             </ion-select>
-          </ion-item>
+          </div>
 
           <div class="detalle-fila">
             <span class="detalle-label">Estado:</span>
