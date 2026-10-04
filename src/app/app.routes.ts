@@ -64,6 +64,11 @@ export const routes: Routes = [
     data: { role: ['admin', 'guarda'] },
   },
   {
+    path: 'reservas',
+    loadComponent: () => import('./pages/reservas/reservas.page').then(m => m.ReservasPage),
+    canActivate: [AuthGuard],
+  },
+  {
     path: 'guia-uso',
     loadComponent: () => import('./pages/guia-uso/guia-uso.page').then(m => m.GuiaUsoPage),
     canActivate: [AuthGuard],

@@ -1,0 +1,134 @@
+<ion-content class="reservas-content">
+  <div class="res-wrap">
+    <header class="res-header">
+      <h2 class="page-title">Reservas</h2>
+      <p class="res-sub">Reserva salones y zonas comunes por horas. Elige la zona, el día y los bloques que necesitas.</p>
+    </header>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">{{ cargaError }}</div>
+    <div *ngIf="isLoading" class="res-card res-skeleton" aria-hidden="true"></div>
+
+    <section class="res-card" *ngIf="!isLoading">
+      <p *ngIf="!zonas.length" class="res-vacio">
+        Aún no hay zonas comunes. {{ esAdmin ? 'Crea la primera más abajo.' : 'El administrador debe crearlas para poder reservar.' }}
+      </p>
+
+      <ng-container *ngIf="zonas.length">
+        <div class="res-zonas" role="tablist" aria-label="Zonas comunes">
+          <button type="button" role="tab" class="res-chip" *ngFor="let z of zonas; trackBy: trackByZona"
+                  [class.activo]="z.idZona === zonaId" [attr.aria-selected]="z.idZona === zonaId"
+                  (click)="cambiarZona(z.idZona || '')">{{ z.nombre }}</button>
+        </div>
+
+        <p class="res-detalle" *ngIf="zona">
+          <ion-icon name="time-outline"></ion-icon>
+          {{ etiqueta(zona.horaApertura) }} a {{ etiqueta(zona.horaCierre) }} · máximo {{ zona.maxHoras }} {{ zona.maxHoras === 1 ? 'hora' : 'horas' }} por reserva
+          <span *ngIf="zona.descripcion"> · {{ zona.descripcion }}</span>
+        </p>
+
+        <label class="res-fecha">
+          <span>Día</span>
+          <input type="date" name="fecha" [(ngModel)]="fecha" [min]="fechaMin" [max]="fechaMax" (ngModelChange)="cambiarFecha()" />
+        </label>
+
+        <div class="res-bloques" role="group" aria-label="Horarios disponibles">
+          <button type="button" class="res-bloque" *ngFor="let hora of bloques; trackBy: trackByHora"
+                  [ngClass]="'res-bloque--' + estadoDe(hora)" [disabled]="estadoDe(hora) === 'ocupado' || estadoDe(hora) === 'pasado' || estadoDe(hora) === 'mio'"
+                  (click)="tocarBloque(hora)">
+            <strong>{{ etiqueta(hora) }}</strong>
+            <small>
+              {{ estadoDe(hora) === 'libre' ? 'Libre' : estadoDe(hora) === 'seleccionado' ? 'Elegido' : estadoDe(hora) === 'mio' ? 'Tuyo' : estadoDe(hora) === 'pasado' ? 'No disponible' : quienReservo(hora) }}
+            </small>
+          </button>
+        </div>
+
+        <div class="res-confirmar" *ngIf="seleccion.length">
+          <span>{{ zona?.nombre }} · {{ resumenSeleccion }}</span>
+          <ion-button (click)="reservar()" [disabled]="reservando">{{ reservando ? 'Reservando...' : 'Confirmar reserva' }}</ion-button>
+        </div>
+      </ng-container>
+    </section>
+
+    <section class="res-card" *ngIf="!isLoading">
+      <h3>Mis reservas</h3>
+      <p *ngIf="!misReservas.length" class="res-vacio">No tienes reservas próximas.</p>
+      <ul class="res-lista" *ngIf="misReservas.length">
+        <li *ngFor="let grupo of misReservas; trackBy: trackByGrupo">
+          <div>
+            <strong>{{ grupo.zonaNombre }}</strong>
+            <span>{{ grupo.fecha }} · {{ etiqueta(grupo.horaInicio) }} a {{ etiqueta(grupo.horaFin) }}</span>
+          </div>
+          <button type="button" class="res-icono" (click)="cancelar(grupo)" [attr.aria-label]="'Cancelar reserva de ' + grupo.zonaNombre">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </li>
+      </ul>
+    </section>
+
+    <ng-container *ngIf="esAdmin && !isLoading">
+      <section class="res-card">
+        <h3>Reservas de la comunidad</h3>
+        <p *ngIf="!reservasComunidad.length" class="res-vacio">No hay reservas próximas.</p>
+        <ul class="res-lista" *ngIf="reservasComunidad.length">
+          <li *ngFor="let grupo of reservasComunidad; trackBy: trackByGrupo">
+            <div>
+              <strong>{{ grupo.zonaNombre }} · {{ grupo.usuarioNombre }}</strong>
+              <span>
+                {{ grupo.fecha }} · {{ etiqueta(grupo.horaInicio) }} a {{ etiqueta(grupo.horaFin) }}
+                <ng-container *ngIf="grupo.torre || grupo.apartamento"> · <ng-container *ngIf="grupo.torre">Torre {{ grupo.torre }} </ng-container><ng-container *ngIf="grupo.apartamento">Apto/Casa {{ grupo.apartamento }}</ng-container></ng-container>
+              </span>
+            </div>
+            <button type="button" class="res-icono" (click)="cancelar(grupo)" [attr.aria-label]="'Cancelar reserva de ' + grupo.usuarioNombre">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="res-card">
+        <h3>Zonas comunes</h3>
+        <ul class="res-lista" *ngIf="zonas.length">
+          <li *ngFor="let z of zonas; trackBy: trackByZona">
+            <div>
+              <strong>{{ z.nombre }}</strong>
+              <span>{{ etiqueta(z.horaApertura) }} a {{ etiqueta(z.horaCierre) }} · máx. {{ z.maxHoras }} h</span>
+            </div>
+            <button type="button" class="res-icono" (click)="eliminarZona(z)" [attr.aria-label]="'Eliminar zona ' + z.nombre">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </li>
+        </ul>
+
+        <ion-button *ngIf="!zonaFormAbierto" size="small" (click)="abrirFormularioZona()" data-testid="nueva-zona">
+          <ion-icon slot="start" name="add-outline"></ion-icon>
+          Nueva zona
+        </ion-button>
+
+        <form *ngIf="zonaFormAbierto" class="res-form" (ngSubmit)="guardarZona()" novalidate>
+          <label><span>Nombre</span><input type="text" name="zonaNombre" [(ngModel)]="zonaNombre" maxlength="60" placeholder="Salón social" /></label>
+          <label><span>Descripción (opcional)</span><input type="text" name="zonaDescripcion" [(ngModel)]="zonaDescripcion" maxlength="120" /></label>
+          <div class="res-form-fila">
+            <label><span>Abre</span>
+              <select name="zonaApertura" [(ngModel)]="zonaApertura">
+                <option *ngFor="let h of horasOpciones.slice(0, 24)" [ngValue]="h">{{ etiqueta(h) }}</option>
+              </select>
+            </label>
+            <label><span>Cierra</span>
+              <select name="zonaCierre" [(ngModel)]="zonaCierre">
+                <option *ngFor="let h of horasOpciones.slice(1)" [ngValue]="h">{{ h === 24 ? '12:00 a. m. (medianoche)' : etiqueta(h) }}</option>
+              </select>
+            </label>
+            <label><span>Máx. horas</span>
+              <input type="number" name="zonaMaxHoras" [(ngModel)]="zonaMaxHoras" min="1" max="8" />
+            </label>
+          </div>
+          <div *ngIf="zonaError" class="error-message" role="alert">{{ zonaError }}</div>
+          <div class="res-acciones">
+            <ion-button size="small" fill="outline" type="button" (click)="cancelarFormularioZona()">Cancelar</ion-button>
+            <ion-button size="small" type="submit" [disabled]="guardandoZona">{{ guardandoZona ? 'Guardando...' : 'Guardar zona' }}</ion-button>
+          </div>
+        </form>
+      </section>
+    </ng-container>
+  </div>
+</ion-content>

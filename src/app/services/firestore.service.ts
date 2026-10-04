@@ -16,11 +16,12 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { BehaviorSubject, Observable, combineLatest, forkJoin, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, Encuesta, Vehiculo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Encuesta, Reserva, Vehiculo, ZonaComun, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -763,6 +764,114 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error obteniendo vehículos:', error);
         return throwError(() => new Error('Error al cargar vehículos'));
+      })
+    );
+  }
+
+  getZonasByComunidad(comunidadId: string): Observable<ZonaComun[]> {
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'zonas'),
+      where('comunidadId', '==', comunidadId),
+      limit(50)
+    ));
+    return this.inContext(() => collectionData(q, { idField: 'idZona' })).pipe(
+      map(data => (data as unknown as ZonaComun[]).sort((a, b) => a.nombre.localeCompare(b.nombre))),
+      catchError(error => {
+        console.error('Error obteniendo zonas comunes:', error);
+        return throwError(() => new Error('Error al cargar las zonas comunes'));
+      })
+    );
+  }
+
+  addZona(zona: Omit<ZonaComun, 'idZona'>): Observable<string> {
+    const col = this.inContext(() => collection(this.firestore, 'zonas'));
+    return from(this.inContext(() => addDoc(col, zona))).pipe(
+      map(docRef => docRef.id),
+      catchError(error => {
+        console.error('Error creando zona común:', error);
+        return throwError(() => new Error('Error al crear la zona'));
+      })
+    );
+  }
+
+  deleteZona(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `zonas/${id}`));
+    return from(this.inContext(() => deleteDoc(docRef))).pipe(
+      catchError(error => {
+        console.error('Error eliminando zona común:', error);
+        return throwError(() => new Error('Error al eliminar la zona'));
+      })
+    );
+  }
+
+  // Ocupación de una zona en un día (para pintar los bloques libres y ocupados).
+  getReservasDeZonaYFecha(comunidadId: string, zonaId: string, fecha: string): Observable<Reserva[]> {
+    return this.reservasDesde(this.inContext(() => query(
+      collection(this.firestore, 'reservas'),
+      where('comunidadId', '==', comunidadId),
+      where('zonaId', '==', zonaId),
+      where('fecha', '==', fecha),
+      limit(48)
+    )));
+  }
+
+  getReservasDeUsuario(idUsuario: string, comunidadId: string): Observable<Reserva[]> {
+    return this.reservasDesde(this.inContext(() => query(
+      collection(this.firestore, 'reservas'),
+      where('usuarioId', '==', idUsuario),
+      where('comunidadId', '==', comunidadId),
+      limit(200)
+    )));
+  }
+
+  getReservasDeComunidad(comunidadId: string): Observable<Reserva[]> {
+    return this.reservasDesde(this.inContext(() => query(
+      collection(this.firestore, 'reservas'),
+      where('comunidadId', '==', comunidadId),
+      limit(500)
+    )));
+  }
+
+  // Todos los bloques en un solo lote: si alguno ya fue tomado por otro
+  // vecino, Firestore rechaza el lote completo y no queda reservado ninguno.
+  crearReservas(reservas: Array<Omit<Reserva, 'idReserva' | 'inicio'> & { id: string; inicio: Date }>): Observable<void> {
+    const batch = this.inContext(() => writeBatch(this.firestore));
+    reservas.forEach(({ id, inicio, ...datos }) => {
+      const limpio: Record<string, unknown> = { ...datos, inicio: Timestamp.fromDate(inicio) };
+      Object.keys(limpio).forEach(clave => limpio[clave] === undefined && delete limpio[clave]);
+      batch.set(this.inContext(() => doc(this.firestore, `reservas/${id}`)), limpio);
+    });
+    return from(this.inContext(() => batch.commit())).pipe(
+      catchError(error => {
+        console.error('Error creando reservas:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  cancelarReservas(ids: string[]): Observable<void> {
+    const batch = this.inContext(() => writeBatch(this.firestore));
+    ids.forEach(id => batch.delete(this.inContext(() => doc(this.firestore, `reservas/${id}`))));
+    return from(this.inContext(() => batch.commit())).pipe(
+      catchError(error => {
+        console.error('Error cancelando reservas:', error);
+        return throwError(() => new Error('Error al cancelar la reserva'));
+      })
+    );
+  }
+
+  private reservasDesde(q: Query<DocumentData>): Observable<Reserva[]> {
+    return this.inContext(() => collectionData(q, { idField: 'idReserva' })).pipe(
+      map(data => (data as Array<Record<string, unknown>>).map(reserva => {
+        const inicio = reserva['inicio'] as { toDate?: () => Date } | string | undefined;
+        return {
+          ...reserva,
+          inicio: typeof inicio === 'string' ? inicio : (inicio?.toDate ? inicio.toDate().toISOString() : ''),
+        } as unknown as Reserva;
+      })),
+      catchError(error => {
+        console.error('Error obteniendo reservas:', error);
+        return throwError(() => new Error('Error al cargar reservas'));
       })
     );
   }
