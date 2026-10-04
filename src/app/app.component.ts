@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, chatbubbleEllipses, clipboard, download, helpCircleOutline, home, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
+import { alertCircle, calendar, car, chatbubbleEllipses, clipboard, download, helpCircleOutline, home, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -86,7 +86,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({clipboard,home,alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
+    addIcons({car,clipboard,home,alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -319,6 +319,14 @@ export class AppComponent implements OnDestroy {
 
   goToEncuestas(){
     this.navigateTo('/encuestas');
+  }
+
+  goToVehiculos(){
+    this.navigateTo('/vehiculos');
+  }
+
+  get puedeVerVehiculos(): boolean {
+    return this.currentUser?.rol === 'admin' || this.currentUser?.rol === 'guarda';
   }
 
   goToAlertasyEventos(){

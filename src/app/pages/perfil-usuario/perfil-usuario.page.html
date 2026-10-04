@@ -98,6 +98,10 @@
     </ng-template>
   </section>
 
+  <section class="perfil-panel" *ngIf="usuario">
+    <app-mis-vehiculos [usuario]="usuario"></app-mis-vehiculos>
+  </section>
+
   <section class="perfil-panel elimination-panel full-span" *ngIf="usuario">
     <h3>Eliminación de cuenta</h3>
     <p>Solicita la eliminación de tus datos. La baja definitiva será realizada posteriormente por el equipo administrador.</p>

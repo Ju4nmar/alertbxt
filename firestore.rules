@@ -304,5 +304,32 @@ service cloud.firestore {
       }
     }
 
+    // Vehículos de los vecinos. Los ve su dueño, el administrador y el guarda
+    // de la comunidad. El id "{comunidadId}_{placa}" impide placas repetidas
+    // (no hay update, así que un segundo registro igual se rechaza).
+    match /vehiculos/{vehiculoId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.propietarioId == request.auth.uid
+          || currentUser().rol in ['admin', 'guarda']
+        );
+
+      allow create: if isMemberOfCommunity(request.resource.data.comunidadId)
+        && request.resource.data.propietarioId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['placa', 'tipo', 'marca', 'color', 'propietarioId', 'propietarioNombre', 'torre', 'apartamento', 'comunidadId', 'fechaRegistro'])
+        && request.resource.data.placa is string
+        && request.resource.data.placa.matches('^[A-Z0-9]{5,7}$')
+        && vehiculoId == request.resource.data.comunidadId + '_' + request.resource.data.placa
+        && request.resource.data.tipo in ['carro', 'moto', 'otro'];
+
+      allow update: if false;
+
+      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.propietarioId == request.auth.uid
+          || isAdminForCommunity(resource.data.comunidadId)
+        );
+    }
+
   }
 }
