@@ -1,0 +1,245 @@
+ion-content.inicio-content {
+  --background: var(--ion-background-color);
+}
+
+.inicio-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--ab-space-5) var(--ab-space-4) 120px;
+}
+
+.inicio-hero {
+  margin-bottom: 20px;
+}
+
+.inicio-fecha {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  color: var(--ab-text-secondary);
+}
+
+.inicio-saludo {
+  margin: 0;
+  font-family: var(--ab-font-heading);
+  font-size: 1.7rem;
+  color: var(--ab-text-primary);
+}
+
+.inicio-comunidad {
+  margin: 4px 0 0;
+  color: var(--ab-text-secondary);
+}
+
+.inicio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.inicio-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px;
+  text-align: left;
+  font: inherit;
+  color: var(--ab-text-primary);
+  background: var(--ab-surface);
+  border: 1px solid var(--ab-border);
+  border-radius: var(--ab-radius-lg);
+  box-shadow: var(--ab-shadow-md);
+
+  > ion-icon {
+    font-size: 1.6rem;
+    color: var(--ion-color-primary);
+  }
+}
+
+button.inicio-card {
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: var(--ab-shadow-lg);
+  }
+}
+
+.inicio-card--activa {
+  background: var(--ab-tipo-emergencia-bg);
+
+  > ion-icon,
+  .inicio-card-valor {
+    color: var(--ion-color-danger);
+  }
+}
+
+.inicio-skeleton {
+  min-height: 150px;
+  background: var(--ab-surface-muted);
+  animation: inicio-pulso 1.2s ease-in-out infinite;
+}
+
+@keyframes inicio-pulso {
+  50% { opacity: 0.55; }
+}
+
+.inicio-card-titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ab-text-secondary);
+}
+
+.inicio-card-valor {
+  font-family: var(--ab-font-heading);
+  font-size: 2.4rem;
+  line-height: 1.1;
+}
+
+.inicio-card-valor--texto {
+  font-size: 1.5rem;
+}
+
+.inicio-card-detalle {
+  font-size: 0.9rem;
+  color: var(--ab-text-secondary);
+}
+
+.inicio-card-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+
+  ion-icon {
+    font-size: 1.4rem;
+    color: var(--ion-color-primary);
+  }
+}
+
+.inicio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 6px 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.pico-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.pico-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+
+  input {
+    width: 55%;
+    padding: 8px 10px;
+    font: inherit;
+    color: var(--ab-text-primary);
+    background: var(--ab-surface-muted);
+    border: 1px solid var(--ab-border);
+    border-radius: var(--ab-radius-sm);
+  }
+}
+
+.pico-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.inicio-card--lista {
+  grid-column: span 1;
+}
+
+.inicio-lista {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inicio-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--ab-border);
+  cursor: pointer;
+}
+
+li:first-child .inicio-item {
+  border-top: 0;
+}
+
+.inicio-item-titulo {
+  font-weight: 700;
+}
+
+.inicio-item-meta {
+  font-size: 0.8rem;
+  color: var(--ab-text-secondary);
+}
+
+.inicio-etiqueta {
+  margin-left: 6px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ion-color-primary-shade);
+  background: var(--ab-tipo-informativo-bg);
+  border-radius: var(--ab-radius-pill);
+}
+
+.inicio-vacio {
+  margin: 0;
+  color: var(--ab-text-secondary);
+}
+
+.inicio-accesos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font: inherit;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+    background: var(--ab-surface);
+    border: 1.5px solid var(--ab-border);
+    border-radius: var(--ab-radius-pill);
+    cursor: pointer;
+  }
+}

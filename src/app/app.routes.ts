@@ -5,7 +5,12 @@ import { RoleGuard } from './guards/role.guard';
 import { GuestGuard } from './guards/guest.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'alertas-eventos', pathMatch: 'full' },
+  { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+  {
+    path: 'inicio',
+    loadComponent: () => import('./pages/inicio/inicio.page').then(m => m.InicioPage),
+    canActivate: [AuthGuard],
+  },
   {
     path: 'alertas-eventos',
     loadComponent: () => import('./pages/alertas-eventos/alertas-eventos.page').then(m => m.AlertasEventosPage),
@@ -75,5 +80,5 @@ export const routes: Routes = [
     path: 'privacidad',
     loadComponent: () => import('./pages/privacidad/privacidad.page').then(m => m.PrivacidadPage),
   },
-  { path: '**', redirectTo: 'alertas-eventos' },
+  { path: '**', redirectTo: 'inicio' },
 ];

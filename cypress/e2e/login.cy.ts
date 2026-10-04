@@ -33,7 +33,7 @@ describe('Inicio de sesión', () => {
     cy.get('ion-input[name="password"] input').type('password123');
     cy.get('.confirm-btn').click();
 
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/alertas-eventos');
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/inicio');
     cy.contains('h2.page-title', 'Alertas y eventos').should('be.visible');
   });
 

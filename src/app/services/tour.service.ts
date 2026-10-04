@@ -11,6 +11,7 @@ interface PasoTour {
 }
 
 const PASOS: PasoTour[] = [
+  { id: 'inicio', titulo: 'Inicio', texto: 'Tu resumen del día: alertas activas, pico y placa, noticias de la comunidad y tus próximas notificaciones.' },
   { id: 'alertas', titulo: 'Alertas y eventos', texto: 'Aquí ves los avisos de tu comunidad, las alertas SOS y tus recordatorios próximos.' },
   { id: 'avisos', titulo: 'Gestión de avisos', texto: 'Publica avisos para toda la comunidad y modera las alertas SOS.', soloAdmin: true },
   { id: 'recordatorios', titulo: 'Notificaciones', texto: 'Crea recordatorios con fecha y hora; te avisaremos cuando lleguen.' },
@@ -64,7 +65,7 @@ export class TourService {
   }
 
   private async esperarNavegacion(): Promise<void> {
-    for (let intento = 0; intento < 16 && !this.buscarVisible('alertas'); intento++) {
+    for (let intento = 0; intento < 16 && !this.buscarVisible('inicio'); intento++) {
       await new Promise(resolve => window.setTimeout(resolve, 250));
     }
   }
