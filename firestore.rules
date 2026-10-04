@@ -246,5 +246,55 @@ service cloud.firestore {
 
       allow read, update, delete: if false;
     }
+    // Encuestas de la comunidad. El administrador las crea; cada vecino vota
+    // una vez (el id del voto es su uid y los votos no se pueden editar). Los
+    // votos ajenos no se leen: la Cloud Function onVotoCreado los suma en
+    // encuestas/{id}.conteo. "cierre" es Timestamp para poder compararlo con
+    // request.time aquí mismo.
+    function puedeLeerEncuesta(encuesta) {
+      return isMemberOfCommunity(encuesta.comunidadId)
+        && (
+          currentUser().rol != 'arrendatario'
+          || encuesta.get('soloPropietarios', false) == false
+        );
+    }
+
+    match /encuestas/{encuestaId} {
+      allow read: if puedeLeerEncuesta(resource.data);
+
+      allow create: if isAdminForCommunity(request.resource.data.comunidadId)
+        && request.resource.data.autorId == request.auth.uid
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() >= 3
+        && request.resource.data.titulo.size() <= 120
+        && request.resource.data.opciones is list
+        && request.resource.data.opciones.size() >= 2
+        && request.resource.data.opciones.size() <= 6
+        && request.resource.data.soloPropietarios is bool
+        && request.resource.data.cierre is timestamp
+        && request.resource.data.totalVotos == 0;
+
+      // Solo se permite adelantar o mover el cierre ("Cerrar ahora").
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cierre'])
+        && request.resource.data.cierre is timestamp;
+
+      allow delete: if isAdminForCommunity(resource.data.comunidadId);
+
+      match /votos/{votoId} {
+        allow read: if isSelf(votoId);
+
+        allow create: if isSelf(votoId)
+          && request.resource.data.keys().hasOnly(['opcion', 'fecha'])
+          && request.resource.data.opcion is int
+          && request.resource.data.opcion >= 0
+          && request.resource.data.opcion < get(/databases/$(database)/documents/encuestas/$(encuestaId)).data.opciones.size()
+          && get(/databases/$(database)/documents/encuestas/$(encuestaId)).data.cierre > request.time
+          && puedeLeerEncuesta(get(/databases/$(database)/documents/encuestas/$(encuestaId)).data);
+
+        allow update, delete: if false;
+      }
+    }
+
   }
 }

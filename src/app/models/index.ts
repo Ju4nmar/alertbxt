@@ -134,3 +134,21 @@ export interface RespuestaMensaje {
   esAdmin: boolean;
 }
 
+// Encuesta de la comunidad. Los votos viven en encuestas/{id}/votos/{uid};
+// "conteo" (índice de opción -> votos) y "totalVotos" los mantiene la Cloud
+// Function onVotoCreado, no el cliente. "cierre" es ISO en el modelo y
+// Timestamp en Firestore (ver normalizeEncuesta).
+export interface Encuesta {
+  idEncuesta?: string;
+  titulo: string;
+  descripcion?: string;
+  opciones: string[];
+  comunidadId: string;
+  autorId: string;
+  autorNombre?: string;
+  soloPropietarios: boolean;
+  cierre: string;
+  fechaCreacion?: string;
+  conteo: Record<string, number>;
+  totalVotos: number;
+}

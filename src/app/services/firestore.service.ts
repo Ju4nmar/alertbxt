@@ -11,13 +11,14 @@ import {
   orderBy,
   query,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { BehaviorSubject, Observable, combineLatest, forkJoin, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Encuesta, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -602,6 +603,110 @@ export class FirestoreService {
         return throwError(() => new Error('Error al cargar las respuestas'));
       })
     );
+  }
+
+  // Igual que con los avisos: el arrendatario debe declarar
+  // soloPropietarios == false en su consulta (ver getAvisosByComunidad).
+  getEncuestasByComunidad(comunidadId: string, rol?: string): Observable<Encuesta[]> {
+    const q = this.inContext(() => {
+      const filtros = [where('comunidadId', '==', comunidadId)];
+      if (rol === 'arrendatario') {
+        filtros.push(where('soloPropietarios', '==', false));
+      }
+      return query(collection(this.firestore, 'encuestas'), ...filtros, limit(100));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idEncuesta' })).pipe(
+      map(data => (data as Array<Record<string, unknown>>)
+        .map(encuesta => this.normalizeEncuesta(encuesta))
+        .sort((a, b) => b.cierre.localeCompare(a.cierre))
+      ),
+      catchError(error => {
+        console.error('Error obteniendo encuestas:', error);
+        return throwError(() => new Error('Error al cargar encuestas'));
+      })
+    );
+  }
+
+  addEncuesta(encuesta: Omit<Encuesta, 'idEncuesta' | 'conteo' | 'totalVotos' | 'fechaCreacion'>): Observable<string> {
+    const col = this.inContext(() => collection(this.firestore, 'encuestas'));
+    const datos = {
+      ...encuesta,
+      cierre: Timestamp.fromDate(new Date(encuesta.cierre)),
+      fechaCreacion: new Date().toISOString(),
+      conteo: {},
+      totalVotos: 0,
+    };
+
+    return from(this.inContext(() => addDoc(col, datos))).pipe(
+      map(docRef => docRef.id),
+      catchError(error => {
+        console.error('Error creando encuesta:', error);
+        return throwError(() => new Error('Error al crear la encuesta'));
+      })
+    );
+  }
+
+  cerrarEncuesta(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${id}`));
+    return from(this.inContext(() => updateDoc(docRef, { cierre: Timestamp.now() }))).pipe(
+      catchError(error => {
+        console.error('Error cerrando encuesta:', error);
+        return throwError(() => new Error('Error al cerrar la encuesta'));
+      })
+    );
+  }
+
+  deleteEncuesta(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${id}`));
+    return from(this.inContext(() => deleteDoc(docRef))).pipe(
+      catchError(error => {
+        console.error('Error eliminando encuesta:', error);
+        return throwError(() => new Error('Error al eliminar la encuesta'));
+      })
+    );
+  }
+
+  // Opción que eligió este usuario (null si aún no vota). El id del voto es
+  // el uid: de ahí sale que solo se pueda votar una vez.
+  getMiVoto(encuestaId: string, uid: string): Observable<number | null> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${encuestaId}/votos/${uid}`));
+    return this.inContext(() => docData(docRef)).pipe(
+      take(1),
+      map(data => (data && typeof data['opcion'] === 'number') ? data['opcion'] as number : null),
+      catchError(() => of(null))
+    );
+  }
+
+  votarEncuesta(encuestaId: string, uid: string, opcion: number): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${encuestaId}/votos/${uid}`));
+    return from(this.inContext(() => setDoc(docRef, { opcion, fecha: new Date().toISOString() }))).pipe(
+      catchError(error => {
+        console.error('Error registrando voto:', error);
+        return throwError(() => new Error('Error al registrar el voto'));
+      })
+    );
+  }
+
+  private normalizeEncuesta(data: Record<string, unknown>): Encuesta {
+    const cierre = data['cierre'] as { toDate?: () => Date } | string | undefined;
+    const cierreIso = typeof cierre === 'string'
+      ? cierre
+      : (cierre?.toDate ? cierre.toDate().toISOString() : new Date(0).toISOString());
+    return {
+      idEncuesta: data['idEncuesta'] as string,
+      titulo: String(data['titulo'] || 'Sin título'),
+      descripcion: (data['descripcion'] as string | undefined) || undefined,
+      opciones: Array.isArray(data['opciones']) ? data['opciones'] as string[] : [],
+      comunidadId: String(data['comunidadId'] || ''),
+      autorId: String(data['autorId'] || ''),
+      autorNombre: (data['autorNombre'] as string | undefined) || undefined,
+      soloPropietarios: data['soloPropietarios'] === true,
+      cierre: cierreIso,
+      fechaCreacion: data['fechaCreacion'] as string | undefined,
+      conteo: (data['conteo'] as Record<string, number> | undefined) ?? {},
+      totalVotos: typeof data['totalVotos'] === 'number' ? data['totalVotos'] as number : 0,
+    };
   }
 
   private normalizeAviso(data: Aviso & Record<string, unknown>): Aviso {

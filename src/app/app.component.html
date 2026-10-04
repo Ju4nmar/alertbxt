@@ -52,6 +52,11 @@
               <ion-label>Unirme a una vecindad</ion-label>
             </ion-item>
 
+            <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/encuestas')" (click)="goToEncuestas()" data-tour="encuestas">
+              <ion-icon slot="start" name="clipboard"></ion-icon>
+              <ion-label>Encuestas</ion-label>
+            </ion-item>
+
             <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/mensajes')" (click)="goToMensajes()" data-tour="mensajes">
               <ion-icon slot="start" name="chatbubble-ellipses"></ion-icon>
               <ion-label>Mensajes</ion-label>
@@ -155,6 +160,11 @@
         <button *ngIf="!currentUser?.comunidadId" type="button" class="tab-btn" [class.tab-active]="isActive('/unirse-vecindad')" (click)="goToUnirseVecindad()">
           <ion-icon name="people"></ion-icon>
           <span>Unirme</span>
+        </button>
+
+        <button type="button" class="tab-btn" [class.tab-active]="isActive('/encuestas')" (click)="goToEncuestas()" data-tour="encuestas">
+          <ion-icon name="clipboard"></ion-icon>
+          <span>Encuestas</span>
         </button>
 
         <button type="button" class="tab-btn" [class.tab-active]="isActive('/mensajes')" (click)="goToMensajes()" data-tour="mensajes">

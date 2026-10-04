@@ -17,6 +17,7 @@ const PASOS: PasoTour[] = [
   { id: 'recordatorios', titulo: 'Notificaciones', texto: 'Crea recordatorios con fecha y hora; te avisaremos cuando lleguen.' },
   { id: 'vecinos', titulo: 'Gestión de vecinos', texto: 'Consulta a tus vecinos, activa o desactiva cuentas y envíales mensajes.', soloAdmin: true },
   { id: 'estadisticas', titulo: 'Métricas', texto: 'Un resumen visual de vecinos, avisos y recordatorios.', soloAdmin: true },
+  { id: 'encuestas', titulo: 'Encuestas', texto: 'Vota en las decisiones de tu comunidad y mira los resultados. Si eres administrador, también las creas aquí.' },
   { id: 'mensajes', titulo: 'Mensajes', texto: 'Lee los mensajes del administrador y respóndelos desde aquí.' },
   { id: 'perfil', titulo: 'Perfil', texto: 'Actualiza tus datos y consulta el código de invitación de tu vecindad.' },
   { id: 'guia', titulo: 'Guía de uso', texto: 'Si tienes dudas, aquí encuentras una explicación de cada función. Desde ahí también puedes volver a ver este recorrido.' },
