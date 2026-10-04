@@ -195,14 +195,6 @@ service cloud.firestore {
       allow delete: if isAdminForCommunity(resource.data.comunidadId);
     }
 
-    match /comunicados/{comunicadoId} {
-      allow read: if isMemberOfCommunity(resource.data.comunidadId);
-      allow create: if isAdminForCommunity(request.resource.data.comunidadId);
-      allow update: if isAdminForCommunity(resource.data.comunidadId)
-        && request.resource.data.comunidadId == resource.data.comunidadId;
-      allow delete: if isAdminForCommunity(resource.data.comunidadId);
-    }
-
     match /recordatorios/{recordatorioId} {
       // usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
       // creó un admin (solo crearRecordatorioAsignado, Admin SDK, escribe
