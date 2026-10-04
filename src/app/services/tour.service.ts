@@ -19,6 +19,7 @@ const PASOS: PasoTour[] = [
   { id: 'vecinos', titulo: 'Gestión de vecinos', texto: 'Consulta a tus vecinos, activa o desactiva cuentas y envíales mensajes.', soloAdmin: true },
   { id: 'estadisticas', titulo: 'Métricas', texto: 'Un resumen visual de vecinos, avisos y recordatorios.', soloAdmin: true },
   { id: 'encuestas', titulo: 'Encuestas', texto: 'Vota en las decisiones de tu comunidad y mira los resultados. Si eres administrador, también las creas aquí.' },
+  { id: 'reservas', titulo: 'Reservas', texto: 'Reserva salones y zonas comunes por horas y consulta o cancela tus reservas.' },
   { id: 'vehiculos', titulo: 'Vehículos', texto: 'Consulta de quién es cada vehículo de la comunidad buscando por placa, vecino o apartamento.', soloGuardaYAdmin: true },
   { id: 'mensajes', titulo: 'Mensajes', texto: 'Lee los mensajes del administrador y respóndelos desde aquí.' },
   { id: 'perfil', titulo: 'Perfil', texto: 'Actualiza tus datos y consulta el código de invitación de tu vecindad.' },

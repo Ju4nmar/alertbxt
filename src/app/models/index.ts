@@ -172,3 +172,34 @@ export interface Vehiculo {
   comunidadId: string;
   fechaRegistro: string;
 }
+
+// Zona común reservable (salón social, BBQ, cancha...). Las configura el
+// administrador; los vecinos reservan por bloques de una hora entre
+// horaApertura (incluida) y horaCierre (excluida).
+export interface ZonaComun {
+  idZona?: string;
+  nombre: string;
+  descripcion?: string;
+  comunidadId: string;
+  horaApertura: number;
+  horaCierre: number;
+  maxHoras: number;
+}
+
+// Una reserva es un documento por hora ocupada, con id
+// "{zonaId}_{fecha}_{hora}": Firestore garantiza que dos vecinos no reserven
+// el mismo bloque (el segundo create falla). Los bloques consecutivos del
+// mismo vecino se muestran juntos (ver agruparReservas).
+export interface Reserva {
+  idReserva?: string;
+  zonaId: string;
+  zonaNombre: string;
+  comunidadId: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  torre?: string;
+  apartamento?: string;
+  fecha: string;
+  hora: number;
+  inicio: string;
+}

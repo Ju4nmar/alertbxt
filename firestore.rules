@@ -331,5 +331,57 @@ service cloud.firestore {
         );
     }
 
+    // Zonas comunes y sus reservas. Un documento por hora reservada con id
+    // "{zonaId}_{fecha}_{hora}" (sin update): el segundo vecino que intente el
+    // mismo bloque recibe un rechazo, así que no hay dobles reservas.
+    function zonaValida(zona) {
+      return zona.nombre is string
+        && zona.nombre.size() >= 2
+        && zona.nombre.size() <= 60
+        && zona.horaApertura is int
+        && zona.horaCierre is int
+        && zona.horaApertura >= 0
+        && zona.horaCierre <= 24
+        && zona.horaApertura < zona.horaCierre
+        && zona.maxHoras is int
+        && zona.maxHoras >= 1
+        && zona.maxHoras <= 8;
+    }
+
+    match /zonas/{zonaId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+      allow create: if isAdminForCommunity(request.resource.data.comunidadId)
+        && zonaValida(request.resource.data);
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && request.resource.data.comunidadId == resource.data.comunidadId
+        && zonaValida(request.resource.data);
+      allow delete: if isAdminForCommunity(resource.data.comunidadId);
+    }
+
+    match /reservas/{reservaId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+
+      allow create: if isMemberOfCommunity(request.resource.data.comunidadId)
+        && request.resource.data.keys().hasOnly(['zonaId', 'zonaNombre', 'comunidadId', 'usuarioId', 'usuarioNombre', 'torre', 'apartamento', 'fecha', 'hora', 'inicio'])
+        && request.resource.data.usuarioId == request.auth.uid
+        && request.resource.data.fecha is string
+        && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.hora is int
+        && reservaId == request.resource.data.zonaId + '_' + request.resource.data.fecha + '_' + string(request.resource.data.hora)
+        && request.resource.data.inicio is timestamp
+        && request.resource.data.inicio > request.time
+        && get(/databases/$(database)/documents/zonas/$(request.resource.data.zonaId)).data.comunidadId == request.resource.data.comunidadId
+        && request.resource.data.hora >= get(/databases/$(database)/documents/zonas/$(request.resource.data.zonaId)).data.horaApertura
+        && request.resource.data.hora < get(/databases/$(database)/documents/zonas/$(request.resource.data.zonaId)).data.horaCierre;
+
+      allow update: if false;
+
+      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.usuarioId == request.auth.uid
+          || isAdminForCommunity(resource.data.comunidadId)
+        );
+    }
+
   }
 }
