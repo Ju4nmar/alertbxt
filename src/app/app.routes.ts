@@ -58,6 +58,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
+    path: 'vehiculos',
+    loadComponent: () => import('./pages/vehiculos/vehiculos.page').then(m => m.VehiculosPage),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: ['admin', 'guarda'] },
+  },
+  {
     path: 'guia-uso',
     loadComponent: () => import('./pages/guia-uso/guia-uso.page').then(m => m.GuiaUsoPage),
     canActivate: [AuthGuard],

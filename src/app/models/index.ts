@@ -152,3 +152,23 @@ export interface Encuesta {
   conteo: Record<string, number>;
   totalVotos: number;
 }
+
+export type TipoVehiculo = 'carro' | 'moto' | 'otro';
+
+// Vehículo registrado por un vecino. El id del documento es
+// "{comunidadId}_{placa}": así no puede haber la misma placa dos veces en una
+// comunidad. Torre/apartamento y nombre se copian al registrar para que el
+// guarda y el administrador identifiquen al dueño sin leer otros perfiles.
+export interface Vehiculo {
+  idVehiculo?: string;
+  placa: string;
+  tipo: TipoVehiculo;
+  marca?: string;
+  color?: string;
+  propietarioId: string;
+  propietarioNombre: string;
+  torre?: string;
+  apartamento?: string;
+  comunidadId: string;
+  fechaRegistro: string;
+}

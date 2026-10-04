@@ -1,5 +1,6 @@
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import {
+  DocumentData,
   Firestore,
   addDoc,
   collection,
@@ -9,6 +10,7 @@ import {
   docData,
   limit,
   orderBy,
+  Query,
   query,
   setDoc,
   Timestamp,
@@ -18,7 +20,7 @@ import {
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { BehaviorSubject, Observable, combineLatest, forkJoin, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, Encuesta, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Encuesta, Vehiculo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -707,6 +709,62 @@ export class FirestoreService {
       conteo: (data['conteo'] as Record<string, number> | undefined) ?? {},
       totalVotos: typeof data['totalVotos'] === 'number' ? data['totalVotos'] as number : 0,
     };
+  }
+
+  // Los vecinos solo leen sus propios vehículos (la regla lo exige, así que
+  // la consulta también filtra por dueño); admin y guarda leen toda la comunidad.
+  getVehiculosDeUsuario(idUsuario: string, comunidadId: string): Observable<Vehiculo[]> {
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'vehiculos'),
+      where('propietarioId', '==', idUsuario),
+      where('comunidadId', '==', comunidadId),
+      limit(20)
+    ));
+    return this.vehiculosDesde(q);
+  }
+
+  getVehiculosDeComunidad(comunidadId: string): Observable<Vehiculo[]> {
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'vehiculos'),
+      where('comunidadId', '==', comunidadId),
+      limit(500)
+    ));
+    return this.vehiculosDesde(q);
+  }
+
+  addVehiculo(vehiculo: Omit<Vehiculo, 'idVehiculo' | 'fechaRegistro'>): Observable<string> {
+    const id = `${vehiculo.comunidadId}_${vehiculo.placa}`;
+    const docRef = this.inContext(() => doc(this.firestore, `vehiculos/${id}`));
+    const datos: Record<string, unknown> = { ...vehiculo, fechaRegistro: new Date().toISOString() };
+    Object.keys(datos).forEach(clave => datos[clave] === undefined && delete datos[clave]);
+
+    return from(this.inContext(() => setDoc(docRef, datos))).pipe(
+      map(() => id),
+      catchError(error => {
+        console.error('Error registrando vehículo:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deleteVehiculo(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `vehiculos/${id}`));
+    return from(this.inContext(() => deleteDoc(docRef))).pipe(
+      catchError(error => {
+        console.error('Error eliminando vehículo:', error);
+        return throwError(() => new Error('Error al eliminar el vehículo'));
+      })
+    );
+  }
+
+  private vehiculosDesde(q: Query<DocumentData>): Observable<Vehiculo[]> {
+    return this.inContext(() => collectionData(q, { idField: 'idVehiculo' })).pipe(
+      map(data => (data as unknown as Vehiculo[]).sort((a, b) => a.placa.localeCompare(b.placa))),
+      catchError(error => {
+        console.error('Error obteniendo vehículos:', error);
+        return throwError(() => new Error('Error al cargar vehículos'));
+      })
+    );
   }
 
   private normalizeAviso(data: Aviso & Record<string, unknown>): Aviso {

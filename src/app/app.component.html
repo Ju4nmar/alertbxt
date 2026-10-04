@@ -57,6 +57,11 @@
               <ion-label>Encuestas</ion-label>
             </ion-item>
 
+            <ion-item *ngIf="puedeVerVehiculos" button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/vehiculos')" (click)="goToVehiculos()" data-tour="vehiculos">
+              <ion-icon slot="start" name="car"></ion-icon>
+              <ion-label>Vehículos</ion-label>
+            </ion-item>
+
             <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/mensajes')" (click)="goToMensajes()" data-tour="mensajes">
               <ion-icon slot="start" name="chatbubble-ellipses"></ion-icon>
               <ion-label>Mensajes</ion-label>
@@ -165,6 +170,11 @@
         <button type="button" class="tab-btn" [class.tab-active]="isActive('/encuestas')" (click)="goToEncuestas()" data-tour="encuestas">
           <ion-icon name="clipboard"></ion-icon>
           <span>Encuestas</span>
+        </button>
+
+        <button *ngIf="puedeVerVehiculos" type="button" class="tab-btn" [class.tab-active]="isActive('/vehiculos')" (click)="goToVehiculos()" data-tour="vehiculos">
+          <ion-icon name="car"></ion-icon>
+          <span>Vehículos</span>
         </button>
 
         <button type="button" class="tab-btn" [class.tab-active]="isActive('/mensajes')" (click)="goToMensajes()" data-tour="mensajes">

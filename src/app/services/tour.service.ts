@@ -8,6 +8,7 @@ interface PasoTour {
   titulo: string;
   texto: string;
   soloAdmin?: boolean;
+  soloGuardaYAdmin?: boolean;
 }
 
 const PASOS: PasoTour[] = [
@@ -18,6 +19,7 @@ const PASOS: PasoTour[] = [
   { id: 'vecinos', titulo: 'Gestión de vecinos', texto: 'Consulta a tus vecinos, activa o desactiva cuentas y envíales mensajes.', soloAdmin: true },
   { id: 'estadisticas', titulo: 'Métricas', texto: 'Un resumen visual de vecinos, avisos y recordatorios.', soloAdmin: true },
   { id: 'encuestas', titulo: 'Encuestas', texto: 'Vota en las decisiones de tu comunidad y mira los resultados. Si eres administrador, también las creas aquí.' },
+  { id: 'vehiculos', titulo: 'Vehículos', texto: 'Consulta de quién es cada vehículo de la comunidad buscando por placa, vecino o apartamento.', soloGuardaYAdmin: true },
   { id: 'mensajes', titulo: 'Mensajes', texto: 'Lee los mensajes del administrador y respóndelos desde aquí.' },
   { id: 'perfil', titulo: 'Perfil', texto: 'Actualiza tus datos y consulta el código de invitación de tu vecindad.' },
   { id: 'guia', titulo: 'Guía de uso', texto: 'Si tienes dudas, aquí encuentras una explicación de cada función. Desde ahí también puedes volver a ver este recorrido.' },
@@ -93,6 +95,7 @@ export class TourService {
 
     const pasos = PASOS
       .filter(paso => !paso.soloAdmin || esAdmin)
+      .filter(paso => !paso.soloGuardaYAdmin || esAdmin || user.rol === 'guarda')
       .map(paso => ({ paso, elemento: this.buscarVisible(paso.id) }))
       .filter((item): item is { paso: PasoTour; elemento: HTMLElement } => !!item.elemento);
 
