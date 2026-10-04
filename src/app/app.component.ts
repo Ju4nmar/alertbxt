@@ -18,7 +18,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, chatbubbleEllipses, download, helpCircleOutline, home, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
+import { alertCircle, calendar, chatbubbleEllipses, clipboard, download, helpCircleOutline, home, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
@@ -86,7 +86,7 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({home,alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
+    addIcons({clipboard,home,alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
@@ -315,6 +315,10 @@ export class AppComponent implements OnDestroy {
 
   goToInicio(){
     this.navigateTo('/inicio');
+  }
+
+  goToEncuestas(){
+    this.navigateTo('/encuestas');
   }
 
   goToAlertasyEventos(){

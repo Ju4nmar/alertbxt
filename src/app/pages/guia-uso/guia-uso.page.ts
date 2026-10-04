@@ -5,6 +5,7 @@ import { addIcons } from 'ionicons';
 import {
   alertCircleOutline,
   calendarOutline,
+  clipboardOutline,
   homeOutline,
   chatbubbleEllipsesOutline,
   notificationsOutline,
@@ -35,6 +36,7 @@ export class GuiaUsoPage implements OnInit, OnDestroy {
       peopleOutline,
       alertCircleOutline,
       calendarOutline,
+      clipboardOutline,
       homeOutline,
       chatbubbleEllipsesOutline,
       notificationsOutline,

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getFunctions } from 'firebase-admin/functions';
 import { getMessaging } from 'firebase-admin/messaging';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
@@ -314,6 +314,96 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
     await ref.update({ estado: 'completado' });
   }
 );
+
+interface EncuestaData {
+  titulo?: string;
+  opciones?: string[];
+  comunidadId?: string;
+  soloPropietarios?: boolean;
+  autorId?: string;
+}
+
+// Cada voto se guarda como encuestas/{id}/votos/{uid} (un documento por
+// vecino, así que votar dos veces es imposible) y esta función lo suma al
+// conteo de la encuesta. Los vecinos no pueden leer votos ajenos, por eso el
+// total vive aquí y no se calcula en el cliente. "contado" evita sumar dos
+// veces si el trigger se reintenta.
+export const onVotoCreado = onDocumentCreated('encuestas/{encuestaId}/votos/{votoId}', async event => {
+  const votoRef = event.data?.ref;
+  if (!votoRef) {
+    return;
+  }
+
+  const encuestaRef = getFirestore().doc(`encuestas/${event.params.encuestaId}`);
+  await getFirestore().runTransaction(async tx => {
+    const [votoSnap, encuestaSnap] = await Promise.all([tx.get(votoRef), tx.get(encuestaRef)]);
+    if (!votoSnap.exists || !encuestaSnap.exists || votoSnap.get('contado') === true) {
+      return;
+    }
+
+    const opcion = votoSnap.get('opcion');
+    const opciones = (encuestaSnap.get('opciones') as string[] | undefined) ?? [];
+    if (!Number.isInteger(opcion) || opcion < 0 || opcion >= opciones.length) {
+      return;
+    }
+
+    tx.update(encuestaRef, {
+      [`conteo.${opcion}`]: FieldValue.increment(1),
+      totalVotos: FieldValue.increment(1),
+    });
+    tx.update(votoRef, { contado: true });
+  });
+});
+
+// Avisa por push a la comunidad cuando el administrador publica una encuesta
+// (sin notificar al propio autor ni a los arrendatarios si es solo para
+// propietarios).
+export const onEncuestaCreada = onDocumentCreated('encuestas/{encuestaId}', async event => {
+  const encuesta = event.data?.data() as EncuestaData | undefined;
+  if (!encuesta?.comunidadId) {
+    return;
+  }
+
+  const db = getFirestore();
+  const usuariosSnap = await db.collection('usuarios')
+    .where('comunidadId', '==', encuesta.comunidadId)
+    .where('activo', '==', true)
+    .get();
+
+  const destinatarioIds = usuariosSnap.docs
+    .filter(doc => doc.id !== encuesta.autorId)
+    .filter(doc => !encuesta.soloPropietarios || (doc.data() as UsuarioData).rol !== 'arrendatario')
+    .map(doc => doc.id);
+
+  const tokenRefs: TokenRef[] = [];
+  await Promise.all(destinatarioIds.map(async id => {
+    const dispositivosSnap = await db.collection(`usuarios/${id}/dispositivos`).get();
+    dispositivosSnap.docs.forEach(doc => tokenRefs.push({ idUsuario: id, token: doc.id }));
+  }));
+
+  const messaging = getMessaging();
+  for (const tokenChunk of chunk(tokenRefs, FCM_MULTICAST_LIMIT)) {
+    const response = await messaging.sendEachForMulticast({
+      tokens: tokenChunk.map(ref => ref.token),
+      notification: {
+        title: 'Nueva encuesta',
+        body: encuesta.titulo || 'Tu comunidad publicó una encuesta.',
+      },
+      data: { encuestaId: event.params.encuestaId },
+      webpush: { fcmOptions: { link: '/encuestas' } },
+    });
+
+    await Promise.all(response.responses.map(async (result, index) => {
+      const code = result.error?.code;
+      if (!result.success && (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token')) {
+        const tokenRef = tokenChunk[index];
+        await db.doc(`usuarios/${tokenRef.idUsuario}/dispositivos/${tokenRef.token}`).delete();
+      }
+    }));
+  }
+
+  logger.info('Encuesta notificada', { encuestaId: event.params.encuestaId, destinatarios: destinatarioIds.length });
+});
 
 interface UsuarioData {
   nombre?: string;
