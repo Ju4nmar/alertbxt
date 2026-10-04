@@ -40,13 +40,6 @@ service cloud.firestore {
       return rol in ['admin', 'propietario', 'arrendatario', 'guarda', 'residente'];
     }
 
-    // Un arrendatario no ve contenido marcado "solo propietarios" (p. ej.
-    // convocatorias de asamblea); todos los demás roles sí.
-    function puedeVerSoloPropietarios(comunidadId) {
-      return isAdminForCommunity(comunidadId)
-        || (isMemberOfCommunity(comunidadId) && currentUser().rol != 'arrendatario');
-    }
-
     function isValidCommunity(comunidadId) {
       return comunidadId is string
         && comunidadId != ''
@@ -178,9 +171,14 @@ service cloud.firestore {
     }
 
     match /avisos/{avisoId} {
-      allow read: if resource.data.get('soloPropietarios', false) == true
-        ? puedeVerSoloPropietarios(resource.data.comunidadId)
-        : isMemberOfCommunity(resource.data.comunidadId);
+      // El arrendatario solo lee avisos marcados explícitamente como
+      // soloPropietarios == false; su consulta debe filtrar igual (ver
+      // FirestoreService.getAvisosByComunidad).
+      allow read: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          currentUser().rol != 'arrendatario'
+          || resource.data.get('soloPropietarios', false) == false
+        );
 
       allow create: if signedIn()
         && request.resource.data.autorId == request.auth.uid
@@ -205,10 +203,7 @@ service cloud.firestore {
         && (
           resource.data.idUsuario == request.auth.uid
           || resource.data.get('usuariosAsignados', []).hasAny([request.auth.uid])
-          || (
-            resource.data.get('paraTodaLaComunidad', false) == true
-            && (resource.data.get('soloPropietarios', false) == false || puedeVerSoloPropietarios(resource.data.comunidadId))
-          )
+          || resource.data.get('paraTodaLaComunidad', false) == true
           || isAdminForCommunity(resource.data.comunidadId)
         );
       allow delete: if (
