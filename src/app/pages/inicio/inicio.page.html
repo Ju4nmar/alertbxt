@@ -1,0 +1,98 @@
+<ion-content class="inicio-content">
+  <div class="inicio-wrap">
+    <header class="inicio-hero">
+      <p class="inicio-fecha">{{ hoy | date: 'EEEE d \'de\' MMMM' }}</p>
+      <h2 class="inicio-saludo">{{ saludo }}</h2>
+      <p class="inicio-comunidad" *ngIf="comunidad?.nombreComunidad">{{ comunidad?.nombreComunidad }}</p>
+    </header>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">{{ cargaError }}</div>
+
+    <div class="inicio-grid" *ngIf="isLoading" aria-hidden="true">
+      <div class="inicio-card inicio-skeleton" *ngFor="let n of [1, 2, 3, 4]"></div>
+    </div>
+
+    <div class="inicio-grid" *ngIf="!isLoading">
+      <button type="button" class="inicio-card inicio-card--alertas" [class.inicio-card--activa]="alertasActivas > 0" (click)="irA('/alertas-eventos')">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span class="inicio-card-titulo">Alertas activas</span>
+        <strong class="inicio-card-valor">{{ alertasActivas }}</strong>
+        <span class="inicio-card-detalle">
+          {{ alertasActivas === 0 ? 'Sin alertas en las últimas 24 horas.' : 'Reportadas en las últimas 24 horas. Toca para verlas.' }}
+        </span>
+      </button>
+
+      <section class="inicio-card inicio-card--pico" data-testid="pico-placa" aria-label="Pico y placa de hoy">
+        <ion-icon name="car-outline"></ion-icon>
+        <span class="inicio-card-titulo">Pico y placa · {{ picoPlaca.etiquetaDia }}</span>
+
+        <ng-container *ngIf="!editandoPicoPlaca">
+          <strong class="inicio-card-valor inicio-card-valor--texto">
+            {{ picoPlaca.restriccion ? 'Placas ' + picoPlaca.restriccion : 'Sin dato' }}
+          </strong>
+          <span class="inicio-card-detalle">
+            {{ picoPlaca.restriccion ? 'Terminadas en esos dígitos hoy.' : (esAdmin ? 'Configúralo para que tus vecinos lo vean.' : 'El administrador aún no lo ha configurado.') }}
+          </span>
+          <button *ngIf="esAdmin" type="button" class="inicio-link" (click)="editarPicoPlaca()">
+            <ion-icon name="pencil-outline"></ion-icon> Configurar
+          </button>
+        </ng-container>
+
+        <form *ngIf="editandoPicoPlaca" class="pico-form" (ngSubmit)="guardarPicoPlaca()">
+          <label *ngFor="let dia of diasPicoPlaca" class="pico-fila">
+            <span>{{ dia.etiqueta }}</span>
+            <input type="text" maxlength="30" [name]="dia.clave" [(ngModel)]="borradorPicoPlaca[dia.clave]" placeholder="Ej. 1 y 2" autocomplete="off" />
+          </label>
+          <div class="pico-acciones">
+            <ion-button size="small" fill="outline" type="button" (click)="cancelarPicoPlaca()">Cancelar</ion-button>
+            <ion-button size="small" type="submit" [disabled]="guardandoPicoPlaca">{{ guardandoPicoPlaca ? 'Guardando...' : 'Guardar' }}</ion-button>
+          </div>
+        </form>
+      </section>
+
+      <section class="inicio-card inicio-card--lista" aria-label="Noticias de la comunidad">
+        <div class="inicio-card-cabecera">
+          <ion-icon name="megaphone-outline"></ion-icon>
+          <span class="inicio-card-titulo">Noticias y comunicados</span>
+        </div>
+        <p class="inicio-vacio" *ngIf="!noticias.length">Aún no hay avisos publicados.</p>
+        <ul class="inicio-lista" *ngIf="noticias.length">
+          <li *ngFor="let aviso of noticias; trackBy: trackById">
+            <button type="button" class="inicio-item" (click)="irA('/alertas-eventos')">
+              <span class="inicio-item-titulo">{{ aviso.tituloAviso }}</span>
+              <span class="inicio-item-meta">
+                {{ aviso.tipoAviso }} · {{ aviso.fechaPublicacion | tiempoRelativo }}
+                <span *ngIf="aviso.soloPropietarios" class="inicio-etiqueta">Solo propietarios</span>
+              </span>
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="inicio-card inicio-card--lista" aria-label="Próximas notificaciones">
+        <div class="inicio-card-cabecera">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span class="inicio-card-titulo">Próximas notificaciones</span>
+        </div>
+        <p class="inicio-vacio" *ngIf="!proximas.length">No tienes notificaciones programadas.</p>
+        <ul class="inicio-lista" *ngIf="proximas.length">
+          <li *ngFor="let recordatorio of proximas; trackBy: trackById">
+            <button type="button" class="inicio-item" (click)="irA('/recordatorios')">
+              <span class="inicio-item-titulo">{{ recordatorio.tituloRecordatorio }}</span>
+              <span class="inicio-item-meta">{{ recordatorio.fechaHora | date: 'EEE d MMM, h:mm a' }}</span>
+            </button>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <nav class="inicio-accesos" aria-label="Accesos rápidos" *ngIf="!isLoading">
+      <button type="button" (click)="irA('/mensajes')">
+        <ion-icon name="chatbubble-ellipses-outline"></ion-icon> Mensajes
+      </button>
+      <button type="button" (click)="irA('/recordatorios')">
+        <ion-icon name="calendar-outline"></ion-icon> Notificaciones
+      </button>
+    </nav>
+  </div>
+</ion-content>

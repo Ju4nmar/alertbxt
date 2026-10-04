@@ -17,7 +17,7 @@ export class RoleGuard implements CanActivate {
     return combineLatest([this.authService.authReady$, this.authService.currentUser$]).pipe(
       filter(([ready]) => ready),
       take(1),
-      map(([, user]) => user?.rol === requiredRole ? true : this.router.createUrlTree(['/alertas-eventos']))
+      map(([, user]) => user?.rol === requiredRole ? true : this.router.createUrlTree(['/inicio']))
     );
   }
 }

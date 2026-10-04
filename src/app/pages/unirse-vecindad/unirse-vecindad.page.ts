@@ -120,7 +120,7 @@ export class UnirseVecindadPage implements OnInit {
         }));
       }
 
-      this.router.navigate(['/alertas-eventos']);
+      this.router.navigate(['/inicio']);
     } catch (error) {
       console.error('Error uniendose a comunidad:', error);
       this.joinError = this.getJoinErrorMessage(error);
@@ -149,7 +149,7 @@ export class UnirseVecindadPage implements OnInit {
     this.isGoogleLoading = true;
     try {
       await firstValueFrom(this.authService.joinComunidadWithGoogle(codigoInvitacion, this.aceptaTerminos, this.rolElegido));
-      this.router.navigate(['/alertas-eventos']);
+      this.router.navigate(['/inicio']);
     } catch (error) {
       console.error('Error uniéndose con Google:', error);
       this.joinError = this.getGoogleErrorMessage(error);

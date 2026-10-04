@@ -17,6 +17,11 @@
           </div>
 
           <ion-list class="sidebar-list" lines="none">
+            <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/inicio')" (click)="goToInicio()" data-tour="inicio">
+              <ion-icon slot="start" name="home"></ion-icon>
+              <ion-label>Inicio</ion-label>
+            </ion-item>
+
             <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/alertas-eventos')" (click)="goToAlertasyEventos()" data-tour="alertas">
               <ion-icon slot="start" name="alert-circle"></ion-icon>
               <ion-label>Alertas y eventos</ion-label>
@@ -117,6 +122,11 @@
       <router-outlet></router-outlet>
 
       <nav *ngIf="isLoggedIn" class="bottom-tabs" aria-label="Navegación principal">
+        <button type="button" class="tab-btn" [class.tab-active]="isActive('/inicio')" (click)="goToInicio()" data-tour="inicio">
+          <ion-icon name="home"></ion-icon>
+          <span>Inicio</span>
+        </button>
+
         <button type="button" class="tab-btn" [class.tab-active]="isActive('/alertas-eventos')" (click)="goToAlertasyEventos()" data-tour="alertas">
           <ion-icon name="alert-circle"></ion-icon>
           <span>Alertas</span>

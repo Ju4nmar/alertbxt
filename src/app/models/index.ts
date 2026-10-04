@@ -63,6 +63,9 @@ export interface Comunidad {
   fechaCreacion?: string;
   ubicacion?: string;
   logoUrl?: string;
+  // Restriccion de pico y placa por dia (clave en minusculas, p. ej. lunes).
+  // La digita el administrador: cambia por ciudad y periodo, no se fija en codigo.
+  picoPlaca?: Record<string, string>;
 }
 
 // idUsuario: recordatorio personal (el propio residente lo creó para sí
