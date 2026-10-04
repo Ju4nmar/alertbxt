@@ -14,7 +14,7 @@ import {
   IonSelectOption,
   IonTextarea,
 } from '@ionic/angular/standalone';
-import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
+import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil, tap } from 'rxjs';
 import { Aviso } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
@@ -89,6 +89,13 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       switchMap(user => {
         this.currentComunidadId = user!.comunidadId;
         return this.firestoreService.getAvisosByComunidad(user!.comunidadId);
+      }),
+      tap(avisos => {
+        // Avisos anteriores a "solo propietarios": se completan para que el
+        // arrendatario pueda consultarlos.
+        this.firestoreService.completarSoloPropietarios(avisos).subscribe({
+          error: error => console.error('No se pudo completar soloPropietarios:', error),
+        });
       }),
       takeUntil(this.destroy$)
     ).subscribe({

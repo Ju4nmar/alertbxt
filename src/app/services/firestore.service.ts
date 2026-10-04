@@ -15,7 +15,7 @@ import {
   where,
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { BehaviorSubject, Observable, combineLatest, from, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, forkJoin, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
 import { AuthService } from './auth.service';
@@ -34,15 +34,19 @@ export class FirestoreService {
     return runInInjectionContext(this.injector, callback);
   }
 
-  getAvisosByComunidad(comunidadId: string): Observable<Aviso[]> {
+  // Las reglas no filtran: si el arrendatario consultara todos los avisos de
+  // la comunidad, Firestore rechazaría la consulta completa por poder incluir
+  // alguno "solo propietarios". Por eso su consulta lo declara explícitamente
+  // (y por eso todo aviso guarda soloPropietarios como booleano).
+  getAvisosByComunidad(comunidadId: string, rol?: string): Observable<Aviso[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
       const col = collection(this.firestore, 'avisos');
-      return query(
-        col,
-        where('comunidadId', '==', comunidadId),
-        limit(50)
-      );
+      const filtros = [where('comunidadId', '==', comunidadId)];
+      if (rol === 'arrendatario') {
+        filtros.push(where('soloPropietarios', '==', false));
+      }
+      return query(col, ...filtros, limit(50));
     });
 
     return this.inContext(() => collectionData(q, { idField: 'idAviso' })).pipe(
@@ -63,7 +67,11 @@ export class FirestoreService {
     this.isLoadingSubject.next(true);
     const col = this.inContext(() => collection(this.firestore, 'avisos'));
 
-    return from(this.inContext(() => addDoc(col, { ...aviso, fechaPublicacion: new Date().toISOString() }))).pipe(
+    return from(this.inContext(() => addDoc(col, {
+      ...aviso,
+      soloPropietarios: aviso.soloPropietarios === true,
+      fechaPublicacion: new Date().toISOString(),
+    }))).pipe(
       map(docRef => docRef.id),
       catchError(error => {
         console.error('Error agregando aviso:', error);
@@ -71,6 +79,16 @@ export class FirestoreService {
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
+  }
+
+  // Avisos creados antes de existir "solo propietarios" no tienen el campo y
+  // quedarían fuera de la consulta del arrendatario; un admin los completa.
+  completarSoloPropietarios(avisos: Aviso[]): Observable<void[]> {
+    const pendientes = avisos.filter(aviso => !!aviso.idAviso && aviso.soloPropietarios === undefined);
+    if (pendientes.length === 0) {
+      return of([]);
+    }
+    return forkJoin(pendientes.map(aviso => this.updateAviso(aviso.idAviso as string, { soloPropietarios: false })));
   }
 
   updateAviso(id: string, aviso: Partial<Aviso>): Observable<void> {

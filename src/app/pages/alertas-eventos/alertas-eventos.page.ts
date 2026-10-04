@@ -90,7 +90,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
         previous?.comunidadId === current?.comunidadId && previous?.idUsuario === current?.idUsuario
       ),
       switchMap(user => combineLatest([
-        this.firestoreService.getAvisosByComunidad(user!.comunidadId).pipe(
+        this.firestoreService.getAvisosByComunidad(user!.comunidadId, user!.rol).pipe(
           switchMap(avisos => this.completarAutores(avisos)),
           catchError(error => {
             console.error('Error cargando avisos:', error);
