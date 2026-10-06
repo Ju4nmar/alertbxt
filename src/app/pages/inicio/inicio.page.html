@@ -76,10 +76,10 @@
         </div>
         <p class="inicio-vacio" *ngIf="!proximas.length">No tienes notificaciones programadas.</p>
         <ul class="inicio-lista" *ngIf="proximas.length">
-          <li *ngFor="let recordatorio of proximas; trackBy: trackById">
-            <button type="button" class="inicio-item" (click)="irA('/recordatorios')">
-              <span class="inicio-item-titulo">{{ recordatorio.tituloRecordatorio }}</span>
-              <span class="inicio-item-meta">{{ recordatorio.fechaHora | date: 'EEE d MMM, h:mm a' }}</span>
+          <li *ngFor="let notificacion of proximas; trackBy: trackById">
+            <button type="button" class="inicio-item" (click)="irA('/notificaciones')">
+              <span class="inicio-item-titulo">{{ notificacion.tituloNotificacion }}</span>
+              <span class="inicio-item-meta">{{ notificacion.fechaHora | date: 'EEE d MMM, h:mm a' }}</span>
             </button>
           </li>
         </ul>
@@ -90,7 +90,7 @@
       <button type="button" (click)="irA('/mensajes')">
         <ion-icon name="chatbubble-ellipses-outline"></ion-icon> Mensajes
       </button>
-      <button type="button" (click)="irA('/recordatorios')">
+      <button type="button" (click)="irA('/notificaciones')">
         <ion-icon name="calendar-outline"></ion-icon> Notificaciones
       </button>
     </nav>

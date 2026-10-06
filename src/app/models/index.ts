@@ -68,17 +68,17 @@ export interface Comunidad {
   picoPlaca?: Record<string, string>;
 }
 
-// idUsuario: recordatorio personal (el propio residente lo creó para sí
-// mismo). usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
+// idUsuario: notificación personal (el propio residente lo creó para sí
+// mismo). usuariosAsignados / paraTodaLaComunidad: notificación de grupo que
 // un administrador asignó a varios vecinos o a toda la comunidad — un solo
 // documento compartido, no una copia por destinatario. Igual que con los
 // personales, "estado" pasa a 'completado' automáticamente cuando se envía
 // el push (ver functions/src/index.ts), no es algo que cada usuario marque
 // por separado.
-export interface Recordatorio {
-  idRecordatorios?: string;
-  tituloRecordatorio: string;
-  descripcionRecordatorio: string;
+export interface Notificacion {
+  idNotificaciones?: string;
+  tituloNotificacion: string;
+  descripcionNotificacion: string;
   fechaHora: string;
   idUsuario?: string;
   usuariosAsignados?: string[];
@@ -87,7 +87,7 @@ export interface Recordatorio {
   comunidadId: string;
   fechaCreacion?: string;
   estado?: 'pendiente' | 'completado';
-  // Igual que en Aviso: oculta el recordatorio a los arrendatarios cuando
+  // Igual que en Aviso: oculta la notificación a los arrendatarios cuando
   // es información reservada al propietario.
   soloPropietarios?: boolean;
 }

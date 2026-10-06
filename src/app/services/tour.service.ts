@@ -15,7 +15,7 @@ const PASOS: PasoTour[] = [
   { id: 'inicio', titulo: 'Inicio', texto: 'Tu resumen del día: alertas activas, pico y placa, noticias de la comunidad y tus próximas notificaciones.' },
   { id: 'alertas', titulo: 'Alertas y eventos', texto: 'Aquí ves los avisos de tu comunidad, las alertas SOS y tus notificaciones próximas.' },
   { id: 'avisos', titulo: 'Gestión de avisos', texto: 'Publica avisos para toda la comunidad y modera las alertas SOS.', soloAdmin: true },
-  { id: 'recordatorios', titulo: 'Notificaciones', texto: 'Crea notificaciones con fecha y hora; te avisaremos cuando lleguen.' },
+  { id: 'notificaciones', titulo: 'Notificaciones', texto: 'Crea notificaciones con fecha y hora; te avisaremos cuando lleguen.' },
   { id: 'vecinos', titulo: 'Gestión de vecinos', texto: 'Consulta a tus vecinos, activa o desactiva cuentas y envíales mensajes.', soloAdmin: true },
   { id: 'estadisticas', titulo: 'Métricas', texto: 'Un resumen visual de vecinos, avisos y notificaciones.', soloAdmin: true },
   { id: 'encuestas', titulo: 'Encuestas', texto: 'Vota en las decisiones de tu comunidad y mira los resultados. Si eres administrador, también las creas aquí.' },

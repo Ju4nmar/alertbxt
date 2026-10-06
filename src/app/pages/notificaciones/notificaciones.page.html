@@ -2,12 +2,12 @@
   <h2 class="page-title">Notificaciones</h2>
 
   <div class="page-shell">
-  <form class="recordatorio-form" (ngSubmit)="guardarRecordatorio()" #recordatorioForm="ngForm" novalidate>
+  <form class="notificacion-form" (ngSubmit)="guardarNotificacion()" #notificacionForm="ngForm" novalidate>
     <h3>{{ idEditando ? 'Editar notificación' : 'Crear notificación' }}</h3>
 
     <div class="form-row">
       <ion-item>
-        <ion-input id="titulo" label="Título" label-placement="floating" [(ngModel)]="tituloRecordatorio" name="tituloRecordatorio" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="recordatorioError = ''"></ion-input>
+        <ion-input id="titulo" label="Título" label-placement="floating" [(ngModel)]="tituloNotificacion" name="tituloNotificacion" required minlength="3" maxlength="80" #tituloInput="ngModel" (ionInput)="notificacionError = ''"></ion-input>
       </ion-item>
       <div *ngIf="tituloInput.invalid && (tituloInput.dirty || tituloInput.touched)" class="field-error">
         <span *ngIf="tituloInput.errors?.['required']">El título de la notificación es obligatorio.</span>
@@ -18,7 +18,7 @@
 
     <div class="form-row">
       <ion-item>
-        <ion-textarea id="descripcion" label="Descripción" label-placement="floating" [(ngModel)]="descripcionRecordatorio" name="descripcionRecordatorio" required minlength="5" maxlength="300" autoGrow="true" #descripcionInput="ngModel" (ionInput)="recordatorioError = ''"></ion-textarea>
+        <ion-textarea id="descripcion" label="Descripción" label-placement="floating" [(ngModel)]="descripcionNotificacion" name="descripcionNotificacion" required minlength="5" maxlength="300" autoGrow="true" #descripcionInput="ngModel" (ionInput)="notificacionError = ''"></ion-textarea>
       </ion-item>
       <div *ngIf="descripcionInput.invalid && (descripcionInput.dirty || descripcionInput.touched)" class="field-error">
         <span *ngIf="descripcionInput.errors?.['required']">La descripción es obligatoria.</span>
@@ -30,22 +30,22 @@
     <div class="form-row date-row">
       <label class="date-group-label">Fecha y hora</label>
       <div class="date-field native-input-group">
-        <label class="native-label" for="fechaRecordatorio">Fecha</label>
-        <input id="fechaRecordatorio" type="date" [(ngModel)]="fechaRecordatorio" name="fechaRecordatorio" required #fechaInput="ngModel" (input)="recordatorioError = ''" />
+        <label class="native-label" for="fechaNotificacion">Fecha</label>
+        <input id="fechaNotificacion" type="date" [(ngModel)]="fechaNotificacion" name="fechaNotificacion" required #fechaInput="ngModel" (input)="notificacionError = ''" />
       </div>
       <div *ngIf="fechaInput.invalid && (fechaInput.dirty || fechaInput.touched)" class="field-error">
         La fecha es requerida.
       </div>
 
       <div class="date-field native-input-group">
-        <label class="native-label" for="horaRecordatorio">Hora</label>
-        <input id="horaRecordatorio" type="time" [(ngModel)]="horaRecordatorio" name="horaRecordatorio" required #horaInput="ngModel" (input)="recordatorioError = ''" />
+        <label class="native-label" for="horaNotificacion">Hora</label>
+        <input id="horaNotificacion" type="time" [(ngModel)]="horaNotificacion" name="horaNotificacion" required #horaInput="ngModel" (input)="notificacionError = ''" />
       </div>
       <div *ngIf="horaInput.invalid && (horaInput.dirty || horaInput.touched)" class="field-error">
         La hora es requerida.
       </div>
 
-      <ion-button type="submit" [disabled]="recordatorioForm.invalid || isLoading">
+      <ion-button type="submit" [disabled]="notificacionForm.invalid || isLoading">
         {{ isLoading ? 'Guardando...' : (idEditando ? 'Actualizar' : 'Guardar') }}
       </ion-button>
     </div>
@@ -76,12 +76,12 @@
       </div>
     </div>
 
-    <div *ngIf="recordatorioError" class="error-message" role="alert">
-      {{ recordatorioError }}
+    <div *ngIf="notificacionError" class="error-message" role="alert">
+      {{ notificacionError }}
     </div>
   </form>
 
-  <div class="lista-recordatorios">
+  <div class="lista-notificaciones">
     <h3>Lista de notificaciones</h3>
 
     <div *ngIf="cargaError" class="error-message" role="alert">
@@ -89,34 +89,34 @@
     </div>
 
     <ng-container *ngIf="isLoadingLista">
-      <div class="recordatorio-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
-        <div class="recordatorio-info">
+      <div class="notificacion-item skeleton-item" aria-hidden="true" *ngFor="let placeholder of skeletonPlaceholders">
+        <div class="notificacion-info">
           <div class="skeleton-line skeleton-line--medium"></div>
-          <div class="recordatorio-meta">
+          <div class="notificacion-meta">
             <div class="skeleton-line skeleton-line--short"></div>
           </div>
         </div>
       </div>
     </ng-container>
 
-    <div *ngFor="let recordatorio of recordatorios; trackBy: trackByRecordatorioId" class="recordatorio-item">
-      <div class="recordatorio-info">
-        <h4>{{ recordatorio.tituloRecordatorio }}</h4>
-        <div class="recordatorio-meta">
-          <span class="recordatorio-fecha">
-            {{ recordatorio.fechaHora | date: 'medium' }}
-            <span class="recordatorio-fecha-relativo">({{ esFuturo(recordatorio.fechaHora) ? 'vence' : 'venció' }} {{ recordatorio.fechaHora | tiempoRelativo }})</span>
+    <div *ngFor="let notificacion of notificaciones; trackBy: trackByNotificacionId" class="notificacion-item">
+      <div class="notificacion-info">
+        <h4>{{ notificacion.tituloNotificacion }}</h4>
+        <div class="notificacion-meta">
+          <span class="notificacion-fecha">
+            {{ notificacion.fechaHora | date: 'medium' }}
+            <span class="notificacion-fecha-relativo">({{ esFuturo(notificacion.fechaHora) ? 'vence' : 'venció' }} {{ notificacion.fechaHora | tiempoRelativo }})</span>
           </span>
-          <span class="estado-pill" [class.estado-pill--completado]="recordatorio.estado === 'completado'">
-            {{ recordatorio.estado === 'completado' ? 'Completado' : 'Pendiente' }}
+          <span class="estado-pill" [class.estado-pill--completado]="notificacion.estado === 'completado'">
+            {{ notificacion.estado === 'completado' ? 'Completado' : 'Pendiente' }}
           </span>
-          <span class="origen-pill" *ngIf="origenRecordatorio(recordatorio) as origen">{{ origen }}</span>
+          <span class="origen-pill" *ngIf="origenNotificacion(notificacion) as origen">{{ origen }}</span>
         </div>
       </div>
 
-      <div class="acciones" *ngIf="esPersonal(recordatorio) || esCreador(recordatorio)">
-        <button class="btn-editar" (click)="editarRecordatorio(recordatorio)">Editar</button>
-        <button class="btn-eliminar" (click)="eliminarRecordatorio(recordatorio)">Eliminar</button>
+      <div class="acciones" *ngIf="esPersonal(notificacion) || esCreador(notificacion)">
+        <button class="btn-editar" (click)="editarNotificacion(notificacion)">Editar</button>
+        <button class="btn-eliminar" (click)="eliminarNotificacion(notificacion)">Eliminar</button>
       </div>
     </div>
   </div>

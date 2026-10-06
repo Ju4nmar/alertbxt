@@ -73,7 +73,7 @@ export class AuthService {
   }
 
   // Una cuenta desactivada puede autenticarse en Firebase Auth (eso no lo
-  // bloquean las reglas), pero luego no puede leer avisos ni recordatorios
+  // bloquean las reglas), pero luego no puede leer avisos ni notificaciones
   // porque isMemberOfCommunity() exige activo == true. Sin este chequeo
   // explícito, el usuario entraba y solo veía listas vacías con errores de
   // permisos silenciosos en la consola, sin ninguna explicación.

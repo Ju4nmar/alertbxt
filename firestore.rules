@@ -195,9 +195,9 @@ service cloud.firestore {
       allow delete: if isAdminForCommunity(resource.data.comunidadId);
     }
 
-    match /recordatorios/{recordatorioId} {
-      // usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
-      // creó un admin (solo crearRecordatorioAsignado, Admin SDK, escribe
+    match /notificaciones/{notificacionId} {
+      // usuariosAsignados / paraTodaLaComunidad: notificación de grupo que
+      // creó un admin (solo crearNotificacionAsignada, Admin SDK, escribe
       // esos campos — no hay regla de create para ellos desde el cliente).
       allow read: if isMemberOfCommunity(resource.data.comunidadId)
         && (
@@ -218,13 +218,13 @@ service cloud.firestore {
         && request.resource.data.idUsuario == request.auth.uid
         && request.resource.data.comunidadId == resource.data.comunidadId;
 
-      // El administrador que creó un recordatorio asignado puede editar su
+      // El administrador que creó una notificación asignada puede editar su
       // contenido (título, descripción, fecha/hora), pero no a quién está
       // asignado ni reasignarse el documento a sí mismo.
       allow update: if isAdminForCommunity(resource.data.comunidadId)
         && resource.data.get('autorId', '') == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['tituloRecordatorio', 'descripcionRecordatorio', 'fechaHora'])
+          .hasOnly(['tituloNotificacion', 'descripcionNotificacion', 'fechaHora'])
         && request.resource.data.comunidadId == resource.data.comunidadId
         && request.resource.data.get('usuariosAsignados', []) == resource.data.get('usuariosAsignados', [])
         && request.resource.data.get('paraTodaLaComunidad', false) == resource.data.get('paraTodaLaComunidad', false);

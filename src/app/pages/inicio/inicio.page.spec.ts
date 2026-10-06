@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { Aviso, Recordatorio, Usuario } from '../../models';
+import { Aviso, Notificacion, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { InicioPage } from './inicio.page';
@@ -22,10 +22,10 @@ const avisos: Aviso[] = [
   { idAviso: '4', tituloAviso: 'Asamblea', descripcionAviso: '', tipoAviso: 'informativo', fechaPublicacion: hace(5), autorId: 'x', comunidadId: 'c1' },
 ];
 
-const recordatorios: Recordatorio[] = [
-  { idRecordatorios: 'r1', tituloRecordatorio: 'Pasada', descripcionRecordatorio: '', fechaHora: hace(2), comunidadId: 'c1' },
-  { idRecordatorios: 'r2', tituloRecordatorio: 'Mañana', descripcionRecordatorio: '', fechaHora: en(24), comunidadId: 'c1' },
-  { idRecordatorios: 'r3', tituloRecordatorio: 'Hecha', descripcionRecordatorio: '', fechaHora: en(3), estado: 'completado', comunidadId: 'c1' },
+const notificaciones: Notificacion[] = [
+  { idNotificaciones: 'r1', tituloNotificacion: 'Pasada', descripcionNotificacion: '', fechaHora: hace(2), comunidadId: 'c1' },
+  { idNotificaciones: 'r2', tituloNotificacion: 'Mañana', descripcionNotificacion: '', fechaHora: en(24), comunidadId: 'c1' },
+  { idNotificaciones: 'r3', tituloNotificacion: 'Hecha', descripcionNotificacion: '', fechaHora: en(3), estado: 'completado', comunidadId: 'c1' },
 ];
 
 describe('InicioPage', () => {
@@ -44,7 +44,7 @@ describe('InicioPage', () => {
           provide: FirestoreService,
           useValue: {
             getAvisosByComunidad: () => of(avisos),
-            getRecordatoriosVisibles: () => of(recordatorios),
+            getNotificacionesVisibles: () => of(notificaciones),
             getComunidadById: () => of({ idComunidad: 'c1', nombreComunidad: 'Torres del Sol', picoPlaca: { lunes: '1 y 2' } }),
             updateComunidad,
           },
@@ -62,7 +62,7 @@ describe('InicioPage', () => {
 
   it('lista noticias sin alertas y notificaciones futuras pendientes', () => {
     expect(component.noticias.map(a => a.idAviso)).toEqual(['4']);
-    expect(component.proximas.map(r => r.idRecordatorios)).toEqual(['r2']);
+    expect(component.proximas.map(r => r.idNotificaciones)).toEqual(['r2']);
   });
 
   it('saluda con el primer nombre', () => {

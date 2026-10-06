@@ -15,22 +15,22 @@ import {
   timeOutline,
 } from 'ionicons/icons';
 import { Subject, catchError, combineLatest, distinctUntilChanged, filter, forkJoin, interval, map, of, switchMap, takeUntil } from 'rxjs';
-import { Aviso, Recordatorio } from '../../models';
+import { Aviso, Notificacion } from '../../models';
 import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { enlaceMapa } from '../../utils/ubicacion.utils';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 
 interface PanelCard {
-  tipo: 'aviso' | 'recordatorio';
+  tipo: 'aviso' | 'notificacion';
   id: string;
   fecha: string;
   aviso?: Aviso;
-  recordatorio?: Recordatorio;
+  notificacion?: Notificacion;
 }
 
 interface ModalData {
-  variant: 'aviso' | 'recordatorio';
+  variant: 'aviso' | 'notificacion';
   titulo: string;
   descripcion: string;
   fecha?: string;
@@ -42,7 +42,7 @@ interface ModalData {
   imagen?: string;
 }
 
-type FiltroPanel = 'todos' | 'aviso' | 'recordatorio';
+type FiltroPanel = 'todos' | 'aviso' | 'notificacion';
 
 @Component({
   selector: 'app-alertas-eventos',
@@ -73,7 +73,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   }
 
   avisos: Aviso[] = [];
-  recordatorios: Recordatorio[] = [];
+  notificaciones: Notificacion[] = [];
   tarjetas: PanelCard[] = [];
   tarjetasVisibles: PanelCard[] = [];
   filtro: FiltroPanel = 'todos';
@@ -98,9 +98,9 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
             return of([]);
           })
         ),
-        this.firestoreService.getRecordatoriosVisibles(user!).pipe(
+        this.firestoreService.getNotificacionesVisibles(user!).pipe(
           catchError(error => {
-            console.error('Error cargando recordatorios:', error);
+            console.error('Error cargando notificaciones:', error);
             this.cargaError = 'No se pudieron cargar las notificaciones. Revisa tu conexión e intenta de nuevo.';
             return of([]);
           })
@@ -108,13 +108,13 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       ])),
       takeUntil(this.destroy$)
     ).subscribe({
-      next: ([avisos, recordatorios]) => {
+      next: ([avisos, notificaciones]) => {
         // Una alerta SOS rechazada por un administrador (falsa alarma) deja de
         // mostrarse a los vecinos; pendiente y validada sí, para no retrasar
         // el aviso mientras se confirma.
         this.avisos = avisos.filter(aviso => !(aviso.tipoAviso === 'alerta' && aviso.estado === 'rechazado'));
-        this.recordatorios = recordatorios;
-        this.tarjetas = this.crearTarjetas(this.avisos, recordatorios);
+        this.notificaciones = notificaciones;
+        this.tarjetas = this.crearTarjetas(this.avisos, notificaciones);
         this.aplicarFiltro();
         this.cdr.markForCheck();
       },
@@ -149,7 +149,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
   }
 
   get totalPendientes(): number {
-    return this.recordatorios.filter(recordatorio => !this.isReminderCompleted(recordatorio)).length;
+    return this.notificaciones.filter(notificacion => !this.isReminderCompleted(notificacion)).length;
   }
 
   cambiarFiltro(filtro: FiltroPanel): void {
@@ -192,7 +192,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     );
   }
 
-  private crearTarjetas(avisos: Aviso[], recordatorios: Recordatorio[]): PanelCard[] {
+  private crearTarjetas(avisos: Aviso[], notificaciones: Notificacion[]): PanelCard[] {
     const tarjetasAvisos: PanelCard[] = avisos.map(aviso => ({
       tipo: 'aviso',
       id: aviso.idAviso || `aviso-${aviso.fechaPublicacion}-${aviso.tituloAviso}`,
@@ -200,14 +200,14 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
       fecha: aviso.fechaPublicacion || '',
     }));
 
-    const tarjetasRecordatorios: PanelCard[] = recordatorios.map(recordatorio => ({
-      tipo: 'recordatorio',
-      id: recordatorio.idRecordatorios || `recordatorio-${recordatorio.fechaHora}-${recordatorio.tituloRecordatorio}`,
-      recordatorio,
-      fecha: recordatorio.fechaHora,
+    const tarjetasNotificaciones: PanelCard[] = notificaciones.map(notificacion => ({
+      tipo: 'notificacion',
+      id: notificacion.idNotificaciones || `notificacion-${notificacion.fechaHora}-${notificacion.tituloNotificacion}`,
+      notificacion,
+      fecha: notificacion.fechaHora,
     }));
 
-    return [...tarjetasAvisos, ...tarjetasRecordatorios].sort((a, b) =>
+    return [...tarjetasAvisos, ...tarjetasNotificaciones].sort((a, b) =>
       this.getTimestamp(b.fecha) - this.getTimestamp(a.fecha)
     );
   }
@@ -233,12 +233,12 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
         autor: tarjeta.aviso.autorNombre || tarjeta.aviso.autorId || 'Autor no disponible',
         imagen: tarjeta.aviso.imagen,
       };
-    } else if (tarjeta.tipo === 'recordatorio' && tarjeta.recordatorio) {
+    } else if (tarjeta.tipo === 'notificacion' && tarjeta.notificacion) {
       this.modalData = {
-        variant: 'recordatorio',
-        titulo: tarjeta.recordatorio.tituloRecordatorio || 'Notificación',
-        descripcion: tarjeta.recordatorio.descripcionRecordatorio || 'Sin descripción',
-        fecha: tarjeta.recordatorio.fechaHora,
+        variant: 'notificacion',
+        titulo: tarjeta.notificacion.tituloNotificacion || 'Notificación',
+        descripcion: tarjeta.notificacion.descripcionNotificacion || 'Sin descripción',
+        fecha: tarjeta.notificacion.fechaHora,
       };
     } else {
       return;
@@ -263,10 +263,10 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     return index < 3;
   }
 
-  isReminderCompleted(recordatorio: Recordatorio | undefined): boolean {
-    if (!recordatorio) return false;
-    if (recordatorio.estado === 'completado') return true;
-    const reminderTime = new Date(recordatorio.fechaHora).getTime();
+  isReminderCompleted(notificacion: Notificacion | undefined): boolean {
+    if (!notificacion) return false;
+    if (notificacion.estado === 'completado') return true;
+    const reminderTime = new Date(notificacion.fechaHora).getTime();
     return reminderTime < Date.now();
   }
 
