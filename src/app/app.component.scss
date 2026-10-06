@@ -559,3 +559,14 @@ ion-split-pane {
     display: none;
   }
 }
+
+/* Aviso de falta de red: la app sigue usable con datos guardados. */
+.offline-banner {
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5a3d00;
+  background: #ffe9b0;
+  border-bottom: 1px solid #e8c766;
+}
