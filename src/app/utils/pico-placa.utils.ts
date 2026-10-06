@@ -1,3 +1,5 @@
+import { nombreFestivo } from './festivos.utils';
+
 export const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] as const;
 
 export const DIAS_PICO_PLACA = [
@@ -24,8 +26,10 @@ export interface PicoPlacaHoy {
   etiquetaDia: string;
   // null: no hay restricción configurada ni vigente para este día.
   restriccion: string | null;
-  // Fin de semana: la medida no aplica (los festivos no se conocen aquí).
+  // Fin de semana: la medida no aplica.
   finDeSemana: boolean;
+  // Festivo en Colombia (calculado, ver festivos.utils): tampoco aplica.
+  festivo: string | null;
   horario: string | null;
 }
 
@@ -52,7 +56,12 @@ export function picoPlacaDeHoy(config: Record<string, string> | undefined, fecha
   const etiquetaDia = DIAS_PICO_PLACA.find(dia => dia.clave === clave)?.etiqueta ?? (clave === 'sabado' ? 'Sábado' : 'Domingo');
 
   if (finDeSemana) {
-    return { etiquetaDia, restriccion: null, finDeSemana: true, horario: null };
+    return { etiquetaDia, restriccion: null, finDeSemana: true, festivo: null, horario: null };
+  }
+
+  const festivo = nombreFestivo(fecha);
+  if (festivo) {
+    return { etiquetaDia, restriccion: null, finDeSemana: false, festivo, horario: null };
   }
 
   const restriccion = valorPicoPlaca(config, clave, fecha) || null;
@@ -61,6 +70,7 @@ export function picoPlacaDeHoy(config: Record<string, string> | undefined, fecha
     etiquetaDia,
     restriccion,
     finDeSemana: false,
+    festivo: null,
     horario: restriccion && usaDefecto ? defectoVigente(fecha)?.horario ?? null : null,
   };
 }

@@ -28,6 +28,13 @@ describe('picoPlacaDeHoy', () => {
     expect(picoPlacaDeHoy({}, sabado)).toEqual(jasmine.objectContaining({ etiquetaDia: 'Sábado', restriccion: null, finDeSemana: true }));
   });
 
+  it('en un festivo no aplica restricción, aunque el día sea hábil', () => {
+    const diaDeLaRaza = new Date(2026, 9, 12);
+    expect(picoPlacaDeHoy(undefined, diaDeLaRaza)).toEqual(jasmine.objectContaining({
+      restriccion: null, finDeSemana: false, festivo: 'Día de la Raza',
+    }));
+  });
+
   it('valorPicoPlaca devuelve el valor vigente de un día concreto', () => {
     expect(valorPicoPlaca(undefined, 'viernes', lunes)).toBe('7 y 8');
     expect(valorPicoPlaca({ viernes: '1 y 2' }, 'viernes', lunes)).toBe('1 y 2');
