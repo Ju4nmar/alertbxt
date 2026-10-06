@@ -93,6 +93,10 @@ export const routes: Routes = [
     canActivate: [GuestGuard],
   },
   {
+    path: 'restablecer-contrasena',
+    loadComponent: () => import('./pages/restablecer-contrasena/restablecer-contrasena.page').then(m => m.RestablecerContrasenaPage),
+  },
+  {
     path: 'privacidad',
     loadComponent: () => import('./pages/privacidad/privacidad.page').then(m => m.PrivacidadPage),
   },
