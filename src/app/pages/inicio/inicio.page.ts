@@ -17,7 +17,7 @@ import { Aviso, Comunidad, Recordatorio, Usuario } from '../../models';
 import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
-import { DIAS_PICO_PLACA, PicoPlacaHoy, picoPlacaDeHoy } from '../../utils/pico-placa.utils';
+import { DIAS_PICO_PLACA, PicoPlacaHoy, picoPlacaDeHoy, valorPicoPlaca } from '../../utils/pico-placa.utils';
 
 const VENTANA_ALERTA_ACTIVA_MS = 24 * 60 * 60 * 1000;
 
@@ -49,7 +49,7 @@ export class InicioPage implements OnInit, OnDestroy {
   alertasActivas = 0;
   noticias: Aviso[] = [];
   proximas: Recordatorio[] = [];
-  picoPlaca: PicoPlacaHoy = { etiquetaDia: '', restriccion: null };
+  picoPlaca: PicoPlacaHoy = { etiquetaDia: '', restriccion: null, finDeSemana: false, horario: null };
   editandoPicoPlaca = false;
   guardandoPicoPlaca = false;
   borradorPicoPlaca: Record<string, string> = {};
@@ -102,7 +102,7 @@ export class InicioPage implements OnInit, OnDestroy {
   editarPicoPlaca(): void {
     this.borradorPicoPlaca = {};
     for (const dia of DIAS_PICO_PLACA) {
-      this.borradorPicoPlaca[dia.clave] = this.comunidad?.picoPlaca?.[dia.clave] ?? '';
+      this.borradorPicoPlaca[dia.clave] = valorPicoPlaca(this.comunidad?.picoPlaca, dia.clave, this.hoy);
     }
     this.editandoPicoPlaca = true;
   }

@@ -28,10 +28,10 @@
 
         <ng-container *ngIf="!editandoPicoPlaca">
           <strong class="inicio-card-valor inicio-card-valor--texto">
-            {{ picoPlaca.restriccion ? 'Placas ' + picoPlaca.restriccion : 'Sin dato' }}
+            {{ picoPlaca.restriccion ? 'Placas ' + picoPlaca.restriccion : (picoPlaca.finDeSemana ? 'Sin restricción' : 'Sin dato') }}
           </strong>
           <span class="inicio-card-detalle">
-            {{ picoPlaca.restriccion ? 'Terminadas en esos dígitos hoy.' : (esAdmin ? 'Configúralo para que tus vecinos lo vean.' : 'El administrador aún no lo ha configurado.') }}
+            {{ picoPlaca.restriccion ? 'Terminadas en esos dígitos hoy' + (picoPlaca.horario ? ', de ' + picoPlaca.horario + '.' : '.') : (picoPlaca.finDeSemana ? 'Fines de semana no aplica (festivos tampoco).' : (esAdmin ? 'Configúralo para que tus vecinos lo vean.' : 'El administrador aún no lo ha configurado.')) }}
           </span>
           <button *ngIf="esAdmin" type="button" class="inicio-link" (click)="editarPicoPlaca()">
             <ion-icon name="pencil-outline"></ion-icon> Configurar
