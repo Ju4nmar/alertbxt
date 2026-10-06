@@ -2,6 +2,8 @@ import { Injectable, Injector, inject, runInInjectionContext } from '@angular/co
 import {
   DocumentData,
   Firestore,
+  clearIndexedDbPersistence,
+  terminate,
   addDoc,
   collection,
   collectionData,
@@ -22,6 +24,7 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 import { BehaviorSubject, Observable, combineLatest, forkJoin, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 import { Aviso, Comunidad, Dispositivo, Encuesta, Reserva, Vehiculo, ZonaComun, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
+import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -361,7 +364,7 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error obteniendo recordatorios:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios'));
+        return throwError(() => new Error('Error al cargar notificaciones'));
       })
     );
   }
@@ -390,7 +393,7 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error obteniendo recordatorios asignados:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios asignados'));
+        return throwError(() => new Error('Error al cargar notificaciones asignadas'));
       })
     );
   }
@@ -416,7 +419,7 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error obteniendo recordatorios de la comunidad:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios de la comunidad'));
+        return throwError(() => new Error('Error al cargar notificaciones de la comunidad'));
       })
     );
   }
@@ -466,7 +469,7 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error obteniendo recordatorios creados:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios creados'));
+        return throwError(() => new Error('Error al cargar notificaciones creadas'));
       })
     );
   }
@@ -486,7 +489,7 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error obteniendo recordatorios de la comunidad:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios'));
+        return throwError(() => new Error('Error al cargar notificaciones'));
       })
     );
   }
@@ -499,7 +502,7 @@ export class FirestoreService {
       map(docRef => docRef.id),
       catchError(error => {
         console.error('Error agregando recordatorio:', error);
-        return throwError(() => new Error('Error al agregar recordatorio'));
+        return throwError(() => new Error('Error al agregar notificación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
@@ -513,7 +516,7 @@ export class FirestoreService {
       map(() => void 0),
       catchError(error => {
         console.error('Error actualizando recordatorio:', error);
-        return throwError(() => new Error('Error al actualizar recordatorio'));
+        return throwError(() => new Error('Error al actualizar notificación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
@@ -527,7 +530,7 @@ export class FirestoreService {
       map(() => void 0),
       catchError(error => {
         console.error('Error eliminando recordatorio:', error);
-        return throwError(() => new Error('Error al eliminar recordatorio'));
+        return throwError(() => new Error('Error al eliminar notificación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
@@ -552,7 +555,7 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error creando recordatorio asignado:', error);
         const mensaje = (error as { message?: string })?.message;
-        return throwError(() => new Error(mensaje || 'No se pudo crear el recordatorio.'));
+        return throwError(() => new Error(mensaje || 'No se pudo crear la notificación.'));
       })
     );
   }
@@ -768,6 +771,23 @@ export class FirestoreService {
     );
   }
 
+  // En un dispositivo compartido, los datos guardados para uso sin red no
+  // deben sobrevivir al cierre de sesión. Termina Firestore y borra su caché;
+  // después hay que recargar la página (la instancia queda inutilizable).
+  async limpiarCacheLocal(): Promise<boolean> {
+    if (environment.useEmulators) {
+      return false;
+    }
+    try {
+      await terminate(this.firestore);
+      await clearIndexedDbPersistence(this.firestore);
+      return true;
+    } catch (error) {
+      console.warn('No se pudo limpiar la caché local:', error);
+      return false;
+    }
+  }
+
   getZonasByComunidad(comunidadId: string): Observable<ZonaComun[]> {
     const q = this.inContext(() => query(
       collection(this.firestore, 'zonas'),
@@ -902,7 +922,7 @@ export class FirestoreService {
   private normalizeRecordatorio(data: Recordatorio & Record<string, unknown>): Recordatorio {
     return {
       idRecordatorios: data.idRecordatorios,
-      tituloRecordatorio: data.tituloRecordatorio || String(data['titulo'] || data['tituloRecordatorio'] || 'Recordatorio'),
+      tituloRecordatorio: data.tituloRecordatorio || String(data['titulo'] || data['tituloRecordatorio'] || 'Notificación'),
       descripcionRecordatorio: data.descripcionRecordatorio || String(data['descripcion'] || ''),
       fechaHora: data.fechaHora || String(data['fecha'] || data['fechaHora'] || ''),
       idUsuario: data.idUsuario || undefined,

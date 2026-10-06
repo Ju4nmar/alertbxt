@@ -14,7 +14,7 @@
       >{{ p.etiqueta }}</button>
     </div>
     <p class="periodo-nota" *ngIf="!isLoading && !cargaError">
-      El período filtra avisos y recordatorios; los vecinos se muestran siempre completos.
+      El período filtra avisos y notificaciones; los vecinos se muestran siempre completos.
     </p>
 
     <div *ngIf="cargaError" class="error-message" role="alert">
@@ -96,7 +96,7 @@
       </section>
 
       <section class="stats-section">
-        <h3>Recordatorios</h3>
+        <h3>Notificaciones</h3>
         <div class="chart-row">
           <div class="headline-stack">
             <button type="button" class="stat-card stat-card--wide stat-card--link" (click)="ir('/recordatorios')">
@@ -108,7 +108,7 @@
                 <span class="stat-value" [appContador]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)" appContadorSufijo="%"></span>
                 <span class="stat-label">Cumplimiento</span>
               </div>
-              <span class="progreso" role="progressbar" aria-label="Porcentaje de recordatorios completados" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)">
+              <span class="progreso" role="progressbar" aria-label="Porcentaje de notificaciones completadas" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)">
                 <span class="progreso-relleno progreso-relleno--success" [style.width.%]="porcentaje(resumen.recordatorios.completados, resumen.recordatorios.total)"></span>
               </span>
             </div>

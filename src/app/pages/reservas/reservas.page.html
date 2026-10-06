@@ -22,7 +22,7 @@
 
         <p class="res-detalle" *ngIf="zona">
           <ion-icon name="time-outline"></ion-icon>
-          {{ etiqueta(zona.horaApertura) }} a {{ etiqueta(zona.horaCierre) }} · máximo {{ zona.maxHoras }} {{ zona.maxHoras === 1 ? 'hora' : 'horas' }} por reserva
+          {{ etiqueta(zona.horaApertura) }} a {{ etiqueta(zona.horaCierre) }} · máximo {{ zona.maxHoras }} {{ zona.maxHoras === 1 ? 'hora' : 'horas' }} por día
           <span *ngIf="zona.descripcion"> · {{ zona.descripcion }}</span>
         </p>
 
@@ -41,6 +41,10 @@
             </small>
           </button>
         </div>
+
+        <p class="res-detalle" *ngIf="!cupoRestante">
+          Ya reservaste el máximo de {{ maxHoras }} {{ maxHoras === 1 ? 'hora' : 'horas' }} para este día en esta zona.
+        </p>
 
         <div class="res-confirmar" *ngIf="seleccion.length">
           <span>{{ zona?.nombre }} · {{ resumenSeleccion }}</span>

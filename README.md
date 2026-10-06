@@ -5,7 +5,7 @@
 <h1 align="center">AlertBxt</h1>
 
 <p align="center">
-  Plataforma web progresiva para la gestión de alertas comunitarias, avisos y recordatorios en conjuntos residenciales.
+  Plataforma web progresiva para la gestión de alertas comunitarias, avisos y notificaciones en conjuntos residenciales.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 AlertBxt es una aplicación web progresiva (PWA) diseñada para mejorar la comunicación y seguridad en comunidades residenciales.
 
-Permite a los usuarios reportar alertas en tiempo real, gestionar avisos administrativos y crear recordatorios personales dentro de su comunidad.
+Permite a los usuarios reportar alertas en tiempo real, gestionar avisos administrativos y crear notificaciones personales dentro de su comunidad.
 
 El sistema está basado en roles (administrador y residente) y utiliza Firebase como backend en tiempo real.
 

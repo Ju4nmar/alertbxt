@@ -74,7 +74,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
   donuts: Record<Donut['clave'], Donut> = {
     vecinos: this.crearDonut('vecinos', 'vecinos', 'Aún no hay vecinos registrados.'),
     avisos: this.crearDonut('avisos', 'avisos', 'Aún no hay avisos en este período.'),
-    recordatorios: this.crearDonut('recordatorios', 'total', 'Aún no hay recordatorios en este período.'),
+    recordatorios: this.crearDonut('recordatorios', 'total', 'Aún no hay notificaciones en este período.'),
   };
   isLoading = true;
   cargaError = '';

@@ -9,14 +9,14 @@
       </div>
       <div class="status-pill status-pill--info">
         <ion-icon name="time-outline"></ion-icon>
-        {{ totalPendientes }} {{ totalPendientes === 1 ? 'recordatorio pendiente' : 'recordatorios pendientes' }}
+        {{ totalPendientes }} {{ totalPendientes === 1 ? 'notificación pendiente' : 'notificaciones pendientes' }}
       </div>
     </div>
 
     <div class="filter-tabs" role="tablist" aria-label="Filtrar publicaciones">
       <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'todos'" [class.active]="filtro === 'todos'" (click)="cambiarFiltro('todos')">Todo</button>
       <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'aviso'" [class.active]="filtro === 'aviso'" (click)="cambiarFiltro('aviso')">Avisos</button>
-      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'recordatorio'" [class.active]="filtro === 'recordatorio'" (click)="cambiarFiltro('recordatorio')">Recordatorios</button>
+      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'recordatorio'" [class.active]="filtro === 'recordatorio'" (click)="cambiarFiltro('recordatorio')">Notificaciones</button>
     </div>
 
     <div *ngIf="cargaError" class="error-message" role="alert">
@@ -82,7 +82,7 @@
       <ng-template #reminderCard>
         <ng-container *ngIf="tarjeta.recordatorio as recordatorio">
           <div class="card-header reminder-header">
-            <span class="ab-badge ab-badge--recordatorio">Recordatorio</span>
+            <span class="ab-badge ab-badge--recordatorio">Notificación</span>
             <h3 class="card-title reminder-title">{{ recordatorio.tituloRecordatorio }}</h3>
           </div>
           <div class="card-body reminder-body">
@@ -104,7 +104,7 @@
 
   <div *ngIf="!isLoading && !tarjetasVisibles.length" class="empty-state">
     <ion-icon name="notifications-off-outline"></ion-icon>
-    <p *ngIf="filtro === 'todos'">Todavía no hay alertas, avisos o recordatorios para mostrar.</p>
+    <p *ngIf="filtro === 'todos'">Todavía no hay alertas, avisos o notificaciones para mostrar.</p>
     <p *ngIf="filtro !== 'todos'">No hay resultados para este filtro por ahora.</p>
   </div>
 </ion-content>
@@ -123,7 +123,7 @@
     [ngClass]="modal.variant === 'recordatorio' ? 'reminder-modal-card' : 'tipo-' + (modal.tipo || 'informativo')"
   >
     <span class="ab-badge" [ngClass]="modal.variant === 'recordatorio' ? 'ab-badge--recordatorio' : 'ab-badge--' + (modal.tipo || 'informativo')">
-      {{ modal.variant === 'recordatorio' ? 'Recordatorio' : (modal.tipo || 'informativo') }}
+      {{ modal.variant === 'recordatorio' ? 'Notificación' : (modal.tipo || 'informativo') }}
     </span>
     <h2 class="modal-title">{{ modal.titulo }}</h2>
     <img

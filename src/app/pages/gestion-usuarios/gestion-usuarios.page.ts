@@ -195,7 +195,7 @@ export class GestionUsuariosPage implements OnInit, OnDestroy {
     if (activo) {
       const alerta = await this.alertController.create({
         header: 'Desactivar vecino',
-        message: `¿Deseas desactivar a ${usuario.nombre}? No podrá acceder a los avisos ni recordatorios de la comunidad.`,
+        message: `¿Deseas desactivar a ${usuario.nombre}? No podrá acceder a los avisos ni notificaciones de la comunidad.`,
         buttons: [
           { text: 'Cancelar', role: 'cancel' },
           { text: 'Desactivar', role: 'destructive', handler: () => this.actualizarUsuario(usuario, { activo: false }) },

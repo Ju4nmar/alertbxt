@@ -101,7 +101,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
         this.firestoreService.getRecordatoriosVisibles(user!).pipe(
           catchError(error => {
             console.error('Error cargando recordatorios:', error);
-            this.cargaError = 'No se pudieron cargar los recordatorios. Revisa tu conexión e intenta de nuevo.';
+            this.cargaError = 'No se pudieron cargar las notificaciones. Revisa tu conexión e intenta de nuevo.';
             return of([]);
           })
         ),
@@ -236,7 +236,7 @@ export class AlertasEventosPage implements OnInit, OnDestroy {
     } else if (tarjeta.tipo === 'recordatorio' && tarjeta.recordatorio) {
       this.modalData = {
         variant: 'recordatorio',
-        titulo: tarjeta.recordatorio.tituloRecordatorio || 'Recordatorio',
+        titulo: tarjeta.recordatorio.tituloRecordatorio || 'Notificación',
         descripcion: tarjeta.recordatorio.descripcionRecordatorio || 'Sin descripción',
         fecha: tarjeta.recordatorio.fechaHora,
       };

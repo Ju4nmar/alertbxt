@@ -134,6 +134,10 @@
         </button>
       </ion-header>
 
+      <div *ngIf="isLoggedIn && sinConexion" class="offline-banner" role="status">
+        Sin conexión: ves los datos guardados y tus cambios se enviarán al reconectar.
+      </div>
+
       <router-outlet></router-outlet>
 
       <nav *ngIf="isLoggedIn" class="bottom-tabs" aria-label="Navegación principal">
