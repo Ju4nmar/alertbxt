@@ -49,7 +49,7 @@ export class InicioPage implements OnInit, OnDestroy {
   alertasActivas = 0;
   noticias: Aviso[] = [];
   proximas: Recordatorio[] = [];
-  picoPlaca: PicoPlacaHoy = { etiquetaDia: '', restriccion: null, finDeSemana: false, horario: null };
+  picoPlaca: PicoPlacaHoy = { etiquetaDia: '', restriccion: null, finDeSemana: false, festivo: null, horario: null };
   editandoPicoPlaca = false;
   guardandoPicoPlaca = false;
   borradorPicoPlaca: Record<string, string> = {};
