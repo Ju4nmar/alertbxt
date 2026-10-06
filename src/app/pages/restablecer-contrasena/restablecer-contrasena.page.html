@@ -1,0 +1,69 @@
+<ion-content class="auth-content" [fullscreen]="true">
+<div class="auth-shell">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <img src="assets/icon/Alertlogo.png" alt="" class="auth-logo" width="220" height="220" />
+      <p class="auth-eyebrow">Nueva contraseña</p>
+      <h1 class="auth-hero-title">Casi<br />listo.</h1>
+      <p class="auth-hero-copy">
+        Elige una contraseña nueva para tu cuenta. Después podrás iniciar sesión
+        como siempre.
+      </p>
+      <ul class="auth-hero-points">
+        <li><span class="point-dot"></span>Mínimo 8 caracteres</li>
+        <li><span class="point-dot"></span>Enlace de un solo uso</li>
+        <li><span class="point-dot"></span>Nada cambia sin tu confirmación</li>
+      </ul>
+    </div>
+  </aside>
+
+  <section class="auth-panel">
+    <div class="auth-panel-inner">
+      <ng-container [ngSwitch]="estado">
+        <ng-container *ngSwitchCase="'verificando'">
+          <h2 class="auth-form-title">Verificando enlace…</h2>
+          <p class="auth-form-sub">Un momento, estamos comprobando tu solicitud.</p>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'listo'">
+          <h2 class="auth-form-title">Elige tu contraseña nueva</h2>
+          <p class="auth-form-sub">Para la cuenta <strong>{{ correo }}</strong>.</p>
+
+          <form (ngSubmit)="guardar()" class="forgot-form" novalidate>
+            <ion-item>
+              <ion-input label="Contraseña nueva" label-placement="floating" type="password" [(ngModel)]="password" name="password" maxlength="40" autocomplete="new-password" (ionInput)="error = ''"></ion-input>
+            </ion-item>
+            <p class="field-hint" *ngIf="password && password.length < 8">Debe tener al menos 8 caracteres.</p>
+
+            <ion-item>
+              <ion-input label="Confirmar contraseña" label-placement="floating" type="password" [(ngModel)]="confirmPassword" name="confirmPassword" maxlength="40" autocomplete="new-password" (ionInput)="error = ''"></ion-input>
+            </ion-item>
+            <p class="field-hint" *ngIf="confirmPassword && !coinciden">Las contraseñas no coinciden.</p>
+
+            <div *ngIf="error" class="error-message" role="alert">{{ error }}</div>
+
+            <ion-button expand="block" type="submit" [disabled]="!puedeGuardar" class="confirm-btn">
+              {{ isLoading ? 'Guardando...' : 'Guardar contraseña' }}
+            </ion-button>
+          </form>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'exito'">
+          <h2 class="auth-form-title">¡Contraseña actualizada!</h2>
+          <p class="auth-form-sub">Ya puedes iniciar sesión con tu contraseña nueva.</p>
+          <ion-button expand="block" class="confirm-btn" (click)="irALogin()">Ir a iniciar sesión</ion-button>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'invalido'">
+          <h2 class="auth-form-title">Enlace no válido</h2>
+          <p class="auth-form-sub">El enlace venció o ya se usó. Pide uno nuevo para continuar.</p>
+          <ion-button expand="block" class="confirm-btn" (click)="pedirOtroEnlace()">Pedir un enlace nuevo</ion-button>
+          <div class="auth-links">
+            <button type="button" class="link-btn" (click)="irALogin()">Volver al inicio de sesión</button>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </section>
+</div>
+</ion-content>

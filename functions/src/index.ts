@@ -9,6 +9,8 @@ import { logger } from 'firebase-functions/v2';
 
 initializeApp();
 
+export { solicitarRecuperacionContrasena } from './recuperacion';
+
 const FCM_MULTICAST_LIMIT = 500;
 const NOTIFICACION_MAX_DELAY_MS = 24 * 24 * 60 * 60 * 1000;
 
