@@ -13,7 +13,7 @@ import {
   pencilOutline,
 } from 'ionicons/icons';
 import { Subject, catchError, combineLatest, distinctUntilChanged, filter, firstValueFrom, of, switchMap, takeUntil } from 'rxjs';
-import { Aviso, Comunidad, Recordatorio, Usuario } from '../../models';
+import { Aviso, Comunidad, Notificacion, Usuario } from '../../models';
 import { TiempoRelativoPipe } from '../../pipes/tiempo-relativo.pipe';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
@@ -48,7 +48,7 @@ export class InicioPage implements OnInit, OnDestroy {
   cargaError = '';
   alertasActivas = 0;
   noticias: Aviso[] = [];
-  proximas: Recordatorio[] = [];
+  proximas: Notificacion[] = [];
   picoPlaca: PicoPlacaHoy = { etiquetaDia: '', restriccion: null, finDeSemana: false, festivo: null, horario: null };
   editandoPicoPlaca = false;
   guardandoPicoPlaca = false;
@@ -65,15 +65,15 @@ export class InicioPage implements OnInit, OnDestroy {
         this.usuario = user;
         return combineLatest([
           this.firestoreService.getAvisosByComunidad(user.comunidadId, user.rol).pipe(catchError(error => this.fallo('avisos', error, [] as Aviso[]))),
-          this.firestoreService.getRecordatoriosVisibles(user).pipe(catchError(error => this.fallo('recordatorios', error, [] as Recordatorio[]))),
+          this.firestoreService.getNotificacionesVisibles(user).pipe(catchError(error => this.fallo('notificaciones', error, [] as Notificacion[]))),
           this.firestoreService.getComunidadById(user.comunidadId).pipe(catchError(error => this.fallo('comunidad', error, null as Comunidad | null))),
         ]);
       }),
       takeUntil(this.destroy$)
-    ).subscribe(([avisos, recordatorios, comunidad]) => {
+    ).subscribe(([avisos, notificaciones, comunidad]) => {
       this.comunidad = comunidad;
       this.picoPlaca = picoPlacaDeHoy(comunidad?.picoPlaca, this.hoy);
-      this.calcularResumen(avisos, recordatorios);
+      this.calcularResumen(avisos, notificaciones);
       this.isLoading = false;
       this.cdr.markForCheck();
     });
@@ -136,11 +136,11 @@ export class InicioPage implements OnInit, OnDestroy {
     }
   }
 
-  trackById(_: number, item: { idAviso?: string; idRecordatorios?: string }): string {
-    return item.idAviso || item.idRecordatorios || '';
+  trackById(_: number, item: { idAviso?: string; idNotificaciones?: string }): string {
+    return item.idAviso || item.idNotificaciones || '';
   }
 
-  private calcularResumen(avisos: Aviso[], recordatorios: Recordatorio[]): void {
+  private calcularResumen(avisos: Aviso[], notificaciones: Notificacion[]): void {
     const ahora = Date.now();
 
     this.alertasActivas = avisos.filter(aviso =>
@@ -154,8 +154,8 @@ export class InicioPage implements OnInit, OnDestroy {
       .sort((a, b) => (b.fechaPublicacion || '').localeCompare(a.fechaPublicacion || ''))
       .slice(0, 3);
 
-    this.proximas = recordatorios
-      .filter(recordatorio => recordatorio.estado !== 'completado' && new Date(recordatorio.fechaHora).getTime() >= ahora)
+    this.proximas = notificaciones
+      .filter(notificacion => notificacion.estado !== 'completado' && new Date(notificacion.fechaHora).getTime() >= ahora)
       .sort((a, b) => a.fechaHora.localeCompare(b.fechaHora))
       .slice(0, 3);
   }

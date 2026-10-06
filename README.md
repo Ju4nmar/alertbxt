@@ -39,8 +39,8 @@ El sistema está basado en roles (administrador y residente) y utiliza Firebase 
 - Solo administradores pueden crear avisos
 - Categorías: mantenimiento, emergencia, informativo
 
-### 📝 Recordatorios
-- Creación de recordatorios personales
+### 📝 Notificaciones
+- Creación de notificaciones personales
 - Gestión individual por usuario
 
 ### 🔔 Notificaciones
@@ -77,7 +77,7 @@ src/
  │   ├── pages/
  │   │   ├── alertas-eventos/
  │   │   ├── gestion-avisos/
- │   │   ├── recordatorios/
+ │   │   ├── notificaciones/
  │   │   ├── login/
  │   │   ├── registro/
  │   │   ├── perfil-usuario/

@@ -32,7 +32,7 @@
               <ion-label>Gestión de avisos</ion-label>
             </ion-item>
 
-            <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/recordatorios')" (click)="goToRecordatorios()" data-tour="recordatorios">
+            <ion-item button lines="none" class="sidebar-item" [class.sidebar-item-active]="isActive('/notificaciones')" (click)="goToNotificaciones()" data-tour="notificaciones">
               <ion-icon slot="start" name="calendar"></ion-icon>
               <ion-label>Notificaciones</ion-label>
             </ion-item>
@@ -156,7 +156,7 @@
           <span>Avisos</span>
         </button>
 
-        <button type="button" class="tab-btn" [class.tab-active]="isActive('/recordatorios')" (click)="goToRecordatorios()" data-tour="recordatorios">
+        <button type="button" class="tab-btn" [class.tab-active]="isActive('/notificaciones')" (click)="goToNotificaciones()" data-tour="notificaciones">
           <ion-icon name="calendar"></ion-icon>
           <span>Notific.</span>
         </button>

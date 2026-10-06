@@ -38,8 +38,8 @@ export const routes: Routes = [
     data: { role: 'admin' },
   },
   {
-    path: 'recordatorios',
-    loadComponent: () => import('./pages/recordatorios/recordatorios.page').then(m => m.RecordatoriosPage),
+    path: 'notificaciones',
+    loadComponent: () => import('./pages/notificaciones/notificaciones.page').then(m => m.NotificacionesPage),
     canActivate: [AuthGuard],
   },
   {

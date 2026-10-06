@@ -375,8 +375,8 @@ export class AppComponent implements OnDestroy {
     this.navigateTo('/gestion-avisos');
   }
 
-  goToRecordatorios(){
-    this.navigateTo('/recordatorios');
+  goToNotificaciones(){
+    this.navigateTo('/notificaciones');
   }
 
   goToPerfilUsuario(){

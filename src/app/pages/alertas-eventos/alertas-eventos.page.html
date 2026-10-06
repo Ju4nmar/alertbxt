@@ -16,7 +16,7 @@
     <div class="filter-tabs" role="tablist" aria-label="Filtrar publicaciones">
       <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'todos'" [class.active]="filtro === 'todos'" (click)="cambiarFiltro('todos')">Todo</button>
       <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'aviso'" [class.active]="filtro === 'aviso'" (click)="cambiarFiltro('aviso')">Avisos</button>
-      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'recordatorio'" [class.active]="filtro === 'recordatorio'" (click)="cambiarFiltro('recordatorio')">Notificaciones</button>
+      <button type="button" role="tab" class="filter-chip" [attr.aria-selected]="filtro === 'notificacion'" [class.active]="filtro === 'notificacion'" (click)="cambiarFiltro('notificacion')">Notificaciones</button>
     </div>
 
     <div *ngIf="cargaError" class="error-message" role="alert">
@@ -42,7 +42,7 @@
   <div class="cards-grid" *ngIf="!isLoading && tarjetasVisibles.length">
     <div
       class="card"
-      [ngClass]="tarjeta.tipo === 'recordatorio' ? 'reminder-card' : 'tipo-' + (tarjeta.aviso?.tipoAviso || 'informativo')"
+      [ngClass]="tarjeta.tipo === 'notificacion' ? 'reminder-card' : 'tipo-' + (tarjeta.aviso?.tipoAviso || 'informativo')"
       *ngFor="let tarjeta of tarjetasVisibles; let i = index; trackBy: trackByCardId"
       (click)="abrirModal(tarjeta)"
     >
@@ -80,21 +80,21 @@
       </ng-container>
 
       <ng-template #reminderCard>
-        <ng-container *ngIf="tarjeta.recordatorio as recordatorio">
+        <ng-container *ngIf="tarjeta.notificacion as notificacion">
           <div class="card-header reminder-header">
-            <span class="ab-badge ab-badge--recordatorio">Notificación</span>
-            <h3 class="card-title reminder-title">{{ recordatorio.tituloRecordatorio }}</h3>
+            <span class="ab-badge ab-badge--notificacion">Notificación</span>
+            <h3 class="card-title reminder-title">{{ notificacion.tituloNotificacion }}</h3>
           </div>
           <div class="card-body reminder-body">
             <p class="card-date">
               <ion-icon name="calendar-outline"></ion-icon>
-              {{ recordatorio.fechaHora | date: 'medium' }}
-              <span class="card-date-relativo">({{ esFuturo(recordatorio.fechaHora) ? 'vence' : 'venció' }} {{ recordatorio.fechaHora | tiempoRelativo }})</span>
+              {{ notificacion.fechaHora | date: 'medium' }}
+              <span class="card-date-relativo">({{ esFuturo(notificacion.fechaHora) ? 'vence' : 'venció' }} {{ notificacion.fechaHora | tiempoRelativo }})</span>
             </p>
-            <p class="card-description">{{ (recordatorio.descripcionRecordatorio || 'Sin descripción') | slice:0:140 }}</p>
-            <div class="reminder-mark" [class.completed]="isReminderCompleted(recordatorio)">
-              <ion-icon [name]="isReminderCompleted(recordatorio) ? 'checkmark-circle' : 'time-outline'"></ion-icon>
-              {{ isReminderCompleted(recordatorio) ? 'Cumplido' : 'Pendiente' }}
+            <p class="card-description">{{ (notificacion.descripcionNotificacion || 'Sin descripción') | slice:0:140 }}</p>
+            <div class="reminder-mark" [class.completed]="isReminderCompleted(notificacion)">
+              <ion-icon [name]="isReminderCompleted(notificacion) ? 'checkmark-circle' : 'time-outline'"></ion-icon>
+              {{ isReminderCompleted(notificacion) ? 'Cumplido' : 'Pendiente' }}
             </div>
           </div>
         </ng-container>
@@ -120,10 +120,10 @@
   <div
     *ngIf="modalData as modal"
     class="detail-modal"
-    [ngClass]="modal.variant === 'recordatorio' ? 'reminder-modal-card' : 'tipo-' + (modal.tipo || 'informativo')"
+    [ngClass]="modal.variant === 'notificacion' ? 'reminder-modal-card' : 'tipo-' + (modal.tipo || 'informativo')"
   >
-    <span class="ab-badge" [ngClass]="modal.variant === 'recordatorio' ? 'ab-badge--recordatorio' : 'ab-badge--' + (modal.tipo || 'informativo')">
-      {{ modal.variant === 'recordatorio' ? 'Notificación' : (modal.tipo || 'informativo') }}
+    <span class="ab-badge" [ngClass]="modal.variant === 'notificacion' ? 'ab-badge--notificacion' : 'ab-badge--' + (modal.tipo || 'informativo')">
+      {{ modal.variant === 'notificacion' ? 'Notificación' : (modal.tipo || 'informativo') }}
     </span>
     <h2 class="modal-title">{{ modal.titulo }}</h2>
     <img

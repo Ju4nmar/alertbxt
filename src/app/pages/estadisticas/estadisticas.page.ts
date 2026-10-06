@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { Subject, catchError, combineLatest, filter, of, switchMap, takeUntil } from 'rxjs';
 import { ContadorDirective } from '../../directives/contador.directive';
-import { Aviso, Recordatorio, Usuario } from '../../models';
+import { Aviso, Notificacion, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 
@@ -23,7 +23,7 @@ interface DonutSegmento extends Categoria {
 }
 
 interface Donut {
-  clave: 'vecinos' | 'avisos' | 'recordatorios';
+  clave: 'vecinos' | 'avisos' | 'notificaciones';
   unidad: string;
   vacio: string;
   categorias: Categoria[];
@@ -36,13 +36,13 @@ interface Donut {
 interface Resumen {
   usuarios: { total: number; activos: number; inactivos: number; admins: number; residentes: number; arrendatarios: number; guardas: number };
   avisos: { total: number; emergencia: number; mantenimiento: number; informativo: number; alertaSos: number };
-  recordatorios: { total: number; completados: number; pendientes: number };
+  notificaciones: { total: number; completados: number; pendientes: number };
 }
 
 const RESUMEN_VACIO: Resumen = {
   usuarios: { total: 0, activos: 0, inactivos: 0, admins: 0, residentes: 0, arrendatarios: 0, guardas: 0 },
   avisos: { total: 0, emergencia: 0, mantenimiento: 0, informativo: 0, alertaSos: 0 },
-  recordatorios: { total: 0, completados: 0, pendientes: 0 },
+  notificaciones: { total: 0, completados: 0, pendientes: 0 },
 };
 
 const DONUT_RADIO = 42;
@@ -74,7 +74,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
   donuts: Record<Donut['clave'], Donut> = {
     vecinos: this.crearDonut('vecinos', 'vecinos', 'Aún no hay vecinos registrados.'),
     avisos: this.crearDonut('avisos', 'avisos', 'Aún no hay avisos en este período.'),
-    recordatorios: this.crearDonut('recordatorios', 'total', 'Aún no hay notificaciones en este período.'),
+    notificaciones: this.crearDonut('notificaciones', 'total', 'Aún no hay notificaciones en este período.'),
   };
   isLoading = true;
   cargaError = '';
@@ -82,7 +82,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
 
   private usuarios: Usuario[] = [];
   private avisos: Aviso[] = [];
-  private recordatorios: Recordatorio[] = [];
+  private notificaciones: Notificacion[] = [];
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
@@ -90,7 +90,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
       switchMap(user => combineLatest([
         this.firestoreService.getUsuariosByComunidad(user.comunidadId),
         this.firestoreService.getAvisosByComunidad(user.comunidadId),
-        this.firestoreService.getRecordatoriosByComunidad(user.comunidadId),
+        this.firestoreService.getNotificacionesByComunidad(user.comunidadId),
       ]).pipe(
         catchError(error => {
           console.error('Error cargando estadísticas:', error);
@@ -105,7 +105,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
         return;
       }
 
-      [this.usuarios, this.avisos, this.recordatorios] = datos;
+      [this.usuarios, this.avisos, this.notificaciones] = datos;
       this.recalcular();
       this.isLoading = false;
     });
@@ -174,9 +174,9 @@ export class EstadisticasPage implements OnInit, OnDestroy {
 
   private recalcular(): void {
     const avisos = this.avisos.filter(aviso => this.dentroDelPeriodo(aviso.fechaPublicacion));
-    const recordatorios = this.recordatorios.filter(r => this.dentroDelPeriodo(r.fechaCreacion || r.fechaHora));
+    const notificaciones = this.notificaciones.filter(r => this.dentroDelPeriodo(r.fechaCreacion || r.fechaHora));
 
-    this.resumen = this.calcularResumen(this.usuarios, avisos, recordatorios);
+    this.resumen = this.calcularResumen(this.usuarios, avisos, notificaciones);
 
     this.donuts.vecinos.categorias = [
       { etiqueta: 'Activos', valor: this.resumen.usuarios.activos, color: 'var(--ion-color-success)' },
@@ -188,9 +188,9 @@ export class EstadisticasPage implements OnInit, OnDestroy {
       { etiqueta: 'Mantenimiento', valor: this.resumen.avisos.mantenimiento, color: 'var(--ion-color-warning)' },
       { etiqueta: 'Informativo', valor: this.resumen.avisos.informativo, color: 'var(--ion-color-primary)' },
     ];
-    this.donuts.recordatorios.categorias = [
-      { etiqueta: 'Completados', valor: this.resumen.recordatorios.completados, color: 'var(--ion-color-success)' },
-      { etiqueta: 'Pendientes', valor: this.resumen.recordatorios.pendientes, color: 'var(--ion-color-medium)' },
+    this.donuts.notificaciones.categorias = [
+      { etiqueta: 'Completados', valor: this.resumen.notificaciones.completados, color: 'var(--ion-color-success)' },
+      { etiqueta: 'Pendientes', valor: this.resumen.notificaciones.pendientes, color: 'var(--ion-color-medium)' },
     ];
 
     Object.values(this.donuts).forEach(donut => {
@@ -199,7 +199,7 @@ export class EstadisticasPage implements OnInit, OnDestroy {
     });
   }
 
-  private calcularResumen(usuarios: Usuario[], avisos: Aviso[], recordatorios: Recordatorio[]): Resumen {
+  private calcularResumen(usuarios: Usuario[], avisos: Aviso[], notificaciones: Notificacion[]): Resumen {
     return {
       usuarios: {
         total: usuarios.length,
@@ -217,10 +217,10 @@ export class EstadisticasPage implements OnInit, OnDestroy {
         informativo: avisos.filter(a => a.tipoAviso === 'informativo').length,
         alertaSos: avisos.filter(a => a.tipoAviso === 'alerta').length,
       },
-      recordatorios: {
-        total: recordatorios.length,
-        completados: recordatorios.filter(r => r.estado === 'completado').length,
-        pendientes: recordatorios.filter(r => r.estado !== 'completado').length,
+      notificaciones: {
+        total: notificaciones.length,
+        completados: notificaciones.filter(r => r.estado === 'completado').length,
+        pendientes: notificaciones.filter(r => r.estado !== 'completado').length,
       },
     };
   }

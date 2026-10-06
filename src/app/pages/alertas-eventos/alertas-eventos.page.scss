@@ -111,7 +111,7 @@ ion-content.feed-content {
    para que resalte entre las demás sin llenar toda la cuadrícula de
    bordes de color. */
 .card.tipo-emergencia { box-shadow: var(--ab-shadow-danger); }
-.card.reminder-card { background: var(--ab-tipo-recordatorio-bg); }
+.card.reminder-card { background: var(--ab-tipo-notificacion-bg); }
 
 .card-header {
   display: flex;
@@ -238,8 +238,8 @@ ion-content.feed-content {
   padding: 0.35rem 0.75rem;
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--ab-tipo-recordatorio);
-  background: var(--ab-tipo-recordatorio-bg);
+  color: var(--ab-tipo-notificacion);
+  background: var(--ab-tipo-notificacion-bg);
   border: 1px solid rgba(var(--ion-color-success-rgb), 0.35);
   border-radius: var(--ab-radius-pill);
 }
@@ -298,7 +298,7 @@ ion-content.feed-content {
 .detail-modal.tipo-emergencia { border-top-color: var(--ab-tipo-emergencia); }
 .detail-modal.tipo-mantenimiento { border-top-color: var(--ab-tipo-mantenimiento); }
 .detail-modal.tipo-informativo { border-top-color: var(--ab-tipo-informativo); }
-.detail-modal.reminder-modal-card { border-top-color: var(--ab-tipo-recordatorio); }
+.detail-modal.reminder-modal-card { border-top-color: var(--ab-tipo-notificacion); }
 
 .detail-modal .modal-title {
   color: var(--ab-text-primary);

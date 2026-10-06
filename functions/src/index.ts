@@ -12,7 +12,7 @@ initializeApp();
 export { solicitarRecuperacionContrasena } from './recuperacion';
 
 const FCM_MULTICAST_LIMIT = 500;
-const RECORDATORIO_MAX_DELAY_MS = 24 * 24 * 60 * 60 * 1000;
+const NOTIFICACION_MAX_DELAY_MS = 24 * 24 * 60 * 60 * 1000;
 
 const TIPO_TITULOS: Record<string, string> = {
   alerta: 'Alerta SOS',
@@ -180,8 +180,8 @@ export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event =
   });
 });
 
-interface RecordatorioData {
-  tituloRecordatorio?: string;
+interface NotificacionData {
+  tituloNotificacion?: string;
   fechaHora?: string;
   idUsuario?: string;
   usuariosAsignados?: string[];
@@ -191,28 +191,28 @@ interface RecordatorioData {
   estado?: string;
 }
 
-function tieneDestinatario(data: RecordatorioData): boolean {
+function tieneDestinatario(data: NotificacionData): boolean {
   return !!data.idUsuario || !!data.usuariosAsignados?.length || !!data.paraTodaLaComunidad;
 }
 
-interface RecordatorioTaskPayload {
-  idRecordatorio: string;
+interface NotificacionTaskPayload {
+  idNotificacion: string;
   fechaHoraEsperada: string;
 }
 
-// Programa (o reprograma) el envio del push de un recordatorio cuando se crea
+// Programa (o reprograma) el envio del push de una notificación cuando se crea
 // o cuando cambia su fechaHora. No cancela tareas viejas explicitamente: la
 // tarea disparada compara la fechaHora esperada contra la actual y se
-// descarta sola si el recordatorio fue editado o eliminado mientras tanto.
-export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatorioId}', async event => {
+// descarta sola si la notificación fue editada o eliminada mientras tanto.
+export const onNotificacionWrite = onDocumentWritten('notificaciones/{notificacionId}', async event => {
   const after = event.data?.after;
   if (!after?.exists) {
     return;
   }
 
-  const data = after.data() as RecordatorioData;
+  const data = after.data() as NotificacionData;
   const before = event.data?.before;
-  const beforeData = before?.exists ? before.data() as RecordatorioData : undefined;
+  const beforeData = before?.exists ? before.data() as NotificacionData : undefined;
 
   if (beforeData?.fechaHora === data.fechaHora) {
     return;
@@ -225,7 +225,7 @@ export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatori
   const fechaHora = new Date(data.fechaHora);
   const delayMs = fechaHora.getTime() - Date.now();
 
-  if (Number.isNaN(fechaHora.getTime()) || delayMs < 0 || delayMs > RECORDATORIO_MAX_DELAY_MS) {
+  if (Number.isNaN(fechaHora.getTime()) || delayMs < 0 || delayMs > NOTIFICACION_MAX_DELAY_MS) {
     return;
   }
 
@@ -233,29 +233,29 @@ export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatori
     await after.ref.update({ estado: 'pendiente' });
   }
 
-  const queue = getFunctions().taskQueue<RecordatorioTaskPayload>('enviarRecordatorioPush');
+  const queue = getFunctions().taskQueue<NotificacionTaskPayload>('enviarNotificacionPush');
   await queue.enqueue(
-    { idRecordatorio: event.params.recordatorioId, fechaHoraEsperada: data.fechaHora },
+    { idNotificacion: event.params.notificacionId, fechaHoraEsperada: data.fechaHora },
     { scheduleTime: fechaHora }
   );
 });
 
-export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
+export const enviarNotificacionPush = onTaskDispatched<NotificacionTaskPayload>(
   {
     retryConfig: { maxAttempts: 2, minBackoffSeconds: 30 },
     rateLimits: { maxConcurrentDispatches: 6 },
   },
   async request => {
-    const { idRecordatorio, fechaHoraEsperada } = request.data;
+    const { idNotificacion, fechaHoraEsperada } = request.data;
     const db = getFirestore();
-    const ref = db.doc(`recordatorios/${idRecordatorio}`);
+    const ref = db.doc(`notificaciones/${idNotificacion}`);
     const snapshot = await ref.get();
 
     if (!snapshot.exists) {
       return;
     }
 
-    const data = snapshot.data() as RecordatorioData;
+    const data = snapshot.data() as NotificacionData;
     if (data.estado === 'completado' || data.fechaHora !== fechaHoraEsperada || !tieneDestinatario(data)) {
       return;
     }
@@ -266,7 +266,7 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
         .where('comunidadId', '==', data.comunidadId)
         .where('activo', '==', true)
         .get();
-      // Un recordatorio "solo propietarios" (p. ej. convocatoria de
+      // Una notificación "solo propietarios" (p. ej. convocatoria de
       // asamblea) no se notifica a los arrendatarios.
       destinatarioIds = usuariosSnap.docs
         .filter(doc => !data.soloPropietarios || (doc.data() as UsuarioData).rol !== 'arrendatario')
@@ -290,11 +290,11 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
           tokens: tokenChunk.map(ref => ref.token),
           notification: {
             title: 'Notificación',
-            body: data.tituloRecordatorio || 'Tienes una notificación pendiente.',
+            body: data.tituloNotificacion || 'Tienes una notificación pendiente.',
           },
-          data: { recordatorioId: idRecordatorio },
+          data: { notificacionId: idNotificacion },
           webpush: {
-            fcmOptions: { link: '/recordatorios' },
+            fcmOptions: { link: '/notificaciones' },
           },
         });
 
@@ -677,7 +677,7 @@ export const responderMensajeAdmin = onCall<ResponderMensajeRequest>(async reque
   return { respuestaId: respuestaRef.id };
 });
 
-interface CrearRecordatorioAsignadoRequest {
+interface CrearNotificacionAsignadaRequest {
   titulo?: string;
   descripcion?: string;
   fechaHora?: string;
@@ -685,18 +685,18 @@ interface CrearRecordatorioAsignadoRequest {
   paraTodos?: boolean;
 }
 
-const RECORDATORIO_TITULO_MIN = 3;
-const RECORDATORIO_TITULO_MAX = 80;
-const RECORDATORIO_DESC_MIN = 5;
-const RECORDATORIO_DESC_MAX = 300;
-const MAX_ASIGNADOS_RECORDATORIO = 200;
+const NOTIFICACION_TITULO_MIN = 3;
+const NOTIFICACION_TITULO_MAX = 80;
+const NOTIFICACION_DESC_MIN = 5;
+const NOTIFICACION_DESC_MAX = 300;
+const MAX_ASIGNADOS_NOTIFICACION = 200;
 
-// Crea UN solo recordatorio compartido (no una copia por destinatario, a
+// Crea UNA sola notificación compartida (no una copia por destinatario, a
 // diferencia de enviarMensajeIndividual): "completado" ya es automático —
-// lo pone enviarRecordatorioPush cuando llega la fecha, igual que en los
-// recordatorios personales — así que no hace falta rastrear el progreso de
+// lo pone enviarNotificacionPush cuando llega la fecha, igual que en las
+// notificaciones personales — así que no hace falta rastrear el progreso de
 // cada destinatario por separado, ni duplicar el documento.
-export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest>(async request => {
+export const crearNotificacionAsignada = onCall<CrearNotificacionAsignadaRequest>(async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
@@ -712,11 +712,11 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
     throw new HttpsError('invalid-argument', 'Completa título, descripción y fecha.');
   }
 
-  if (titulo.length < RECORDATORIO_TITULO_MIN || titulo.length > RECORDATORIO_TITULO_MAX) {
+  if (titulo.length < NOTIFICACION_TITULO_MIN || titulo.length > NOTIFICACION_TITULO_MAX) {
     throw new HttpsError('invalid-argument', 'Revisa la longitud del título.');
   }
 
-  if (descripcion.length < RECORDATORIO_DESC_MIN || descripcion.length > RECORDATORIO_DESC_MAX) {
+  if (descripcion.length < NOTIFICACION_DESC_MIN || descripcion.length > NOTIFICACION_DESC_MAX) {
     throw new HttpsError('invalid-argument', 'Revisa la longitud de la descripción.');
   }
 
@@ -724,8 +724,8 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
     throw new HttpsError('invalid-argument', 'Selecciona al menos un vecino, o marca "Todos".');
   }
 
-  if (usuarioIds.length > MAX_ASIGNADOS_RECORDATORIO) {
-    throw new HttpsError('invalid-argument', `No puedes asignar a más de ${MAX_ASIGNADOS_RECORDATORIO} vecinos a la vez.`);
+  if (usuarioIds.length > MAX_ASIGNADOS_NOTIFICACION) {
+    throw new HttpsError('invalid-argument', `No puedes asignar a más de ${MAX_ASIGNADOS_NOTIFICACION} vecinos a la vez.`);
   }
 
   const fechaHora = new Date(fechaHoraTexto);
@@ -741,9 +741,9 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
     throw new HttpsError('permission-denied', 'Solo un administrador puede asignar notificaciones a otros vecinos.');
   }
 
-  const recordatorioData: Record<string, unknown> = {
-    tituloRecordatorio: titulo,
-    descripcionRecordatorio: descripcion,
+  const notificacionData: Record<string, unknown> = {
+    tituloNotificacion: titulo,
+    descripcionNotificacion: descripcion,
     fechaHora: fechaHora.toISOString(),
     comunidadId: autor.comunidadId,
     autorId: uid,
@@ -752,7 +752,7 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
   };
 
   if (paraTodos) {
-    recordatorioData['paraTodaLaComunidad'] = true;
+    notificacionData['paraTodaLaComunidad'] = true;
   } else {
     const destinatarioSnaps = await Promise.all(usuarioIds.map(id => db.doc(`usuarios/${id}`).get()));
     const asignadosValidos = destinatarioSnaps
@@ -764,17 +764,17 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
       throw new HttpsError('not-found', 'Ningún vecino seleccionado pertenece a tu comunidad.');
     }
 
-    recordatorioData['usuariosAsignados'] = asignadosValidos;
+    notificacionData['usuariosAsignados'] = asignadosValidos;
   }
 
-  const ref = await db.collection('recordatorios').add(recordatorioData);
+  const ref = await db.collection('notificaciones').add(notificacionData);
 
-  logger.info('Recordatorio asignado creado', {
-    recordatorioId: ref.id,
+  logger.info('Notificación asignada creada', {
+    notificacionId: ref.id,
     autorId: uid,
     paraTodos,
-    asignados: paraTodos ? undefined : (recordatorioData['usuariosAsignados'] as string[]).length,
+    asignados: paraTodos ? undefined : (notificacionData['usuariosAsignados'] as string[]).length,
   });
 
-  return { recordatorioId: ref.id };
+  return { notificacionId: ref.id };
 });

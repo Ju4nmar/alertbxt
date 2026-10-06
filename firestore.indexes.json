@@ -9,7 +9,7 @@
       ]
     },
     {
-      "collectionGroup": "recordatorios",
+      "collectionGroup": "notificaciones",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "idUsuario", "order": "ASCENDING" },
@@ -17,7 +17,7 @@
       ]
     },
     {
-      "collectionGroup": "recordatorios",
+      "collectionGroup": "notificaciones",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "usuariosAsignados", "arrayConfig": "CONTAINS" },
@@ -25,7 +25,7 @@
       ]
     },
     {
-      "collectionGroup": "recordatorios",
+      "collectionGroup": "notificaciones",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "comunidadId", "order": "ASCENDING" },

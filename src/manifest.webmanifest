@@ -3,7 +3,7 @@
   "short_name": "AlertBxt",
   "id": "/",
   "lang": "es",
-  "description": "Alertas, eventos y recordatorios para comunidades.",
+  "description": "Alertas, eventos y notificaciones para comunidades.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
