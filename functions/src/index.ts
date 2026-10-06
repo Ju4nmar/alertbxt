@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getFunctions } from 'firebase-admin/functions';
 import { getMessaging } from 'firebase-admin/messaging';
-import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentDeleted, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
@@ -287,8 +287,8 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
         const response = await messaging.sendEachForMulticast({
           tokens: tokenChunk.map(ref => ref.token),
           notification: {
-            title: 'Recordatorio',
-            body: data.tituloRecordatorio || 'Tienes un recordatorio pendiente.',
+            title: 'Notificación',
+            body: data.tituloRecordatorio || 'Tienes una notificación pendiente.',
           },
           data: { recordatorioId: idRecordatorio },
           webpush: {
@@ -402,6 +402,54 @@ export const onEncuestaCreada = onDocumentCreated('encuestas/{encuestaId}', asyn
   }
 
   logger.info('Encuesta notificada', { encuestaId: event.params.encuestaId, destinatarios: destinatarioIds.length });
+});
+
+// Al borrar una encuesta, Firestore deja huérfana su subcolección de votos:
+// se limpia aquí para no acumular datos de vecinos sin dueño.
+export const onEncuestaEliminada = onDocumentDeleted('encuestas/{encuestaId}', async event => {
+  const db = getFirestore();
+  await db.recursiveDelete(db.collection(`encuestas/${event.params.encuestaId}/votos`));
+  logger.info('Votos de encuesta eliminados', { encuestaId: event.params.encuestaId });
+});
+
+// Las reglas de Firestore no pueden contar cuántas horas lleva reservadas un
+// vecino, así que el tope por día y zona (maxHoras) se hace cumplir aquí:
+// se conservan sus primeras horas del día y se borran las que se pasen. Es
+// idempotente: varios disparos del mismo lote borran las mismas reservas.
+export const onReservaCreada = onDocumentCreated('reservas/{reservaId}', async event => {
+  const reserva = event.data?.data() as { zonaId?: string; fecha?: string; usuarioId?: string } | undefined;
+  if (!reserva?.zonaId || !reserva.fecha || !reserva.usuarioId) {
+    return;
+  }
+
+  const db = getFirestore();
+  const zonaSnap = await db.doc(`zonas/${reserva.zonaId}`).get();
+  const maxHoras = zonaSnap.get('maxHoras');
+  if (!zonaSnap.exists || typeof maxHoras !== 'number') {
+    return;
+  }
+
+  const delDiaSnap = await db.collection('reservas')
+    .where('zonaId', '==', reserva.zonaId)
+    .where('fecha', '==', reserva.fecha)
+    .where('usuarioId', '==', reserva.usuarioId)
+    .get();
+
+  const excedentes = delDiaSnap.docs
+    .sort((a, b) => (a.get('hora') as number) - (b.get('hora') as number))
+    .slice(maxHoras);
+
+  if (!excedentes.length) {
+    return;
+  }
+
+  await Promise.all(excedentes.map(doc => doc.ref.delete()));
+  logger.warn('Reservas por encima del máximo eliminadas', {
+    zonaId: reserva.zonaId,
+    usuarioId: reserva.usuarioId,
+    fecha: reserva.fecha,
+    eliminadas: excedentes.length,
+  });
 });
 
 interface UsuarioData {
@@ -680,7 +728,7 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
 
   const fechaHora = new Date(fechaHoraTexto);
   if (Number.isNaN(fechaHora.getTime()) || fechaHora.getTime() < Date.now()) {
-    throw new HttpsError('invalid-argument', 'La fecha y hora del recordatorio deben ser futuras.');
+    throw new HttpsError('invalid-argument', 'La fecha y hora de la notificación deben ser futuras.');
   }
 
   const db = getFirestore();
@@ -688,7 +736,7 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
   const autor = autorSnap.data() as UsuarioData | undefined;
 
   if (!autor || autor.rol !== 'admin' || !autor.comunidadId) {
-    throw new HttpsError('permission-denied', 'Solo un administrador puede asignar recordatorios a otros vecinos.');
+    throw new HttpsError('permission-denied', 'Solo un administrador puede asignar notificaciones a otros vecinos.');
   }
 
   const recordatorioData: Record<string, unknown> = {

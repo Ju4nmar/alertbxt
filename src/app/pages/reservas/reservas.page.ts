@@ -145,6 +145,16 @@ export class ReservasPage implements OnInit, OnDestroy {
     return this.zona?.maxHoras ?? 1;
   }
 
+  // El tope es por vecino, día y zona: lo que ya reservó ese día descuenta
+  // del cupo (el servidor lo hace cumplir también, ver onReservaCreada).
+  get horasYaReservadas(): number {
+    return this.ocupadas.filter(reserva => reserva.usuarioId === this.usuario?.idUsuario).length;
+  }
+
+  get cupoRestante(): number {
+    return Math.max(0, this.maxHoras - this.horasYaReservadas);
+  }
+
   etiqueta(hora: number): string {
     return etiquetaHora(hora);
   }
@@ -183,8 +193,8 @@ export class ReservasPage implements OnInit, OnDestroy {
 
   tocarBloque(hora: number): void {
     const estado = this.estadoDe(hora);
-    if (estado === 'libre' || estado === 'seleccionado') {
-      this.seleccion = alternarBloque(this.seleccion, hora, this.maxHoras);
+    if ((estado === 'libre' || estado === 'seleccionado') && this.cupoRestante > 0) {
+      this.seleccion = alternarBloque(this.seleccion, hora, this.cupoRestante);
     }
   }
 
