@@ -43,12 +43,23 @@
 }
 
 .auth-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
+  display: block;
+  width: min(220px, 60%);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 44px;
   background: rgba(255, 255, 255, 0.16);
-  padding: 10px;
-  margin-bottom: 22px;
+  padding: 22px;
+  margin: 0 auto 28px;
+}
+
+@media (max-width: 900px) {
+  .auth-logo {
+    width: 150px;
+    margin-bottom: 18px;
+    border-radius: 32px;
+    padding: 16px;
+  }
 }
 
 .auth-eyebrow {
@@ -152,24 +163,35 @@ ion-input {
   --highlight-color-focused: var(--ion-color-tertiary) !important;
 }
 
+/* Casilla de términos: alineada al borde del formulario (como títulos y
+   botones), sin la "píldora" de fondo, y arriba de la primera línea del texto
+   para que no flote cuando el texto ocupa varias líneas. */
 .chekbox {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
   --min-height: auto;
+  margin-top: 8px;
   border: none !important;
   background: transparent !important;
 }
 
+.chekbox::part(native) {
+  align-items: flex-start;
+  padding: 8px 0;
+}
+
 .chekbox ion-checkbox {
-  margin-right: 12px;
+  margin: 2px 12px 0 0;
   --size: 22px;
   --checkbox-background-checked: var(--ion-color-tertiary);
   --border-color-checked: var(--ion-color-tertiary);
 }
 
 .chekbox ion-label {
+  margin: 0;
   font-size: 14px;
+  line-height: 1.45;
   color: var(--ab-text-secondary);
   white-space: normal;
 }

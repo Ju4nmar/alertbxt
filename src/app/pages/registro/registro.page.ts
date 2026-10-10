@@ -94,7 +94,7 @@ export class RegistroPage {
         tipoComunidad: this.tipoComunidad,
         aceptaTerminos: this.aceptaTerminos,
       }));
-      this.router.navigate(['/alertas-eventos']);
+      this.router.navigate(['/inicio']);
     } catch (error) {
       console.error('Error creando comunidad:', error);
       this.registroError = this.getRegisterErrorMessage(error);

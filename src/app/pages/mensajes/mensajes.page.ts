@@ -7,10 +7,17 @@ import { chatbubbleEllipsesOutline, paperPlaneOutline } from 'ionicons/icons';
 import { Subject, Subscription, filter, finalize, switchMap, take, takeUntil } from 'rxjs';
 import { MensajeAdmin, MensajeEnviado, RespuestaMensaje, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
+import { FirestoreService } from '../../services/firestore.service';
 import { MensajesService } from '../../services/mensajes.service';
 import { ToastService } from '../../services/toast.service';
+import { etiquetaRol } from '../../utils/rol.utils';
+import { formatearUnidad } from '../../utils/ubicacion.utils';
 
 type Vista = 'recibidos' | 'enviados';
+
+// Por encima de estos límites el texto se recorta y aparece "Ver más".
+const UMBRAL_TEXTO_LARGO = 280;
+const LINEAS_TEXTO_LARGO = 5;
 
 @Component({
   selector: 'app-mensajes',
@@ -21,6 +28,7 @@ type Vista = 'recibidos' | 'enviados';
 })
 export class MensajesPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
+  private readonly firestoreService = inject(FirestoreService);
   private readonly mensajesService = inject(MensajesService);
   private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
@@ -40,6 +48,24 @@ export class MensajesPage implements OnInit, OnDestroy {
   respuestasPorHilo: Record<string, RespuestaMensaje[]> = {};
   textoRespuesta = '';
   enviandoRespuesta = false;
+  readonly textosExpandidos = new Set<string>();
+
+  // Vista estilo correo: lista a la izquierda, detalle de lectura a la
+  // derecha (en móvil, una pantalla reemplaza a la otra).
+  mensajeRecibidoSeleccionado: MensajeAdmin | null = null;
+  mensajeEnviadoSeleccionado: MensajeEnviado | null = null;
+
+  get hayDetalleAbierto(): boolean {
+    return !!this.mensajeRecibidoSeleccionado || !!this.mensajeEnviadoSeleccionado;
+  }
+
+  // Contexto de las personas del mensaje (rol, torre y apartamento), para
+  // que quien lee sepa con quién habla sin salir de la bandeja.
+  private readonly perfiles: Record<string, Usuario | null> = {};
+  private readonly perfilesPedidos = new Set<string>();
+  private comunidadEsDeCasas = false;
+  private comunidadPedida = false;
+  readonly maxDestinatariosVisibles = 20;
 
   get esAdmin(): boolean {
     return this.usuario?.rol === 'admin';
@@ -61,6 +87,7 @@ export class MensajesPage implements OnInit, OnDestroy {
       )
       .subscribe(user => {
         this.usuario = user;
+        this.cargarTipoComunidad(user?.comunidadId);
       });
 
     this.authService.currentUser$
@@ -100,6 +127,57 @@ export class MensajesPage implements OnInit, OnDestroy {
 
   cambiarVista(vista: Vista): void {
     this.vista = vista;
+    this.cerrarDetalle();
+  }
+
+  seleccionarRecibido(mensaje: MensajeAdmin): void {
+    this.mensajeEnviadoSeleccionado = null;
+    this.mensajeRecibidoSeleccionado = mensaje;
+    this.cargarPerfil(mensaje.autorId);
+
+    // Una respuesta que le llega al admin se lee tal cual; el hilo (y el
+    // cuadro para contestar) pertenece al mensaje original.
+    if (mensaje.esRespuesta) {
+      this.cerrarHilo();
+      return;
+    }
+    this.abrirHilo(this.usuarioId, mensaje.idMensaje);
+  }
+
+  seleccionarEnviado(mensaje: MensajeEnviado): void {
+    this.mensajeRecibidoSeleccionado = null;
+    this.mensajeEnviadoSeleccionado = mensaje;
+    this.destinatariosVisibles(mensaje).forEach(destinatario => this.cargarPerfil(destinatario.id));
+    const primerDestinatario = mensaje.destinatarios[0];
+    if (primerDestinatario) {
+      this.abrirHilo(primerDestinatario.id, primerDestinatario.mensajeId);
+    }
+  }
+
+  esRecibidoSeleccionado(mensaje: MensajeAdmin): boolean {
+    return !!this.mensajeRecibidoSeleccionado?.idMensaje && this.mensajeRecibidoSeleccionado.idMensaje === mensaje.idMensaje;
+  }
+
+  esEnviadoSeleccionado(mensaje: MensajeEnviado): boolean {
+    return !!this.mensajeEnviadoSeleccionado?.idMensaje && this.mensajeEnviadoSeleccionado.idMensaje === mensaje.idMensaje;
+  }
+
+  destinatariosVisibles(mensaje: MensajeEnviado): MensajeEnviado['destinatarios'] {
+    return mensaje.destinatarios.slice(0, this.maxDestinatariosVisibles);
+  }
+
+  // "Propietario · Torre 10 - Apto 302"; vacío mientras carga el perfil.
+  contextoDe(uid: string | undefined): string {
+    const perfil = uid ? this.perfiles[uid] : null;
+    if (!perfil) {
+      return '';
+    }
+    return [etiquetaRol(perfil.rol), formatearUnidad(perfil, this.comunidadEsDeCasas)].filter(Boolean).join(' · ');
+  }
+
+  cerrarDetalle(): void {
+    this.mensajeRecibidoSeleccionado = null;
+    this.mensajeEnviadoSeleccionado = null;
     this.cerrarHilo();
   }
 
@@ -122,13 +200,52 @@ export class MensajesPage implements OnInit, OnDestroy {
     return this.respuestasPorHilo[this.claveHilo(uidDueno, mensajeId)] || [];
   }
 
+  // Para los chips de destinatario dentro del detalle de un enviado: alternan
+  // entre mostrar y ocultar el hilo de ese destinatario.
   toggleHilo(uidDueno: string, mensajeId: string | undefined): void {
     if (!mensajeId) {
       return;
     }
 
     if (this.hiloEstaAbierto(uidDueno, mensajeId)) {
-      this.cerrarHilo();
+      this.hiloAbierto = null;
+      this.respuestasSub?.unsubscribe();
+      return;
+    }
+
+    this.abrirHilo(uidDueno, mensajeId);
+  }
+
+  private cargarPerfil(uid: string | undefined): void {
+    if (!uid || this.perfilesPedidos.has(uid)) {
+      return;
+    }
+
+    this.perfilesPedidos.add(uid);
+    this.firestoreService.getUsuarioById(uid)
+      .pipe(take(1), takeUntil(this.destroy$))
+      .subscribe({
+        next: perfil => this.perfiles[uid] = perfil,
+        error: () => this.perfiles[uid] = null,
+      });
+  }
+
+  private cargarTipoComunidad(comunidadId: string | undefined): void {
+    if (!comunidadId || this.comunidadPedida) {
+      return;
+    }
+
+    this.comunidadPedida = true;
+    this.firestoreService.getComunidadById(comunidadId)
+      .pipe(take(1), takeUntil(this.destroy$))
+      .subscribe({
+        next: comunidad => this.comunidadEsDeCasas = comunidad?.tipoComunidad === 'casas',
+        error: () => this.comunidadEsDeCasas = false,
+      });
+  }
+
+  private abrirHilo(uidDueno: string, mensajeId: string | undefined): void {
+    if (!mensajeId || this.hiloEstaAbierto(uidDueno, mensajeId)) {
       return;
     }
 
@@ -169,6 +286,26 @@ export class MensajesPage implements OnInit, OnDestroy {
           this.toastService.error(error?.message || 'No se pudo enviar la respuesta.');
         },
       });
+  }
+
+  esTextoLargo(texto: string | undefined): boolean {
+    if (!texto) {
+      return false;
+    }
+    return texto.length > UMBRAL_TEXTO_LARGO || texto.split('\n').length > LINEAS_TEXTO_LARGO;
+  }
+
+  textoExpandido(clave: string | undefined): boolean {
+    return !!clave && this.textosExpandidos.has(clave);
+  }
+
+  alternarTexto(clave: string | undefined): void {
+    if (!clave) {
+      return;
+    }
+    if (!this.textosExpandidos.delete(clave)) {
+      this.textosExpandidos.add(clave);
+    }
   }
 
   private cerrarHilo(): void {

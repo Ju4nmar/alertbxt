@@ -3,10 +3,11 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AlertController, IonButton, IonContent, IonInput, IonItem, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { firstValueFrom, of, Subject, filter, switchMap, takeUntil } from 'rxjs';
-import { Comunidad, Usuario } from '../../models';
+import { Comunidad, Rol, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ToastService } from '../../services/toast.service';
+import { MisVehiculosComponent } from './mis-vehiculos.component';
 import { isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
 
 @Component({
@@ -14,7 +15,7 @@ import { isValidEmail, isValidPhone } from '../../utils/auth-form.utils';
   templateUrl: './perfil-usuario.page.html',
   styleUrls: ['./perfil-usuario.page.scss'],
   standalone: true,
-  imports: [IonButton, IonContent, IonInput, IonItem, IonSelect, IonSelectOption, CommonModule, FormsModule]
+  imports: [MisVehiculosComponent, IonButton, IonContent, IonInput, IonItem, IonSelect, IonSelectOption, CommonModule, FormsModule]
 })
 export class PerfilUsuarioPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
@@ -36,7 +37,7 @@ export class PerfilUsuarioPage implements OnInit, OnDestroy {
   telefono = '';
   numeroApartamento = '';
   torre = '';
-  rol: 'admin' | 'residente' = 'residente';
+  rol: Rol = 'propietario';
   nombreComunidad = '';
 
   get esComunidadDeCasas(): boolean {

@@ -33,7 +33,7 @@ export class LoginPage {
     this.isGoogleLoading = true;
     try {
       const user = await firstValueFrom(this.authService.loginWithGoogle());
-      this.router.navigate([user.comunidadId ? '/alertas-eventos' : '/unirse-vecindad']);
+      this.router.navigate([user.comunidadId ? '/inicio' : '/unirse-vecindad']);
     } catch (error) {
       console.error('Error de inicio de sesión con Google:', error);
       this.loginError = this.getGoogleErrorMessage(error);
@@ -63,7 +63,7 @@ export class LoginPage {
     this.isLoading = true;
     try {
       const user = await firstValueFrom(this.authService.login(email, this.password));
-      this.router.navigate([user.comunidadId ? '/alertas-eventos' : '/unirse-vecindad']);
+      this.router.navigate([user.comunidadId ? '/inicio' : '/unirse-vecindad']);
     } catch (error) {
       console.error('Error de inicio de sesión:', error);
       this.loginError = this.getLoginErrorMessage(error);

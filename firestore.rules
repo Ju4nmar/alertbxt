@@ -33,6 +33,13 @@ service cloud.firestore {
         && currentUser().comunidadId == comunidadId;
     }
 
+    // 'residente' se mantiene como valor válido mientras corre la migración
+    // a 'propietario' (ver scripts/migrar-roles.js); el cliente ya no lo
+    // escribe para cuentas nuevas.
+    function isRolValido(rol) {
+      return rol in ['admin', 'propietario', 'arrendatario', 'guarda', 'residente'];
+    }
+
     function isValidCommunity(comunidadId) {
       return comunidadId is string
         && comunidadId != ''
@@ -50,7 +57,7 @@ service cloud.firestore {
         && request.resource.data.activo == true
         && request.resource.data.get('pendienteEliminacion', false) == false
         && (
-          request.resource.data.rol == 'residente'
+          request.resource.data.rol in ['propietario', 'arrendatario']
           || (
             request.resource.data.rol == 'admin'
             && exists(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId))
@@ -63,7 +70,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['nombre', 'correo', 'telefono', 'numeroApartamento', 'torre', 'fotoPerfil', 'comunidadId', 'fechaRegistro', 'activo'])
         && request.resource.data.rol == resource.data.rol
-        && request.resource.data.rol in ['admin', 'residente']
+        && isRolValido(request.resource.data.rol)
         && (
           request.resource.data.activo == resource.data.get('activo', true)
           || (!resource.data.keys().hasAll(['activo']) && request.resource.data.activo == true)
@@ -90,7 +97,7 @@ service cloud.firestore {
         && request.resource.data.idUsuario == resource.data.idUsuario
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activo', 'rol'])
         && request.resource.data.get('activo', true) is bool
-        && request.resource.data.rol in ['admin', 'residente'];
+        && isRolValido(request.resource.data.rol);
 
       allow delete: if false;
 
@@ -164,7 +171,14 @@ service cloud.firestore {
     }
 
     match /avisos/{avisoId} {
-      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+      // El arrendatario solo lee avisos marcados explícitamente como
+      // soloPropietarios == false; su consulta debe filtrar igual (ver
+      // FirestoreService.getAvisosByComunidad).
+      allow read: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          currentUser().rol != 'arrendatario'
+          || resource.data.get('soloPropietarios', false) == false
+        );
 
       allow create: if signedIn()
         && request.resource.data.autorId == request.auth.uid
@@ -181,17 +195,9 @@ service cloud.firestore {
       allow delete: if isAdminForCommunity(resource.data.comunidadId);
     }
 
-    match /comunicados/{comunicadoId} {
-      allow read: if isMemberOfCommunity(resource.data.comunidadId);
-      allow create: if isAdminForCommunity(request.resource.data.comunidadId);
-      allow update: if isAdminForCommunity(resource.data.comunidadId)
-        && request.resource.data.comunidadId == resource.data.comunidadId;
-      allow delete: if isAdminForCommunity(resource.data.comunidadId);
-    }
-
-    match /recordatorios/{recordatorioId} {
-      // usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
-      // creó un admin (solo crearRecordatorioAsignado, Admin SDK, escribe
+    match /notificaciones/{notificacionId} {
+      // usuariosAsignados / paraTodaLaComunidad: notificación de grupo que
+      // creó un admin (solo crearNotificacionAsignada, Admin SDK, escribe
       // esos campos — no hay regla de create para ellos desde el cliente).
       allow read: if isMemberOfCommunity(resource.data.comunidadId)
         && (
@@ -211,6 +217,18 @@ service cloud.firestore {
         && resource.data.idUsuario == request.auth.uid
         && request.resource.data.idUsuario == request.auth.uid
         && request.resource.data.comunidadId == resource.data.comunidadId;
+
+      // El administrador que creó una notificación asignada puede editar su
+      // contenido (título, descripción, fecha/hora), pero no a quién está
+      // asignado ni reasignarse el documento a sí mismo.
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && resource.data.get('autorId', '') == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['tituloNotificacion', 'descripcionNotificacion', 'fechaHora'])
+        && request.resource.data.comunidadId == resource.data.comunidadId
+        && request.resource.data.get('usuariosAsignados', []) == resource.data.get('usuariosAsignados', [])
+        && request.resource.data.get('paraTodaLaComunidad', false) == resource.data.get('paraTodaLaComunidad', false);
+
       allow create: if isMemberOfCommunity(request.resource.data.comunidadId)
         && request.resource.data.idUsuario == request.auth.uid
         && request.resource.data.comunidadId == currentUser().comunidadId;
@@ -228,5 +246,134 @@ service cloud.firestore {
 
       allow read, update, delete: if false;
     }
+    // Encuestas de la comunidad. El administrador las crea; cada vecino vota
+    // una vez (el id del voto es su uid y los votos no se pueden editar). Los
+    // votos ajenos no se leen: la Cloud Function onVotoCreado los suma en
+    // encuestas/{id}.conteo. "cierre" es Timestamp para poder compararlo con
+    // request.time aquí mismo.
+    function puedeLeerEncuesta(encuesta) {
+      return isMemberOfCommunity(encuesta.comunidadId)
+        && (
+          currentUser().rol != 'arrendatario'
+          || encuesta.get('soloPropietarios', false) == false
+        );
+    }
+
+    match /encuestas/{encuestaId} {
+      allow read: if puedeLeerEncuesta(resource.data);
+
+      allow create: if isAdminForCommunity(request.resource.data.comunidadId)
+        && request.resource.data.autorId == request.auth.uid
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() >= 3
+        && request.resource.data.titulo.size() <= 120
+        && request.resource.data.opciones is list
+        && request.resource.data.opciones.size() >= 2
+        && request.resource.data.opciones.size() <= 6
+        && request.resource.data.soloPropietarios is bool
+        && request.resource.data.cierre is timestamp
+        && request.resource.data.totalVotos == 0;
+
+      // Solo se permite adelantar o mover el cierre ("Cerrar ahora").
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cierre'])
+        && request.resource.data.cierre is timestamp;
+
+      allow delete: if isAdminForCommunity(resource.data.comunidadId);
+
+      match /votos/{votoId} {
+        allow read: if isSelf(votoId);
+
+        allow create: if isSelf(votoId)
+          && request.resource.data.keys().hasOnly(['opcion', 'fecha'])
+          && request.resource.data.opcion is int
+          && request.resource.data.opcion >= 0
+          && request.resource.data.opcion < get(/databases/$(database)/documents/encuestas/$(encuestaId)).data.opciones.size()
+          && get(/databases/$(database)/documents/encuestas/$(encuestaId)).data.cierre > request.time
+          && puedeLeerEncuesta(get(/databases/$(database)/documents/encuestas/$(encuestaId)).data);
+
+        allow update, delete: if false;
+      }
+    }
+
+    // Vehículos de los vecinos. Los ve su dueño, el administrador y el guarda
+    // de la comunidad. El id "{comunidadId}_{placa}" impide placas repetidas
+    // (no hay update, así que un segundo registro igual se rechaza).
+    match /vehiculos/{vehiculoId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.propietarioId == request.auth.uid
+          || currentUser().rol in ['admin', 'guarda']
+        );
+
+      allow create: if isMemberOfCommunity(request.resource.data.comunidadId)
+        && request.resource.data.propietarioId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['placa', 'tipo', 'marca', 'color', 'propietarioId', 'propietarioNombre', 'torre', 'apartamento', 'comunidadId', 'fechaRegistro'])
+        && request.resource.data.placa is string
+        && request.resource.data.placa.matches('^[A-Z0-9]{5,7}$')
+        && vehiculoId == request.resource.data.comunidadId + '_' + request.resource.data.placa
+        && request.resource.data.tipo in ['carro', 'moto', 'otro'];
+
+      allow update: if false;
+
+      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.propietarioId == request.auth.uid
+          || isAdminForCommunity(resource.data.comunidadId)
+        );
+    }
+
+    // Zonas comunes y sus reservas. Un documento por hora reservada con id
+    // "{zonaId}_{fecha}_{hora}" (sin update): el segundo vecino que intente el
+    // mismo bloque recibe un rechazo, así que no hay dobles reservas.
+    function zonaValida(zona) {
+      return zona.nombre is string
+        && zona.nombre.size() >= 2
+        && zona.nombre.size() <= 60
+        && zona.horaApertura is int
+        && zona.horaCierre is int
+        && zona.horaApertura >= 0
+        && zona.horaCierre <= 24
+        && zona.horaApertura < zona.horaCierre
+        && zona.maxHoras is int
+        && zona.maxHoras >= 1
+        && zona.maxHoras <= 8;
+    }
+
+    match /zonas/{zonaId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+      allow create: if isAdminForCommunity(request.resource.data.comunidadId)
+        && zonaValida(request.resource.data);
+      allow update: if isAdminForCommunity(resource.data.comunidadId)
+        && request.resource.data.comunidadId == resource.data.comunidadId
+        && zonaValida(request.resource.data);
+      allow delete: if isAdminForCommunity(resource.data.comunidadId);
+    }
+
+    match /reservas/{reservaId} {
+      allow read: if isMemberOfCommunity(resource.data.comunidadId);
+
+      allow create: if isMemberOfCommunity(request.resource.data.comunidadId)
+        && request.resource.data.keys().hasOnly(['zonaId', 'zonaNombre', 'comunidadId', 'usuarioId', 'usuarioNombre', 'torre', 'apartamento', 'fecha', 'hora', 'inicio'])
+        && request.resource.data.usuarioId == request.auth.uid
+        && request.resource.data.fecha is string
+        && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.hora is int
+        && reservaId == request.resource.data.zonaId + '_' + request.resource.data.fecha + '_' + string(request.resource.data.hora)
+        && request.resource.data.inicio is timestamp
+        && request.resource.data.inicio > request.time
+        && get(/databases/$(database)/documents/zonas/$(request.resource.data.zonaId)).data.comunidadId == request.resource.data.comunidadId
+        && request.resource.data.hora >= get(/databases/$(database)/documents/zonas/$(request.resource.data.zonaId)).data.horaApertura
+        && request.resource.data.hora < get(/databases/$(database)/documents/zonas/$(request.resource.data.zonaId)).data.horaCierre;
+
+      allow update: if false;
+
+      allow delete: if isMemberOfCommunity(resource.data.comunidadId)
+        && (
+          resource.data.usuarioId == request.auth.uid
+          || isAdminForCommunity(resource.data.comunidadId)
+        );
+    }
+
   }
 }

@@ -5,7 +5,12 @@ import { RoleGuard } from './guards/role.guard';
 import { GuestGuard } from './guards/guest.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'alertas-eventos', pathMatch: 'full' },
+  { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+  {
+    path: 'inicio',
+    loadComponent: () => import('./pages/inicio/inicio.page').then(m => m.InicioPage),
+    canActivate: [AuthGuard],
+  },
   {
     path: 'alertas-eventos',
     loadComponent: () => import('./pages/alertas-eventos/alertas-eventos.page').then(m => m.AlertasEventosPage),
@@ -33,8 +38,8 @@ export const routes: Routes = [
     data: { role: 'admin' },
   },
   {
-    path: 'recordatorios',
-    loadComponent: () => import('./pages/recordatorios/recordatorios.page').then(m => m.RecordatoriosPage),
+    path: 'notificaciones',
+    loadComponent: () => import('./pages/notificaciones/notificaciones.page').then(m => m.NotificacionesPage),
     canActivate: [AuthGuard],
   },
   {
@@ -45,6 +50,22 @@ export const routes: Routes = [
   {
     path: 'mensajes',
     loadComponent: () => import('./pages/mensajes/mensajes.page').then(m => m.MensajesPage),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'encuestas',
+    loadComponent: () => import('./pages/encuestas/encuestas.page').then(m => m.EncuestasPage),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'vehiculos',
+    loadComponent: () => import('./pages/vehiculos/vehiculos.page').then(m => m.VehiculosPage),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: ['admin', 'guarda'] },
+  },
+  {
+    path: 'reservas',
+    loadComponent: () => import('./pages/reservas/reservas.page').then(m => m.ReservasPage),
     canActivate: [AuthGuard],
   },
   {
@@ -72,8 +93,12 @@ export const routes: Routes = [
     canActivate: [GuestGuard],
   },
   {
+    path: 'restablecer-contrasena',
+    loadComponent: () => import('./pages/restablecer-contrasena/restablecer-contrasena.page').then(m => m.RestablecerContrasenaPage),
+  },
+  {
     path: 'privacidad',
     loadComponent: () => import('./pages/privacidad/privacidad.page').then(m => m.PrivacidadPage),
   },
-  { path: '**', redirectTo: 'alertas-eventos' },
+  { path: '**', redirectTo: 'inicio' },
 ];

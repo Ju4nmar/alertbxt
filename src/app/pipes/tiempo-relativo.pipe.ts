@@ -18,7 +18,7 @@ const UNIDADES: [ms: number, singular: string, plural: string][] = [
 
 // "hace 2 horas" / "en 3 días" — complementa la fecha absoluta, no la
 // reemplaza (ver *-eventos.page.html): un vecino entiende de un vistazo si
-// algo es reciente o si un recordatorio vence pronto, sin tener que restar
+// algo es reciente o si una notificación vence pronto, sin tener que restar
 // fechas mentalmente.
 @Pipe({
   name: 'tiempoRelativo',

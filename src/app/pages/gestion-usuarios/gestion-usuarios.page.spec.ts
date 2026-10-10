@@ -107,10 +107,16 @@ describe('GestionUsuariosPage', () => {
     expect(component.puedeGestionarUsuario(admin)).toBeFalse();
   });
 
-  it('cambiarRol invierte el rol de un residente gestionable', () => {
-    component.cambiarRol(residente);
+  it('cambiarRol actualiza el rol de un residente gestionable', () => {
+    component.cambiarRol(residente, 'admin');
 
     expect(updateUsuarioEstadoSpy).toHaveBeenCalledWith('residente-1', { rol: 'admin' });
+  });
+
+  it('cambiarRol no hace nada si el rol no cambia', () => {
+    component.cambiarRol(residente, residente.rol);
+
+    expect(updateUsuarioEstadoSpy).not.toHaveBeenCalled();
   });
 
   it('enviarMensaje() pide el texto y llama a MensajesService con el destinatario correcto', async () => {

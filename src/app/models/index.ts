@@ -16,9 +16,19 @@ export interface Aviso {
   comunidadId: string;
   imagen?: string;
   estado?: 'pendiente' | 'validado' | 'rechazado';
+  // Cuando es true, solo lo ven/reciben notificación los propietarios,
+  // guardas y el administrador — no los arrendatarios (p. ej. convocatorias
+  // de asamblea, que son asunto del propietario).
+  soloPropietarios?: boolean;
 }
 
 export type TipoComunidad = 'apartamentos' | 'casas';
+
+// 'residente' se conserva como valor histórico: usuarios creados antes de
+// esta migración pueden tenerlo momentáneamente mientras corre el script de
+// migración (ver scripts/migrar-roles.js). El código nuevo nunca debe
+// escribir 'residente'; usa 'propietario' en su lugar.
+export type Rol = 'admin' | 'propietario' | 'arrendatario' | 'guarda' | 'residente';
 
 export interface Usuario {
   idUsuario?: string;
@@ -31,7 +41,7 @@ export interface Usuario {
   // tipoComunidad (se tratan como "apartamentos" por compatibilidad).
   numeroApartamento?: string;
   torre?: string;
-  rol: 'admin' | 'residente';
+  rol: Rol;
   activo: boolean;
   pendienteEliminacion?: boolean;
   fechaSolicitudEliminacion?: string;
@@ -53,19 +63,22 @@ export interface Comunidad {
   fechaCreacion?: string;
   ubicacion?: string;
   logoUrl?: string;
+  // Restriccion de pico y placa por dia (clave en minusculas, p. ej. lunes).
+  // La digita el administrador: cambia por ciudad y periodo, no se fija en codigo.
+  picoPlaca?: Record<string, string>;
 }
 
-// idUsuario: recordatorio personal (el propio residente lo creó para sí
-// mismo). usuariosAsignados / paraTodaLaComunidad: recordatorio de grupo que
+// idUsuario: notificación personal (el propio residente lo creó para sí
+// mismo). usuariosAsignados / paraTodaLaComunidad: notificación de grupo que
 // un administrador asignó a varios vecinos o a toda la comunidad — un solo
 // documento compartido, no una copia por destinatario. Igual que con los
 // personales, "estado" pasa a 'completado' automáticamente cuando se envía
 // el push (ver functions/src/index.ts), no es algo que cada usuario marque
 // por separado.
-export interface Recordatorio {
-  idRecordatorios?: string;
-  tituloRecordatorio: string;
-  descripcionRecordatorio: string;
+export interface Notificacion {
+  idNotificaciones?: string;
+  tituloNotificacion: string;
+  descripcionNotificacion: string;
   fechaHora: string;
   idUsuario?: string;
   usuariosAsignados?: string[];
@@ -74,6 +87,9 @@ export interface Recordatorio {
   comunidadId: string;
   fechaCreacion?: string;
   estado?: 'pendiente' | 'completado';
+  // Igual que en Aviso: oculta la notificación a los arrendatarios cuando
+  // es información reservada al propietario.
+  soloPropietarios?: boolean;
 }
 
 export interface Dispositivo {
@@ -118,3 +134,72 @@ export interface RespuestaMensaje {
   esAdmin: boolean;
 }
 
+// Encuesta de la comunidad. Los votos viven en encuestas/{id}/votos/{uid};
+// "conteo" (índice de opción -> votos) y "totalVotos" los mantiene la Cloud
+// Function onVotoCreado, no el cliente. "cierre" es ISO en el modelo y
+// Timestamp en Firestore (ver normalizeEncuesta).
+export interface Encuesta {
+  idEncuesta?: string;
+  titulo: string;
+  descripcion?: string;
+  opciones: string[];
+  comunidadId: string;
+  autorId: string;
+  autorNombre?: string;
+  soloPropietarios: boolean;
+  cierre: string;
+  fechaCreacion?: string;
+  conteo: Record<string, number>;
+  totalVotos: number;
+}
+
+export type TipoVehiculo = 'carro' | 'moto' | 'otro';
+
+// Vehículo registrado por un vecino. El id del documento es
+// "{comunidadId}_{placa}": así no puede haber la misma placa dos veces en una
+// comunidad. Torre/apartamento y nombre se copian al registrar para que el
+// guarda y el administrador identifiquen al dueño sin leer otros perfiles.
+export interface Vehiculo {
+  idVehiculo?: string;
+  placa: string;
+  tipo: TipoVehiculo;
+  marca?: string;
+  color?: string;
+  propietarioId: string;
+  propietarioNombre: string;
+  torre?: string;
+  apartamento?: string;
+  comunidadId: string;
+  fechaRegistro: string;
+}
+
+// Zona común reservable (salón social, BBQ, cancha...). Las configura el
+// administrador; los vecinos reservan por bloques de una hora entre
+// horaApertura (incluida) y horaCierre (excluida).
+export interface ZonaComun {
+  idZona?: string;
+  nombre: string;
+  descripcion?: string;
+  comunidadId: string;
+  horaApertura: number;
+  horaCierre: number;
+  maxHoras: number;
+}
+
+// Una reserva es un documento por hora ocupada, con id
+// "{zonaId}_{fecha}_{hora}": Firestore garantiza que dos vecinos no reserven
+// el mismo bloque (el segundo create falla). Los bloques consecutivos del
+// mismo vecino se muestran juntos (ver agruparReservas).
+export interface Reserva {
+  idReserva?: string;
+  zonaId: string;
+  zonaNombre: string;
+  comunidadId: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  torre?: string;
+  apartamento?: string;
+  fecha: string;
+  hora: number;
+  inicio: string;
+}

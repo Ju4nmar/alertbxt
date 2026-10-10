@@ -1,16 +1,18 @@
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getFunctions } from 'firebase-admin/functions';
 import { getMessaging } from 'firebase-admin/messaging';
-import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentDeleted, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 
 initializeApp();
 
+export { solicitarRecuperacionContrasena } from './recuperacion';
+
 const FCM_MULTICAST_LIMIT = 500;
-const RECORDATORIO_MAX_DELAY_MS = 24 * 24 * 60 * 60 * 1000;
+const NOTIFICACION_MAX_DELAY_MS = 24 * 24 * 60 * 60 * 1000;
 
 const TIPO_TITULOS: Record<string, string> = {
   alerta: 'Alerta SOS',
@@ -26,6 +28,7 @@ interface AvisoData {
   tipoAviso?: string;
   comunidadId?: string;
   autorId?: string;
+  soloPropietarios?: boolean;
 }
 
 interface TokenRef {
@@ -101,7 +104,18 @@ export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event =
     .where('activo', '==', true)
     .get();
 
-  const destinatarios = usuariosSnap.docs.filter(doc => doc.id !== aviso.autorId);
+  // Un aviso "solo propietarios" (p. ej. convocatoria de asamblea) no se
+  // notifica a los arrendatarios.
+  const destinatarios = usuariosSnap.docs.filter(doc => {
+    if (doc.id === aviso.autorId) {
+      return false;
+    }
+    if (aviso.soloPropietarios) {
+      const rol = (doc.data() as UsuarioData).rol;
+      return rol !== 'arrendatario';
+    }
+    return true;
+  });
   if (!destinatarios.length) {
     return;
   }
@@ -166,38 +180,39 @@ export const onAvisoCreado = onDocumentCreated('avisos/{avisoId}', async event =
   });
 });
 
-interface RecordatorioData {
-  tituloRecordatorio?: string;
+interface NotificacionData {
+  tituloNotificacion?: string;
   fechaHora?: string;
   idUsuario?: string;
   usuariosAsignados?: string[];
   paraTodaLaComunidad?: boolean;
+  soloPropietarios?: boolean;
   comunidadId?: string;
   estado?: string;
 }
 
-function tieneDestinatario(data: RecordatorioData): boolean {
+function tieneDestinatario(data: NotificacionData): boolean {
   return !!data.idUsuario || !!data.usuariosAsignados?.length || !!data.paraTodaLaComunidad;
 }
 
-interface RecordatorioTaskPayload {
-  idRecordatorio: string;
+interface NotificacionTaskPayload {
+  idNotificacion: string;
   fechaHoraEsperada: string;
 }
 
-// Programa (o reprograma) el envio del push de un recordatorio cuando se crea
+// Programa (o reprograma) el envio del push de una notificación cuando se crea
 // o cuando cambia su fechaHora. No cancela tareas viejas explicitamente: la
 // tarea disparada compara la fechaHora esperada contra la actual y se
-// descarta sola si el recordatorio fue editado o eliminado mientras tanto.
-export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatorioId}', async event => {
+// descarta sola si la notificación fue editada o eliminada mientras tanto.
+export const onNotificacionWrite = onDocumentWritten('notificaciones/{notificacionId}', async event => {
   const after = event.data?.after;
   if (!after?.exists) {
     return;
   }
 
-  const data = after.data() as RecordatorioData;
+  const data = after.data() as NotificacionData;
   const before = event.data?.before;
-  const beforeData = before?.exists ? before.data() as RecordatorioData : undefined;
+  const beforeData = before?.exists ? before.data() as NotificacionData : undefined;
 
   if (beforeData?.fechaHora === data.fechaHora) {
     return;
@@ -210,7 +225,7 @@ export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatori
   const fechaHora = new Date(data.fechaHora);
   const delayMs = fechaHora.getTime() - Date.now();
 
-  if (Number.isNaN(fechaHora.getTime()) || delayMs < 0 || delayMs > RECORDATORIO_MAX_DELAY_MS) {
+  if (Number.isNaN(fechaHora.getTime()) || delayMs < 0 || delayMs > NOTIFICACION_MAX_DELAY_MS) {
     return;
   }
 
@@ -218,29 +233,29 @@ export const onRecordatorioWrite = onDocumentWritten('recordatorios/{recordatori
     await after.ref.update({ estado: 'pendiente' });
   }
 
-  const queue = getFunctions().taskQueue<RecordatorioTaskPayload>('enviarRecordatorioPush');
+  const queue = getFunctions().taskQueue<NotificacionTaskPayload>('enviarNotificacionPush');
   await queue.enqueue(
-    { idRecordatorio: event.params.recordatorioId, fechaHoraEsperada: data.fechaHora },
+    { idNotificacion: event.params.notificacionId, fechaHoraEsperada: data.fechaHora },
     { scheduleTime: fechaHora }
   );
 });
 
-export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
+export const enviarNotificacionPush = onTaskDispatched<NotificacionTaskPayload>(
   {
     retryConfig: { maxAttempts: 2, minBackoffSeconds: 30 },
     rateLimits: { maxConcurrentDispatches: 6 },
   },
   async request => {
-    const { idRecordatorio, fechaHoraEsperada } = request.data;
+    const { idNotificacion, fechaHoraEsperada } = request.data;
     const db = getFirestore();
-    const ref = db.doc(`recordatorios/${idRecordatorio}`);
+    const ref = db.doc(`notificaciones/${idNotificacion}`);
     const snapshot = await ref.get();
 
     if (!snapshot.exists) {
       return;
     }
 
-    const data = snapshot.data() as RecordatorioData;
+    const data = snapshot.data() as NotificacionData;
     if (data.estado === 'completado' || data.fechaHora !== fechaHoraEsperada || !tieneDestinatario(data)) {
       return;
     }
@@ -251,7 +266,11 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
         .where('comunidadId', '==', data.comunidadId)
         .where('activo', '==', true)
         .get();
-      destinatarioIds = usuariosSnap.docs.map(doc => doc.id);
+      // Una notificación "solo propietarios" (p. ej. convocatoria de
+      // asamblea) no se notifica a los arrendatarios.
+      destinatarioIds = usuariosSnap.docs
+        .filter(doc => !data.soloPropietarios || (doc.data() as UsuarioData).rol !== 'arrendatario')
+        .map(doc => doc.id);
     } else if (data.usuariosAsignados?.length) {
       destinatarioIds = data.usuariosAsignados;
     } else {
@@ -270,12 +289,12 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
         const response = await messaging.sendEachForMulticast({
           tokens: tokenChunk.map(ref => ref.token),
           notification: {
-            title: 'Recordatorio',
-            body: data.tituloRecordatorio || 'Tienes un recordatorio pendiente.',
+            title: 'Notificación',
+            body: data.tituloNotificacion || 'Tienes una notificación pendiente.',
           },
-          data: { recordatorioId: idRecordatorio },
+          data: { notificacionId: idNotificacion },
           webpush: {
-            fcmOptions: { link: '/recordatorios' },
+            fcmOptions: { link: '/notificaciones' },
           },
         });
 
@@ -296,6 +315,144 @@ export const enviarRecordatorioPush = onTaskDispatched<RecordatorioTaskPayload>(
     await ref.update({ estado: 'completado' });
   }
 );
+
+interface EncuestaData {
+  titulo?: string;
+  opciones?: string[];
+  comunidadId?: string;
+  soloPropietarios?: boolean;
+  autorId?: string;
+}
+
+// Cada voto se guarda como encuestas/{id}/votos/{uid} (un documento por
+// vecino, así que votar dos veces es imposible) y esta función lo suma al
+// conteo de la encuesta. Los vecinos no pueden leer votos ajenos, por eso el
+// total vive aquí y no se calcula en el cliente. "contado" evita sumar dos
+// veces si el trigger se reintenta.
+export const onVotoCreado = onDocumentCreated('encuestas/{encuestaId}/votos/{votoId}', async event => {
+  const votoRef = event.data?.ref;
+  if (!votoRef) {
+    return;
+  }
+
+  const encuestaRef = getFirestore().doc(`encuestas/${event.params.encuestaId}`);
+  await getFirestore().runTransaction(async tx => {
+    const [votoSnap, encuestaSnap] = await Promise.all([tx.get(votoRef), tx.get(encuestaRef)]);
+    if (!votoSnap.exists || !encuestaSnap.exists || votoSnap.get('contado') === true) {
+      return;
+    }
+
+    const opcion = votoSnap.get('opcion');
+    const opciones = (encuestaSnap.get('opciones') as string[] | undefined) ?? [];
+    if (!Number.isInteger(opcion) || opcion < 0 || opcion >= opciones.length) {
+      return;
+    }
+
+    tx.update(encuestaRef, {
+      [`conteo.${opcion}`]: FieldValue.increment(1),
+      totalVotos: FieldValue.increment(1),
+    });
+    tx.update(votoRef, { contado: true });
+  });
+});
+
+// Avisa por push a la comunidad cuando el administrador publica una encuesta
+// (sin notificar al propio autor ni a los arrendatarios si es solo para
+// propietarios).
+export const onEncuestaCreada = onDocumentCreated('encuestas/{encuestaId}', async event => {
+  const encuesta = event.data?.data() as EncuestaData | undefined;
+  if (!encuesta?.comunidadId) {
+    return;
+  }
+
+  const db = getFirestore();
+  const usuariosSnap = await db.collection('usuarios')
+    .where('comunidadId', '==', encuesta.comunidadId)
+    .where('activo', '==', true)
+    .get();
+
+  const destinatarioIds = usuariosSnap.docs
+    .filter(doc => doc.id !== encuesta.autorId)
+    .filter(doc => !encuesta.soloPropietarios || (doc.data() as UsuarioData).rol !== 'arrendatario')
+    .map(doc => doc.id);
+
+  const tokenRefs: TokenRef[] = [];
+  await Promise.all(destinatarioIds.map(async id => {
+    const dispositivosSnap = await db.collection(`usuarios/${id}/dispositivos`).get();
+    dispositivosSnap.docs.forEach(doc => tokenRefs.push({ idUsuario: id, token: doc.id }));
+  }));
+
+  const messaging = getMessaging();
+  for (const tokenChunk of chunk(tokenRefs, FCM_MULTICAST_LIMIT)) {
+    const response = await messaging.sendEachForMulticast({
+      tokens: tokenChunk.map(ref => ref.token),
+      notification: {
+        title: 'Nueva encuesta',
+        body: encuesta.titulo || 'Tu comunidad publicó una encuesta.',
+      },
+      data: { encuestaId: event.params.encuestaId },
+      webpush: { fcmOptions: { link: '/encuestas' } },
+    });
+
+    await Promise.all(response.responses.map(async (result, index) => {
+      const code = result.error?.code;
+      if (!result.success && (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token')) {
+        const tokenRef = tokenChunk[index];
+        await db.doc(`usuarios/${tokenRef.idUsuario}/dispositivos/${tokenRef.token}`).delete();
+      }
+    }));
+  }
+
+  logger.info('Encuesta notificada', { encuestaId: event.params.encuestaId, destinatarios: destinatarioIds.length });
+});
+
+// Al borrar una encuesta, Firestore deja huérfana su subcolección de votos:
+// se limpia aquí para no acumular datos de vecinos sin dueño.
+export const onEncuestaEliminada = onDocumentDeleted('encuestas/{encuestaId}', async event => {
+  const db = getFirestore();
+  await db.recursiveDelete(db.collection(`encuestas/${event.params.encuestaId}/votos`));
+  logger.info('Votos de encuesta eliminados', { encuestaId: event.params.encuestaId });
+});
+
+// Las reglas de Firestore no pueden contar cuántas horas lleva reservadas un
+// vecino, así que el tope por día y zona (maxHoras) se hace cumplir aquí:
+// se conservan sus primeras horas del día y se borran las que se pasen. Es
+// idempotente: varios disparos del mismo lote borran las mismas reservas.
+export const onReservaCreada = onDocumentCreated('reservas/{reservaId}', async event => {
+  const reserva = event.data?.data() as { zonaId?: string; fecha?: string; usuarioId?: string } | undefined;
+  if (!reserva?.zonaId || !reserva.fecha || !reserva.usuarioId) {
+    return;
+  }
+
+  const db = getFirestore();
+  const zonaSnap = await db.doc(`zonas/${reserva.zonaId}`).get();
+  const maxHoras = zonaSnap.get('maxHoras');
+  if (!zonaSnap.exists || typeof maxHoras !== 'number') {
+    return;
+  }
+
+  const delDiaSnap = await db.collection('reservas')
+    .where('zonaId', '==', reserva.zonaId)
+    .where('fecha', '==', reserva.fecha)
+    .where('usuarioId', '==', reserva.usuarioId)
+    .get();
+
+  const excedentes = delDiaSnap.docs
+    .sort((a, b) => (a.get('hora') as number) - (b.get('hora') as number))
+    .slice(maxHoras);
+
+  if (!excedentes.length) {
+    return;
+  }
+
+  await Promise.all(excedentes.map(doc => doc.ref.delete()));
+  logger.warn('Reservas por encima del máximo eliminadas', {
+    zonaId: reserva.zonaId,
+    usuarioId: reserva.usuarioId,
+    fecha: reserva.fecha,
+    eliminadas: excedentes.length,
+  });
+});
 
 interface UsuarioData {
   nombre?: string;
@@ -520,7 +677,7 @@ export const responderMensajeAdmin = onCall<ResponderMensajeRequest>(async reque
   return { respuestaId: respuestaRef.id };
 });
 
-interface CrearRecordatorioAsignadoRequest {
+interface CrearNotificacionAsignadaRequest {
   titulo?: string;
   descripcion?: string;
   fechaHora?: string;
@@ -528,18 +685,18 @@ interface CrearRecordatorioAsignadoRequest {
   paraTodos?: boolean;
 }
 
-const RECORDATORIO_TITULO_MIN = 3;
-const RECORDATORIO_TITULO_MAX = 80;
-const RECORDATORIO_DESC_MIN = 5;
-const RECORDATORIO_DESC_MAX = 300;
-const MAX_ASIGNADOS_RECORDATORIO = 200;
+const NOTIFICACION_TITULO_MIN = 3;
+const NOTIFICACION_TITULO_MAX = 80;
+const NOTIFICACION_DESC_MIN = 5;
+const NOTIFICACION_DESC_MAX = 300;
+const MAX_ASIGNADOS_NOTIFICACION = 200;
 
-// Crea UN solo recordatorio compartido (no una copia por destinatario, a
+// Crea UNA sola notificación compartida (no una copia por destinatario, a
 // diferencia de enviarMensajeIndividual): "completado" ya es automático —
-// lo pone enviarRecordatorioPush cuando llega la fecha, igual que en los
-// recordatorios personales — así que no hace falta rastrear el progreso de
+// lo pone enviarNotificacionPush cuando llega la fecha, igual que en las
+// notificaciones personales — así que no hace falta rastrear el progreso de
 // cada destinatario por separado, ni duplicar el documento.
-export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest>(async request => {
+export const crearNotificacionAsignada = onCall<CrearNotificacionAsignadaRequest>(async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
@@ -555,11 +712,11 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
     throw new HttpsError('invalid-argument', 'Completa título, descripción y fecha.');
   }
 
-  if (titulo.length < RECORDATORIO_TITULO_MIN || titulo.length > RECORDATORIO_TITULO_MAX) {
+  if (titulo.length < NOTIFICACION_TITULO_MIN || titulo.length > NOTIFICACION_TITULO_MAX) {
     throw new HttpsError('invalid-argument', 'Revisa la longitud del título.');
   }
 
-  if (descripcion.length < RECORDATORIO_DESC_MIN || descripcion.length > RECORDATORIO_DESC_MAX) {
+  if (descripcion.length < NOTIFICACION_DESC_MIN || descripcion.length > NOTIFICACION_DESC_MAX) {
     throw new HttpsError('invalid-argument', 'Revisa la longitud de la descripción.');
   }
 
@@ -567,13 +724,13 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
     throw new HttpsError('invalid-argument', 'Selecciona al menos un vecino, o marca "Todos".');
   }
 
-  if (usuarioIds.length > MAX_ASIGNADOS_RECORDATORIO) {
-    throw new HttpsError('invalid-argument', `No puedes asignar a más de ${MAX_ASIGNADOS_RECORDATORIO} vecinos a la vez.`);
+  if (usuarioIds.length > MAX_ASIGNADOS_NOTIFICACION) {
+    throw new HttpsError('invalid-argument', `No puedes asignar a más de ${MAX_ASIGNADOS_NOTIFICACION} vecinos a la vez.`);
   }
 
   const fechaHora = new Date(fechaHoraTexto);
   if (Number.isNaN(fechaHora.getTime()) || fechaHora.getTime() < Date.now()) {
-    throw new HttpsError('invalid-argument', 'La fecha y hora del recordatorio deben ser futuras.');
+    throw new HttpsError('invalid-argument', 'La fecha y hora de la notificación deben ser futuras.');
   }
 
   const db = getFirestore();
@@ -581,12 +738,12 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
   const autor = autorSnap.data() as UsuarioData | undefined;
 
   if (!autor || autor.rol !== 'admin' || !autor.comunidadId) {
-    throw new HttpsError('permission-denied', 'Solo un administrador puede asignar recordatorios a otros vecinos.');
+    throw new HttpsError('permission-denied', 'Solo un administrador puede asignar notificaciones a otros vecinos.');
   }
 
-  const recordatorioData: Record<string, unknown> = {
-    tituloRecordatorio: titulo,
-    descripcionRecordatorio: descripcion,
+  const notificacionData: Record<string, unknown> = {
+    tituloNotificacion: titulo,
+    descripcionNotificacion: descripcion,
     fechaHora: fechaHora.toISOString(),
     comunidadId: autor.comunidadId,
     autorId: uid,
@@ -595,7 +752,7 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
   };
 
   if (paraTodos) {
-    recordatorioData['paraTodaLaComunidad'] = true;
+    notificacionData['paraTodaLaComunidad'] = true;
   } else {
     const destinatarioSnaps = await Promise.all(usuarioIds.map(id => db.doc(`usuarios/${id}`).get()));
     const asignadosValidos = destinatarioSnaps
@@ -607,17 +764,17 @@ export const crearRecordatorioAsignado = onCall<CrearRecordatorioAsignadoRequest
       throw new HttpsError('not-found', 'Ningún vecino seleccionado pertenece a tu comunidad.');
     }
 
-    recordatorioData['usuariosAsignados'] = asignadosValidos;
+    notificacionData['usuariosAsignados'] = asignadosValidos;
   }
 
-  const ref = await db.collection('recordatorios').add(recordatorioData);
+  const ref = await db.collection('notificaciones').add(notificacionData);
 
-  logger.info('Recordatorio asignado creado', {
-    recordatorioId: ref.id,
+  logger.info('Notificación asignada creada', {
+    notificacionId: ref.id,
     autorId: uid,
     paraTodos,
-    asignados: paraTodos ? undefined : (recordatorioData['usuariosAsignados'] as string[]).length,
+    asignados: paraTodos ? undefined : (notificacionData['usuariosAsignados'] as string[]).length,
   });
 
-  return { recordatorioId: ref.id };
+  return { notificacionId: ref.id };
 });

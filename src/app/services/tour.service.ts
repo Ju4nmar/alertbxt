@@ -8,14 +8,19 @@ interface PasoTour {
   titulo: string;
   texto: string;
   soloAdmin?: boolean;
+  soloGuardaYAdmin?: boolean;
 }
 
 const PASOS: PasoTour[] = [
-  { id: 'alertas', titulo: 'Alertas y eventos', texto: 'Aquí ves los avisos de tu comunidad, las alertas SOS y tus recordatorios próximos.' },
+  { id: 'inicio', titulo: 'Inicio', texto: 'Tu resumen del día: alertas activas, pico y placa, noticias de la comunidad y tus próximas notificaciones.' },
+  { id: 'alertas', titulo: 'Alertas y eventos', texto: 'Aquí ves los avisos de tu comunidad, las alertas SOS y tus notificaciones próximas.' },
   { id: 'avisos', titulo: 'Gestión de avisos', texto: 'Publica avisos para toda la comunidad y modera las alertas SOS.', soloAdmin: true },
-  { id: 'recordatorios', titulo: 'Recordatorios', texto: 'Crea recordatorios con fecha y hora; te avisaremos cuando lleguen.' },
+  { id: 'notificaciones', titulo: 'Notificaciones', texto: 'Crea notificaciones con fecha y hora; te avisaremos cuando lleguen.' },
   { id: 'vecinos', titulo: 'Gestión de vecinos', texto: 'Consulta a tus vecinos, activa o desactiva cuentas y envíales mensajes.', soloAdmin: true },
-  { id: 'estadisticas', titulo: 'Estadísticas', texto: 'Un resumen visual de vecinos, avisos y recordatorios.', soloAdmin: true },
+  { id: 'estadisticas', titulo: 'Métricas', texto: 'Un resumen visual de vecinos, avisos y notificaciones.', soloAdmin: true },
+  { id: 'encuestas', titulo: 'Encuestas', texto: 'Vota en las decisiones de tu comunidad y mira los resultados. Si eres administrador, también las creas aquí.' },
+  { id: 'reservas', titulo: 'Reservas', texto: 'Reserva salones y zonas comunes por horas y consulta o cancela tus reservas.' },
+  { id: 'vehiculos', titulo: 'Vehículos', texto: 'Consulta de quién es cada vehículo de la comunidad buscando por placa, vecino o apartamento.', soloGuardaYAdmin: true },
   { id: 'mensajes', titulo: 'Mensajes', texto: 'Lee los mensajes del administrador y respóndelos desde aquí.' },
   { id: 'perfil', titulo: 'Perfil', texto: 'Actualiza tus datos y consulta el código de invitación de tu vecindad.' },
   { id: 'guia', titulo: 'Guía de uso', texto: 'Si tienes dudas, aquí encuentras una explicación de cada función. Desde ahí también puedes volver a ver este recorrido.' },
@@ -64,7 +69,7 @@ export class TourService {
   }
 
   private async esperarNavegacion(): Promise<void> {
-    for (let intento = 0; intento < 16 && !this.buscarVisible('alertas'); intento++) {
+    for (let intento = 0; intento < 16 && !this.buscarVisible('inicio'); intento++) {
       await new Promise(resolve => window.setTimeout(resolve, 250));
     }
   }
@@ -91,6 +96,7 @@ export class TourService {
 
     const pasos = PASOS
       .filter(paso => !paso.soloAdmin || esAdmin)
+      .filter(paso => !paso.soloGuardaYAdmin || esAdmin || user.rol === 'guarda')
       .map(paso => ({ paso, elemento: this.buscarVisible(paso.id) }))
       .filter((item): item is { paso: PasoTour; elemento: HTMLElement } => !!item.elemento);
 

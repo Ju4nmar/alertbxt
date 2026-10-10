@@ -8,10 +8,11 @@ export interface UsuarioSembrado {
   correo: string;
   password: string;
   telefono?: string;
-  rol?: 'admin' | 'residente';
+  rol?: 'admin' | 'propietario' | 'arrendatario' | 'guarda' | 'residente';
   activo?: boolean;
   comunidadId?: string;
   numeroApartamento?: string;
+  torre?: string;
 }
 
 // Cypress 16 cambió la firma de cy.env()/Cypress.env() para leer un solo
@@ -37,17 +38,20 @@ function firestoreUrl(): string {
 
 // Convierte un objeto plano a formato de documento REST de Firestore
 // (https://firebase.google.com/docs/firestore/reference/rest/v1/Value).
+function aFirestoreValor(valor: unknown): Record<string, unknown> {
+  if (typeof valor === 'boolean') return { booleanValue: valor };
+  if (typeof valor === 'number') return { integerValue: String(valor) };
+  if (valor instanceof Date) return { timestampValue: valor.toISOString() };
+  if (Array.isArray(valor)) return { arrayValue: { values: valor.map(aFirestoreValor) } };
+  if (valor && typeof valor === 'object') return { mapValue: { fields: aFirestoreFields(valor as Record<string, unknown>) } };
+  return { stringValue: String(valor) };
+}
+
 function aFirestoreFields(datos: Record<string, unknown>): Record<string, unknown> {
   const fields: Record<string, unknown> = {};
   for (const [clave, valor] of Object.entries(datos)) {
     if (valor === undefined) continue;
-    if (typeof valor === 'boolean') {
-      fields[clave] = { booleanValue: valor };
-    } else if (typeof valor === 'string') {
-      fields[clave] = { stringValue: valor };
-    } else {
-      fields[clave] = { stringValue: String(valor) };
-    }
+    fields[clave] = aFirestoreValor(valor);
   }
   return fields;
 }
@@ -79,6 +83,7 @@ Cypress.Commands.add('seedUsuario', (datos: UsuarioSembrado) => {
       comunidadId: datos.comunidadId ?? 'comunidad-e2e',
       fechaRegistro: new Date().toISOString(),
       ...(datos.numeroApartamento ? { numeroApartamento: datos.numeroApartamento } : {}),
+      ...(datos.torre ? { torre: datos.torre } : {}),
     };
 
     return cy.request({
@@ -100,6 +105,26 @@ Cypress.Commands.add('seedComunidad', (idComunidad: string, datos: Record<string
     headers: { Authorization: 'Bearer owner' },
     body: { fields: aFirestoreFields(datos) },
   });
+});
+
+// Escribe cualquier documento (ruta "coleccion/id") con tipos de Firestore:
+// números, fechas (Date → Timestamp), listas y mapas.
+Cypress.Commands.add('seedDocumento', (ruta: string, datos: Record<string, unknown>) => {
+  return cy.request({
+    method: 'PATCH',
+    url: `${firestoreUrl()}/v1/projects/${proyecto()}/databases/(default)/documents/${ruta}`,
+    headers: { Authorization: 'Bearer owner' },
+    body: { fields: aFirestoreFields(datos) },
+  });
+});
+
+// Inicia sesión por la interfaz, como lo haría un vecino, y espera al panel de inicio.
+Cypress.Commands.add('iniciarSesion', (correo: string, password: string) => {
+  cy.visit('/login');
+  cy.get('ion-input[name="email"] input').type(correo);
+  cy.get('ion-input[name="password"] input').type(password);
+  cy.get('.confirm-btn').click();
+  cy.location('pathname', { timeout: 15000 }).should('eq', '/inicio');
 });
 
 // Crea el documento de codigos_invitacion/{codigo} que

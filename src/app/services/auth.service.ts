@@ -73,7 +73,7 @@ export class AuthService {
   }
 
   // Una cuenta desactivada puede autenticarse en Firebase Auth (eso no lo
-  // bloquean las reglas), pero luego no puede leer avisos ni recordatorios
+  // bloquean las reglas), pero luego no puede leer avisos ni notificaciones
   // porque isMemberOfCommunity() exige activo == true. Sin este chequeo
   // explícito, el usuario entraba y solo veía listas vacías con errores de
   // permisos silenciosos en la consola, sin ninguna explicación.
@@ -183,7 +183,7 @@ export class AuthService {
     );
   }
 
-  joinComunidadWithGoogle(codigoInvitacion: string, aceptaTerminos: boolean): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
+  joinComunidadWithGoogle(codigoInvitacion: string, aceptaTerminos: boolean, rolElegido: 'propietario' | 'arrendatario' = 'propietario'): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
     if (!aceptaTerminos) {
       return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
     }
@@ -218,7 +218,7 @@ export class AuthService {
               nombre: result.user.displayName || 'Residente',
               correo: result.user.email || '',
               telefono: '',
-              rol: 'residente',
+              rol: rolElegido,
               activo: true,
               comunidadId: comunidad.idComunidad || '',
               fechaRegistro: new Date().toISOString(),
@@ -331,6 +331,7 @@ export class AuthService {
     password: string;
     codigoInvitacion: string;
     aceptaTerminos: boolean;
+    rolElegido: 'propietario' | 'arrendatario';
   }): Observable<{ comunidad: ComunidadResumen; usuario: Usuario }> {
     if (!data.aceptaTerminos) {
       return throwError(() => new Error('Debe aceptar el tratamiento de datos personales'));
@@ -354,7 +355,7 @@ export class AuthService {
               telefono: data.telefono.trim(),
               numeroApartamento: data.numeroApartamento.trim(),
               ...(data.torre?.trim() ? { torre: data.torre.trim() } : {}),
-              rol: 'residente',
+              rol: data.rolElegido,
               activo: true,
               comunidadId: comunidad.idComunidad || '',
               fechaRegistro: new Date().toISOString(),

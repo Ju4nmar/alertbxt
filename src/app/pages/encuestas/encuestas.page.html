@@ -1,0 +1,109 @@
+<ion-content class="encuestas-content">
+  <div class="enc-wrap">
+    <header class="enc-header">
+      <h2 class="page-title">Encuestas</h2>
+      <p class="enc-sub">Participa en las decisiones de tu comunidad. Cada vecino puede votar una sola vez.</p>
+      <ion-button *ngIf="esAdmin && !formAbierto" (click)="abrirFormulario()" data-testid="nueva-encuesta">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Nueva encuesta
+      </ion-button>
+    </header>
+
+    <div *ngIf="cargaError" class="error-message" role="alert">{{ cargaError }}</div>
+
+    <form *ngIf="formAbierto" class="enc-card enc-form" (ngSubmit)="publicar()" novalidate>
+      <h3>Nueva encuesta</h3>
+
+      <label class="enc-campo">
+        <span>Pregunta</span>
+        <input type="text" name="titulo" [(ngModel)]="titulo" maxlength="120" placeholder="¿Aprobamos el cambio de portería?" />
+      </label>
+
+      <label class="enc-campo">
+        <span>Detalle (opcional)</span>
+        <textarea name="descripcion" [(ngModel)]="descripcion" rows="2" maxlength="400"></textarea>
+      </label>
+
+      <div class="enc-campo">
+        <span>Opciones (2 a {{ opcionesMax }})</span>
+        <div class="enc-opcion-fila" *ngFor="let opcion of opciones; let i = index; trackBy: trackByIndice">
+          <input type="text" [name]="'opcion' + i" [(ngModel)]="opciones[i]" maxlength="60" [placeholder]="'Opción ' + (i + 1)" />
+          <button type="button" class="enc-icono" *ngIf="opciones.length > 2" (click)="quitarOpcion(i)" aria-label="Quitar opción">
+            <ion-icon name="close-circle-outline"></ion-icon>
+          </button>
+        </div>
+        <button type="button" class="enc-link" *ngIf="opciones.length < opcionesMax" (click)="agregarOpcion()">+ Agregar opción</button>
+      </div>
+
+      <label class="enc-campo">
+        <span>Cierra el</span>
+        <input type="datetime-local" name="cierre" [(ngModel)]="cierre" />
+      </label>
+
+      <label class="enc-check">
+        <input type="checkbox" name="soloPropietarios" [(ngModel)]="soloPropietarios" />
+        Solo propietarios (los arrendatarios no la ven ni reciben aviso)
+      </label>
+
+      <div *ngIf="formError" class="error-message" role="alert">{{ formError }}</div>
+
+      <div class="enc-acciones">
+        <ion-button fill="outline" type="button" (click)="cancelarFormulario()">Cancelar</ion-button>
+        <ion-button type="submit" [disabled]="publicando">{{ publicando ? 'Publicando...' : 'Publicar' }}</ion-button>
+      </div>
+    </form>
+
+    <div *ngIf="isLoading" class="enc-card enc-skeleton" aria-hidden="true"></div>
+
+    <p *ngIf="!isLoading && !encuestas.length && !cargaError" class="enc-vacio">
+      Aún no hay encuestas. {{ esAdmin ? 'Crea la primera con «Nueva encuesta».' : 'Cuando el administrador publique una, te avisaremos.' }}
+    </p>
+
+    <article class="enc-card" *ngFor="let encuesta of encuestas; trackBy: trackByEncuesta" [class.enc-card--cerrada]="!estaAbierta(encuesta)">
+      <div class="enc-card-cabecera">
+        <span class="enc-estado" [class.enc-estado--abierta]="estaAbierta(encuesta)">
+          {{ estaAbierta(encuesta) ? 'Abierta' : 'Cerrada' }}
+        </span>
+        <span class="enc-etiqueta" *ngIf="encuesta.soloPropietarios">Solo propietarios</span>
+      </div>
+      <h3 class="enc-titulo">{{ encuesta.titulo }}</h3>
+      <p class="enc-detalle" *ngIf="encuesta.descripcion">{{ encuesta.descripcion }}</p>
+      <p class="enc-meta">
+        <ion-icon name="time-outline"></ion-icon>
+        {{ estaAbierta(encuesta) ? 'Cierra' : 'Cerró' }} el {{ encuesta.cierre | date: 'd MMM y, h:mm a' }}
+      </p>
+
+      <ng-container *ngIf="puedeVotar(encuesta)">
+        <label class="enc-radio" *ngFor="let opcion of encuesta.opciones; let i = index; trackBy: trackByIndice">
+          <input type="radio" [name]="'enc-' + encuesta.idEncuesta" [checked]="seleccion[encuesta.idEncuesta || ''] === i" (change)="elegir(encuesta, i)" />
+          {{ opcion }}
+        </label>
+        <ion-button size="small" (click)="votar(encuesta)" [disabled]="seleccion[encuesta.idEncuesta || ''] === undefined || votando[encuesta.idEncuesta || '']">
+          {{ votando[encuesta.idEncuesta || ''] ? 'Enviando...' : 'Votar' }}
+        </ion-button>
+      </ng-container>
+
+      <ng-container *ngIf="mostrarResultados(encuesta)">
+        <p class="enc-total">{{ encuesta.totalVotos }} {{ encuesta.totalVotos === 1 ? 'voto' : 'votos' }}</p>
+        <div class="enc-resultado" *ngFor="let opcion of encuesta.opciones; let i = index; trackBy: trackByIndice">
+          <div class="enc-resultado-texto">
+            <span>
+              {{ opcion }}
+              <ion-icon *ngIf="misVotos[encuesta.idEncuesta || ''] === i" name="checkmark-circle" aria-label="Tu voto"></ion-icon>
+            </span>
+            <strong>{{ porcentaje(encuesta, i) }}% · {{ votosDe(encuesta, i) }}</strong>
+          </div>
+          <div class="enc-barra"><div class="enc-barra-relleno" [style.width.%]="porcentaje(encuesta, i)"></div></div>
+        </div>
+      </ng-container>
+
+      <div class="enc-acciones" *ngIf="esAdmin">
+        <ion-button size="small" fill="outline" *ngIf="estaAbierta(encuesta)" (click)="cerrarAhora(encuesta)">Cerrar ahora</ion-button>
+        <ion-button size="small" fill="outline" color="danger" (click)="eliminar(encuesta)">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          Eliminar
+        </ion-button>
+      </div>
+    </article>
+  </div>
+</ion-content>

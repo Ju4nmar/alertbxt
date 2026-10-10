@@ -117,11 +117,21 @@
             <span class="detalle-valor">{{ formatearUnidad(usuarioSeleccionado) || 'No disponible' }}</span>
           </div>
 
-          <div class="detalle-fila">
+          <div class="detalle-fila" *ngIf="!puedeGestionarUsuario(usuarioSeleccionado)">
             <span class="detalle-label">Rol:</span>
             <span class="detalle-valor" [ngClass]="obtenerBadgeRol(usuarioSeleccionado.rol).clase">
               {{ obtenerBadgeRol(usuarioSeleccionado.rol).label }}
             </span>
+          </div>
+
+          <div class="detalle-fila" *ngIf="puedeGestionarUsuario(usuarioSeleccionado)">
+            <span class="detalle-label">Rol:</span>
+            <ion-select class="detalle-select" aria-label="Rol" [ngModel]="usuarioSeleccionado.rol" (ionChange)="cambiarRol(usuarioSeleccionado, $event.detail.value)" [disabled]="actualizandoUsuario" interface="popover">
+              <ion-select-option value="propietario">Propietario</ion-select-option>
+              <ion-select-option value="arrendatario">Arrendatario</ion-select-option>
+              <ion-select-option value="guarda">Guarda</ion-select-option>
+              <ion-select-option value="admin">Administrador</ion-select-option>
+            </ion-select>
           </div>
 
           <div class="detalle-fila">
@@ -141,10 +151,7 @@
               {{ enviandoMensaje ? 'Enviando...' : 'Enviar mensaje' }}
             </ion-button>
             <ion-button expand="block" [disabled]="actualizandoUsuario" (click)="alternarEstado(usuarioSeleccionado)">
-              {{ usuarioSeleccionado.activo === false ? 'Activar residente' : 'Desactivar residente' }}
-            </ion-button>
-            <ion-button expand="block" fill="outline" [disabled]="actualizandoUsuario" (click)="cambiarRol(usuarioSeleccionado)">
-              {{ usuarioSeleccionado.rol === 'admin' ? 'Convertir en residente' : 'Convertir en administrador' }}
+              {{ usuarioSeleccionado.activo === false ? 'Activar vecino' : 'Desactivar vecino' }}
             </ion-button>
           </div>
         </div>

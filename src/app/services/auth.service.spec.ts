@@ -167,6 +167,7 @@ describe('AuthService', () => {
       password: 'password123',
       codigoInvitacion: 'ABCD1234',
       aceptaTerminos: false,
+      rolElegido: 'propietario',
     }))).toBeRejectedWithError('Debe aceptar el tratamiento de datos personales');
 
     expect(authClientSpy.createUserWithEmailAndPassword).not.toHaveBeenCalled();

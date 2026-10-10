@@ -4,8 +4,15 @@ import { RouteReuseStrategy, provideRouter } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
 import { getApp, provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { ReCaptchaEnterpriseProvider, initializeAppCheck, provideAppCheck } from '@angular/fire/app-check';
-import { connectFirestoreEmulator, provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { browserLocalPersistence, connectAuthEmulator, getAuth, provideAuth, setPersistence } from '@angular/fire/auth';
+import { connectFirestoreEmulator, initializeFirestore, provideFirestore, getFirestore } from '@angular/fire/firestore';
+// Las fábricas de caché se importan del SDK directo (igual que en auth): las
+// versiones envueltas por @angular/fire no están pensadas para esto.
+import { persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
+// setPersistence y browserLocalPersistence se importan del SDK directo: la
+// versión envuelta por @angular/fire convierte la clase en una función que ya
+// no se puede instanciar ("t is not a constructor").
+import { browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { provideFunctions, getFunctions } from '@angular/fire/functions';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -45,11 +52,24 @@ bootstrapApplication(AppComponent, {
         })]
       : []),
     provideFirestore(() => {
-      const firestore = getFirestore(getApp());
       if (environment.useEmulators) {
+        const firestore = getFirestore(getApp());
         connectFirestoreEmulator(firestore, 'localhost', 8080);
+        return firestore;
       }
-      return firestore;
+      // Persistencia offline: los datos ya vistos se leen de IndexedDB sin red
+      // y las escrituras (p. ej. una alerta SOS) quedan en cola y se envían
+      // solas al reconectar, también entre pestañas. Si el navegador no la
+      // permite (modo privado, almacenamiento bloqueado) o ya hay una
+      // instancia (recarga en caliente), se usa la instancia normal.
+      try {
+        return initializeFirestore(getApp(), {
+          localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+        });
+      } catch (error) {
+        console.warn('Persistencia offline no disponible:', error);
+        return getFirestore(getApp());
+      }
     }),
     provideMessaging(() => getMessaging(getApp())),
     provideFunctions(() => getFunctions(getApp())),
@@ -58,7 +78,9 @@ bootstrapApplication(AppComponent, {
       if (environment.useEmulators) {
         connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
       } else {
-        void setPersistence(auth, browserLocalPersistence);
+        setPersistence(auth, browserLocalPersistence).catch(error => {
+          console.warn('No se pudo fijar la persistencia de sesión:', error);
+        });
       }
       return auth;
     }),

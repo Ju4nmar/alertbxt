@@ -2,7 +2,7 @@
 <div class="auth-shell" [class.no-hero]="isLoggedIn">
   <aside class="auth-hero" *ngIf="!isLoggedIn">
     <div class="auth-hero-inner">
-      <img src="assets/icon/Alertlogo.png" alt="" class="auth-logo" width="72" height="72" />
+      <img src="assets/icon/Alertlogo.png" alt="" class="auth-logo" width="220" height="220" />
       <p class="auth-eyebrow">Invitación</p>
       <h1 class="auth-hero-title">Te están<br />esperando.</h1>
       <p class="auth-hero-copy">
@@ -34,8 +34,16 @@
         </div>
 
         <ng-container *ngIf="!isLoggedIn">
+          <ion-item>
+            <ion-select label="Eres..." label-placement="floating" [(ngModel)]="rolElegido" name="rolElegido" interface="popover">
+              <ion-select-option value="propietario">Propietario</ion-select-option>
+              <ion-select-option value="arrendatario">Arrendatario</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <p class="field-hint">Algunos avisos (como convocatorias de asamblea) se muestran solo al propietario.</p>
+
           <ion-item class="chekbox">
-            <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="joinError = ''"></ion-checkbox>
+            <ion-checkbox slot="start" [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="joinError = ''"></ion-checkbox>
             <ion-label>
               Acepto el <a href="/privacidad" target="_blank" rel="noopener">tratamiento de mis datos personales</a> conforme a la Ley 1581 de 2012.
             </ion-label>

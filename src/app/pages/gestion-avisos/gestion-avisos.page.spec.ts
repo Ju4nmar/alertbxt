@@ -28,6 +28,7 @@ describe('GestionAvisosPage', () => {
           useValue: {
             isLoading$: of(false),
             getAvisosByComunidad: () => of([]),
+            completarSoloPropietarios: () => of([]),
             addAviso: () => of('aviso-1'),
             updateAviso: () => of(void 0),
             deleteAviso: () => of(void 0),

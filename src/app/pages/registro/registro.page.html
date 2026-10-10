@@ -2,7 +2,7 @@
 <div class="auth-shell">
   <aside class="auth-hero">
     <div class="auth-hero-inner">
-      <img src="assets/icon/Alertlogo.png" alt="" class="auth-logo" width="72" height="72" />
+      <img src="assets/icon/Alertlogo.png" alt="" class="auth-logo" width="220" height="220" />
       <p class="auth-eyebrow">Nuevo conjunto</p>
       <h1 class="auth-hero-title">Organiza tu<br />conjunto desde hoy.</h1>
       <p class="auth-hero-copy">
@@ -90,7 +90,7 @@
         </div>
 
         <ion-item class="chekbox">
-          <ion-checkbox [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
+          <ion-checkbox slot="start" [(ngModel)]="aceptaTerminos" name="aceptaTerminos" required #terminosInput="ngModel" (ionChange)="registroError = ''"></ion-checkbox>
           <ion-label>
             Acepto el <a href="/privacidad" target="_blank" rel="noopener">tratamiento de mis datos personales</a> conforme a la Ley 1581 de 2012.
           </ion-label>

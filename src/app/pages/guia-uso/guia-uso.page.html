@@ -45,6 +45,71 @@
         </div>
       </ion-accordion>
 
+      <ion-accordion value="inicio">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="home-outline"></ion-icon>
+          <ion-label>Inicio</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Es la primera pantalla al entrar: un resumen del día con las
+            alertas activas de las últimas 24 horas, el pico y placa de hoy,
+            las noticias recientes de tu comunidad y tus próximas
+            notificaciones. El administrador puede configurar el pico y placa
+            desde esa misma tarjeta.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="encuestas">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="clipboard-outline"></ion-icon>
+          <ion-label>Encuestas</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            El administrador publica preguntas con varias opciones y una fecha
+            de cierre; recibes una notificación cuando hay una nueva. Cada
+            vecino vota una sola vez y, al votar (o cuando la encuesta cierra),
+            ve los resultados en porcentajes. Algunas son solo para
+            propietarios y los arrendatarios no las ven.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="vehiculos">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="car-outline"></ion-icon>
+          <ion-label>Vehículos</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Cada vecino registra sus placas (hasta 4) desde su Perfil, en «Mis
+            vehículos». El administrador y el guarda tienen la sección
+            «Vehículos» para buscar de quién es un vehículo por placa, nombre,
+            torre o apartamento. Una misma placa solo puede registrarse una vez
+            por vecindad.
+          </p>
+        </div>
+      </ion-accordion>
+
+      <ion-accordion value="reservas">
+        <ion-item slot="header" lines="none">
+          <ion-icon slot="start" name="bookmark-outline"></ion-icon>
+          <ion-label>Reservas</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <p>
+            Elige la zona común, el día y toca los horarios libres que
+            necesitas (consecutivos, hasta el máximo de horas por día que fije la zona) y
+            confirma. Los bloques ocupados muestran el apartamento que los
+            reservó. Puedes cancelar tus reservas desde «Mis reservas». El
+            administrador crea y elimina las zonas y puede cancelar cualquier
+            reserva.
+          </p>
+        </div>
+      </ion-accordion>
+
       <ion-accordion value="alertas">
         <ion-item slot="header" lines="none">
           <ion-icon slot="start" name="calendar-outline"></ion-icon>
@@ -53,24 +118,26 @@
         <div class="ion-padding" slot="content">
           <p>
             Aquí ves los avisos del administrador (emergencia, mantenimiento,
-            informativo), las alertas SOS de tus vecinos y tus próximos
-            recordatorios. Cada tarjeta muestra la fecha exacta y también
+            informativo), las alertas SOS de tus vecinos y tus próximas
+            notificaciones. Cada tarjeta muestra la fecha exacta y también
             cuánto falta o cuánto pasó, por ejemplo "vence en 2 días" o "hace
             3 horas".
           </p>
         </div>
       </ion-accordion>
 
-      <ion-accordion value="recordatorios">
+      <ion-accordion value="notificaciones">
         <ion-item slot="header" lines="none">
           <ion-icon slot="start" name="calendar-outline"></ion-icon>
-          <ion-label>Recordatorios</ion-label>
+          <ion-label>Notificaciones</ion-label>
         </ion-item>
         <div class="ion-padding" slot="content">
           <p>
-            Crea recordatorios personales (pagos, citas, tareas) con fecha
-            límite. Márcalos como completados cuando termines; mientras estén
-            pendientes también aparecen en tu feed de Alertas y eventos.
+            Crea notificaciones personales (pagos, citas, tareas) con fecha y
+            hora: te llegará un aviso cuando llegue el momento y, mientras estén
+            pendientes, también aparecen en tu feed de Alertas y eventos. El
+            administrador puede enviarlas a vecinos específicos o a toda la
+            comunidad.
           </p>
         </div>
       </ion-accordion>
@@ -140,12 +207,12 @@
         <ion-accordion value="estadisticas">
           <ion-item slot="header" lines="none">
             <ion-icon slot="start" name="stats-chart-outline"></ion-icon>
-            <ion-label>Estadísticas (administrador)</ion-label>
+            <ion-label>Métricas (administrador)</ion-label>
           </ion-item>
           <div class="ion-padding" slot="content">
             <p>
               Un vistazo general a tu comunidad: vecinos activos, avisos
-              publicados por tipo y recordatorios completados frente a
+              publicados por tipo y notificaciones completadas frente a
               pendientes.
             </p>
           </div>

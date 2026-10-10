@@ -1,6 +1,9 @@
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import {
+  DocumentData,
   Firestore,
+  clearIndexedDbPersistence,
+  terminate,
   addDoc,
   collection,
   collectionData,
@@ -9,15 +12,19 @@ import {
   docData,
   limit,
   orderBy,
+  Query,
   query,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
+  writeBatch,
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { BehaviorSubject, Observable, combineLatest, from, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, forkJoin, from, of, throwError } from 'rxjs';
 import { catchError, finalize, map, switchMap, take, tap } from 'rxjs/operators';
-import { Aviso, Comunidad, Dispositivo, MensajeAdmin, MensajeEnviado, Recordatorio, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
+import { Aviso, Comunidad, Dispositivo, Encuesta, Reserva, Vehiculo, ZonaComun, MensajeAdmin, MensajeEnviado, Notificacion, RespuestaMensaje, TipoComunidad, Usuario } from '../models';
+import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -34,15 +41,19 @@ export class FirestoreService {
     return runInInjectionContext(this.injector, callback);
   }
 
-  getAvisosByComunidad(comunidadId: string): Observable<Aviso[]> {
+  // Las reglas no filtran: si el arrendatario consultara todos los avisos de
+  // la comunidad, Firestore rechazaría la consulta completa por poder incluir
+  // alguno "solo propietarios". Por eso su consulta lo declara explícitamente
+  // (y por eso todo aviso guarda soloPropietarios como booleano).
+  getAvisosByComunidad(comunidadId: string, rol?: string): Observable<Aviso[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
       const col = collection(this.firestore, 'avisos');
-      return query(
-        col,
-        where('comunidadId', '==', comunidadId),
-        limit(50)
-      );
+      const filtros = [where('comunidadId', '==', comunidadId)];
+      if (rol === 'arrendatario') {
+        filtros.push(where('soloPropietarios', '==', false));
+      }
+      return query(col, ...filtros, limit(50));
     });
 
     return this.inContext(() => collectionData(q, { idField: 'idAviso' })).pipe(
@@ -63,7 +74,11 @@ export class FirestoreService {
     this.isLoadingSubject.next(true);
     const col = this.inContext(() => collection(this.firestore, 'avisos'));
 
-    return from(this.inContext(() => addDoc(col, { ...aviso, fechaPublicacion: new Date().toISOString() }))).pipe(
+    return from(this.inContext(() => addDoc(col, {
+      ...aviso,
+      soloPropietarios: aviso.soloPropietarios === true,
+      fechaPublicacion: new Date().toISOString(),
+    }))).pipe(
       map(docRef => docRef.id),
       catchError(error => {
         console.error('Error agregando aviso:', error);
@@ -71,6 +86,16 @@ export class FirestoreService {
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
+  }
+
+  // Avisos creados antes de existir "solo propietarios" no tienen el campo y
+  // quedarían fuera de la consulta del arrendatario; un admin los completa.
+  completarSoloPropietarios(avisos: Aviso[]): Observable<void[]> {
+    const pendientes = avisos.filter(aviso => !!aviso.idAviso && aviso.soloPropietarios === undefined);
+    if (pendientes.length === 0) {
+      return of([]);
+    }
+    return forkJoin(pendientes.map(aviso => this.updateAviso(aviso.idAviso as string, { soloPropietarios: false })));
   }
 
   updateAviso(id: string, aviso: Partial<Aviso>): Observable<void> {
@@ -311,11 +336,11 @@ export class FirestoreService {
     );
   }
 
-  getRecordatoriosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
+  getNotificacionesByUsuario(idUsuario: string, comunidadId: string): Observable<Notificacion[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
-      const col = collection(this.firestore, 'recordatorios');
-      // La regla de seguridad de "recordatorios" exige idUsuario Y comunidadId
+      const col = collection(this.firestore, 'notificaciones');
+      // La regla de seguridad de "notificaciones" exige idUsuario Y comunidadId
       // (isMemberOfCommunity). Firestore solo puede validar una consulta de
       // lista cuando TODOS los campos que la regla revisa también están en
       // los filtros de la consulta; si comunidadId no se filtra aquí,
@@ -330,28 +355,28 @@ export class FirestoreService {
       );
     });
 
-    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
-      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
-        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+    return this.inContext(() => collectionData(q, { idField: 'idNotificaciones' })).pipe(
+      map(data => (data as Array<Notificacion & Record<string, unknown>>)
+        .map(notificacion => this.normalizeNotificacion(notificacion))
         .sort((a, b) => (a.fechaHora || '').localeCompare(b.fechaHora || ''))
       ),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
-        console.error('Error obteniendo recordatorios:', error);
+        console.error('Error obteniendo notificaciones:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios'));
+        return throwError(() => new Error('Error al cargar notificaciones'));
       })
     );
   }
 
-  // Recordatorios de grupo que un admin asignó puntualmente a este usuario
+  // Notificaciones de grupo que un admin asignó puntualmente a este usuario
   // (usuariosAsignados array-contains uid) — un solo documento compartido
-  // con otros destinatarios, no una copia propia. Ver getRecordatoriosByUsuario
+  // con otros destinatarios, no una copia propia. Ver getNotificacionesByUsuario
   // sobre por qué comunidadId también se filtra aquí.
-  getRecordatoriosAsignadosByUsuario(idUsuario: string, comunidadId: string): Observable<Recordatorio[]> {
+  getNotificacionesAsignadasByUsuario(idUsuario: string, comunidadId: string): Observable<Notificacion[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
-      const col = collection(this.firestore, 'recordatorios');
+      const col = collection(this.firestore, 'notificaciones');
       return query(
         col,
         where('usuariosAsignados', 'array-contains', idUsuario),
@@ -360,24 +385,24 @@ export class FirestoreService {
       );
     });
 
-    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
-      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
-        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+    return this.inContext(() => collectionData(q, { idField: 'idNotificaciones' })).pipe(
+      map(data => (data as Array<Notificacion & Record<string, unknown>>)
+        .map(notificacion => this.normalizeNotificacion(notificacion))
       ),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
-        console.error('Error obteniendo recordatorios asignados:', error);
+        console.error('Error obteniendo notificaciones asignados:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios asignados'));
+        return throwError(() => new Error('Error al cargar notificaciones asignadas'));
       })
     );
   }
 
-  // Recordatorios que un admin asignó a toda la comunidad (paraTodaLaComunidad).
-  getRecordatoriosParaTodaLaComunidad(comunidadId: string): Observable<Recordatorio[]> {
+  // Notificaciones que un admin asignó a toda la comunidad (paraTodaLaComunidad).
+  getNotificacionesParaTodaLaComunidad(comunidadId: string): Observable<Notificacion[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
-      const col = collection(this.firestore, 'recordatorios');
+      const col = collection(this.firestore, 'notificaciones');
       return query(
         col,
         where('comunidadId', '==', comunidadId),
@@ -386,151 +411,151 @@ export class FirestoreService {
       );
     });
 
-    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
-      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
-        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+    return this.inContext(() => collectionData(q, { idField: 'idNotificaciones' })).pipe(
+      map(data => (data as Array<Notificacion & Record<string, unknown>>)
+        .map(notificacion => this.normalizeNotificacion(notificacion))
       ),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
-        console.error('Error obteniendo recordatorios de la comunidad:', error);
+        console.error('Error obteniendo notificaciones de la comunidad:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios de la comunidad'));
+        return throwError(() => new Error('Error al cargar notificaciones de la comunidad'));
       })
     );
   }
 
-  // Todo lo que un usuario debe ver como "sus" recordatorios: los personales,
-  // los que un admin le asignó (o asignó a toda la comunidad) y, si es admin,
-  // los que él mismo asignó a otros — así conserva el registro de que
+  // Todo lo que un usuario debe ver como "sus" notificaciones: las personales,
+  // las que un admin le asignó (o asignó a toda la comunidad) y, si es admin,
+  // las que él mismo asignó a otros — así conserva el registro de que
   // llegaron y de si ya se cumplieron. Son consultas separadas (una por
-  // regla de seguridad) que se unen aquí, sin repetidos.
-  getRecordatoriosVisibles(usuario: Usuario): Observable<Recordatorio[]> {
+  // regla de seguridad) que se unen aquí, sin repetidas.
+  getNotificacionesVisibles(usuario: Usuario): Observable<Notificacion[]> {
     const idUsuario = usuario.idUsuario || '';
     const fuentes = [
-      this.getRecordatoriosByUsuario(idUsuario, usuario.comunidadId),
-      this.getRecordatoriosAsignadosByUsuario(idUsuario, usuario.comunidadId),
-      this.getRecordatoriosParaTodaLaComunidad(usuario.comunidadId),
+      this.getNotificacionesByUsuario(idUsuario, usuario.comunidadId),
+      this.getNotificacionesAsignadasByUsuario(idUsuario, usuario.comunidadId),
+      this.getNotificacionesParaTodaLaComunidad(usuario.comunidadId),
     ];
     if (usuario.rol === 'admin') {
-      fuentes.push(this.getRecordatoriosCreadosPor(idUsuario, usuario.comunidadId));
+      fuentes.push(this.getNotificacionesCreadasPor(idUsuario, usuario.comunidadId));
     }
 
     return combineLatest(fuentes).pipe(
       map(listas => {
-        const porId = new Map<string, Recordatorio>();
-        ([] as Recordatorio[]).concat(...listas).forEach(recordatorio => {
-          porId.set(recordatorio.idRecordatorios || `${recordatorio.fechaHora}-${recordatorio.tituloRecordatorio}`, recordatorio);
+        const porId = new Map<string, Notificacion>();
+        ([] as Notificacion[]).concat(...listas).forEach(notificacion => {
+          porId.set(notificacion.idNotificaciones || `${notificacion.fechaHora}-${notificacion.tituloNotificacion}`, notificacion);
         });
         return Array.from(porId.values()).sort((a, b) => (a.fechaHora || '').localeCompare(b.fechaHora || ''));
       })
     );
   }
 
-  // Recordatorios de grupo que este admin creó (autorId).
-  getRecordatoriosCreadosPor(autorId: string, comunidadId: string): Observable<Recordatorio[]> {
+  // Notificaciones de grupo que este admin creó (autorId).
+  getNotificacionesCreadasPor(autorId: string, comunidadId: string): Observable<Notificacion[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => query(
-      collection(this.firestore, 'recordatorios'),
+      collection(this.firestore, 'notificaciones'),
       where('autorId', '==', autorId),
       where('comunidadId', '==', comunidadId),
       limit(100)
     ));
 
-    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
-      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
-        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+    return this.inContext(() => collectionData(q, { idField: 'idNotificaciones' })).pipe(
+      map(data => (data as Array<Notificacion & Record<string, unknown>>)
+        .map(notificacion => this.normalizeNotificacion(notificacion))
       ),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
-        console.error('Error obteniendo recordatorios creados:', error);
+        console.error('Error obteniendo notificaciones creados:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios creados'));
+        return throwError(() => new Error('Error al cargar notificaciones creadas'));
       })
     );
   }
 
-  getRecordatoriosByComunidad(comunidadId: string): Observable<Recordatorio[]> {
+  getNotificacionesByComunidad(comunidadId: string): Observable<Notificacion[]> {
     this.isLoadingSubject.next(true);
     const q = this.inContext(() => {
-      const col = collection(this.firestore, 'recordatorios');
+      const col = collection(this.firestore, 'notificaciones');
       return query(col, where('comunidadId', '==', comunidadId), limit(500));
     });
 
-    return this.inContext(() => collectionData(q, { idField: 'idRecordatorios' })).pipe(
-      map(data => (data as Array<Recordatorio & Record<string, unknown>>)
-        .map(recordatorio => this.normalizeRecordatorio(recordatorio))
+    return this.inContext(() => collectionData(q, { idField: 'idNotificaciones' })).pipe(
+      map(data => (data as Array<Notificacion & Record<string, unknown>>)
+        .map(notificacion => this.normalizeNotificacion(notificacion))
       ),
       tap(() => this.isLoadingSubject.next(false)),
       catchError(error => {
-        console.error('Error obteniendo recordatorios de la comunidad:', error);
+        console.error('Error obteniendo notificaciones de la comunidad:', error);
         this.isLoadingSubject.next(false);
-        return throwError(() => new Error('Error al cargar recordatorios'));
+        return throwError(() => new Error('Error al cargar notificaciones'));
       })
     );
   }
 
-  addRecordatorio(recordatorio: Omit<Recordatorio, 'idRecordatorios'>): Observable<string> {
+  addNotificacion(notificacion: Omit<Notificacion, 'idNotificaciones'>): Observable<string> {
     this.isLoadingSubject.next(true);
-    const col = this.inContext(() => collection(this.firestore, 'recordatorios'));
+    const col = this.inContext(() => collection(this.firestore, 'notificaciones'));
 
-    return from(this.inContext(() => addDoc(col, { ...recordatorio, fechaCreacion: new Date().toISOString() }))).pipe(
+    return from(this.inContext(() => addDoc(col, { ...notificacion, fechaCreacion: new Date().toISOString() }))).pipe(
       map(docRef => docRef.id),
       catchError(error => {
-        console.error('Error agregando recordatorio:', error);
-        return throwError(() => new Error('Error al agregar recordatorio'));
+        console.error('Error agregando notificacion:', error);
+        return throwError(() => new Error('Error al agregar notificación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
   }
 
-  updateRecordatorio(id: string, recordatorio: Partial<Recordatorio>): Observable<void> {
+  updateNotificacion(id: string, notificacion: Partial<Notificacion>): Observable<void> {
     this.isLoadingSubject.next(true);
-    const docRef = this.inContext(() => doc(this.firestore, `recordatorios/${id}`));
+    const docRef = this.inContext(() => doc(this.firestore, `notificaciones/${id}`));
 
-    return from(this.inContext(() => updateDoc(docRef, recordatorio))).pipe(
+    return from(this.inContext(() => updateDoc(docRef, notificacion))).pipe(
       map(() => void 0),
       catchError(error => {
-        console.error('Error actualizando recordatorio:', error);
-        return throwError(() => new Error('Error al actualizar recordatorio'));
+        console.error('Error actualizando notificacion:', error);
+        return throwError(() => new Error('Error al actualizar notificación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
   }
 
-  deleteRecordatorio(id: string): Observable<void> {
+  deleteNotificacion(id: string): Observable<void> {
     this.isLoadingSubject.next(true);
-    const docRef = this.inContext(() => doc(this.firestore, `recordatorios/${id}`));
+    const docRef = this.inContext(() => doc(this.firestore, `notificaciones/${id}`));
 
     return from(this.inContext(() => deleteDoc(docRef))).pipe(
       map(() => void 0),
       catchError(error => {
-        console.error('Error eliminando recordatorio:', error);
-        return throwError(() => new Error('Error al eliminar recordatorio'));
+        console.error('Error eliminando notificacion:', error);
+        return throwError(() => new Error('Error al eliminar notificación'));
       }),
       finalize(() => this.isLoadingSubject.next(false))
     );
   }
 
-  // A diferencia de addRecordatorio (escritura directa del cliente, para
-  // recordatorios personales), esto pasa por una Cloud Function porque
+  // A diferencia de addNotificacion (escritura directa del cliente, para
+  // notificaciones personales), esto pasa por una Cloud Function porque
   // valida que quien asigna es admin y que los destinatarios pertenecen a
   // su comunidad — la misma razón por la que enviarMensajeIndividual no es
   // un simple addDoc.
-  crearRecordatorioAsignado(datos: {
+  crearNotificacionAsignada(datos: {
     titulo: string;
     descripcion: string;
     fechaHora: string;
     usuarioIds?: string[];
     paraTodos?: boolean;
   }): Observable<void> {
-    const crear = httpsCallable<typeof datos, { recordatorioId: string }>(this.functions, 'crearRecordatorioAsignado');
+    const crear = httpsCallable<typeof datos, { notificacionId: string }>(this.functions, 'crearNotificacionAsignada');
 
     return from(crear(datos)).pipe(
       map(() => void 0),
       catchError(error => {
-        console.error('Error creando recordatorio asignado:', error);
+        console.error('Error creando notificacion asignado:', error);
         const mensaje = (error as { message?: string })?.message;
-        return throwError(() => new Error(mensaje || 'No se pudo crear el recordatorio.'));
+        return throwError(() => new Error(mensaje || 'No se pudo crear la notificación.'));
       })
     );
   }
@@ -586,6 +611,291 @@ export class FirestoreService {
     );
   }
 
+  // Igual que con los avisos: el arrendatario debe declarar
+  // soloPropietarios == false en su consulta (ver getAvisosByComunidad).
+  getEncuestasByComunidad(comunidadId: string, rol?: string): Observable<Encuesta[]> {
+    const q = this.inContext(() => {
+      const filtros = [where('comunidadId', '==', comunidadId)];
+      if (rol === 'arrendatario') {
+        filtros.push(where('soloPropietarios', '==', false));
+      }
+      return query(collection(this.firestore, 'encuestas'), ...filtros, limit(100));
+    });
+
+    return this.inContext(() => collectionData(q, { idField: 'idEncuesta' })).pipe(
+      map(data => (data as Array<Record<string, unknown>>)
+        .map(encuesta => this.normalizeEncuesta(encuesta))
+        .sort((a, b) => b.cierre.localeCompare(a.cierre))
+      ),
+      catchError(error => {
+        console.error('Error obteniendo encuestas:', error);
+        return throwError(() => new Error('Error al cargar encuestas'));
+      })
+    );
+  }
+
+  addEncuesta(encuesta: Omit<Encuesta, 'idEncuesta' | 'conteo' | 'totalVotos' | 'fechaCreacion'>): Observable<string> {
+    const col = this.inContext(() => collection(this.firestore, 'encuestas'));
+    const datos = {
+      ...encuesta,
+      cierre: Timestamp.fromDate(new Date(encuesta.cierre)),
+      fechaCreacion: new Date().toISOString(),
+      conteo: {},
+      totalVotos: 0,
+    };
+
+    return from(this.inContext(() => addDoc(col, datos))).pipe(
+      map(docRef => docRef.id),
+      catchError(error => {
+        console.error('Error creando encuesta:', error);
+        return throwError(() => new Error('Error al crear la encuesta'));
+      })
+    );
+  }
+
+  cerrarEncuesta(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${id}`));
+    return from(this.inContext(() => updateDoc(docRef, { cierre: Timestamp.now() }))).pipe(
+      catchError(error => {
+        console.error('Error cerrando encuesta:', error);
+        return throwError(() => new Error('Error al cerrar la encuesta'));
+      })
+    );
+  }
+
+  deleteEncuesta(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${id}`));
+    return from(this.inContext(() => deleteDoc(docRef))).pipe(
+      catchError(error => {
+        console.error('Error eliminando encuesta:', error);
+        return throwError(() => new Error('Error al eliminar la encuesta'));
+      })
+    );
+  }
+
+  // Opción que eligió este usuario (null si aún no vota). El id del voto es
+  // el uid: de ahí sale que solo se pueda votar una vez.
+  getMiVoto(encuestaId: string, uid: string): Observable<number | null> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${encuestaId}/votos/${uid}`));
+    return this.inContext(() => docData(docRef)).pipe(
+      take(1),
+      map(data => (data && typeof data['opcion'] === 'number') ? data['opcion'] as number : null),
+      catchError(() => of(null))
+    );
+  }
+
+  votarEncuesta(encuestaId: string, uid: string, opcion: number): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${encuestaId}/votos/${uid}`));
+    return from(this.inContext(() => setDoc(docRef, { opcion, fecha: new Date().toISOString() }))).pipe(
+      catchError(error => {
+        console.error('Error registrando voto:', error);
+        return throwError(() => new Error('Error al registrar el voto'));
+      })
+    );
+  }
+
+  private normalizeEncuesta(data: Record<string, unknown>): Encuesta {
+    const cierre = data['cierre'] as { toDate?: () => Date } | string | undefined;
+    const cierreIso = typeof cierre === 'string'
+      ? cierre
+      : (cierre?.toDate ? cierre.toDate().toISOString() : new Date(0).toISOString());
+    return {
+      idEncuesta: data['idEncuesta'] as string,
+      titulo: String(data['titulo'] || 'Sin título'),
+      descripcion: (data['descripcion'] as string | undefined) || undefined,
+      opciones: Array.isArray(data['opciones']) ? data['opciones'] as string[] : [],
+      comunidadId: String(data['comunidadId'] || ''),
+      autorId: String(data['autorId'] || ''),
+      autorNombre: (data['autorNombre'] as string | undefined) || undefined,
+      soloPropietarios: data['soloPropietarios'] === true,
+      cierre: cierreIso,
+      fechaCreacion: data['fechaCreacion'] as string | undefined,
+      conteo: (data['conteo'] as Record<string, number> | undefined) ?? {},
+      totalVotos: typeof data['totalVotos'] === 'number' ? data['totalVotos'] as number : 0,
+    };
+  }
+
+  // Los vecinos solo leen sus propios vehículos (la regla lo exige, así que
+  // la consulta también filtra por dueño); admin y guarda leen toda la comunidad.
+  getVehiculosDeUsuario(idUsuario: string, comunidadId: string): Observable<Vehiculo[]> {
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'vehiculos'),
+      where('propietarioId', '==', idUsuario),
+      where('comunidadId', '==', comunidadId),
+      limit(20)
+    ));
+    return this.vehiculosDesde(q);
+  }
+
+  getVehiculosDeComunidad(comunidadId: string): Observable<Vehiculo[]> {
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'vehiculos'),
+      where('comunidadId', '==', comunidadId),
+      limit(500)
+    ));
+    return this.vehiculosDesde(q);
+  }
+
+  addVehiculo(vehiculo: Omit<Vehiculo, 'idVehiculo' | 'fechaRegistro'>): Observable<string> {
+    const id = `${vehiculo.comunidadId}_${vehiculo.placa}`;
+    const docRef = this.inContext(() => doc(this.firestore, `vehiculos/${id}`));
+    const datos: Record<string, unknown> = { ...vehiculo, fechaRegistro: new Date().toISOString() };
+    Object.keys(datos).forEach(clave => datos[clave] === undefined && delete datos[clave]);
+
+    return from(this.inContext(() => setDoc(docRef, datos))).pipe(
+      map(() => id),
+      catchError(error => {
+        console.error('Error registrando vehículo:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deleteVehiculo(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `vehiculos/${id}`));
+    return from(this.inContext(() => deleteDoc(docRef))).pipe(
+      catchError(error => {
+        console.error('Error eliminando vehículo:', error);
+        return throwError(() => new Error('Error al eliminar el vehículo'));
+      })
+    );
+  }
+
+  private vehiculosDesde(q: Query<DocumentData>): Observable<Vehiculo[]> {
+    return this.inContext(() => collectionData(q, { idField: 'idVehiculo' })).pipe(
+      map(data => (data as unknown as Vehiculo[]).sort((a, b) => a.placa.localeCompare(b.placa))),
+      catchError(error => {
+        console.error('Error obteniendo vehículos:', error);
+        return throwError(() => new Error('Error al cargar vehículos'));
+      })
+    );
+  }
+
+  // En un dispositivo compartido, los datos guardados para uso sin red no
+  // deben sobrevivir al cierre de sesión. Termina Firestore y borra su caché;
+  // después hay que recargar la página (la instancia queda inutilizable).
+  async limpiarCacheLocal(): Promise<boolean> {
+    if (environment.useEmulators) {
+      return false;
+    }
+    try {
+      await terminate(this.firestore);
+      await clearIndexedDbPersistence(this.firestore);
+      return true;
+    } catch (error) {
+      console.warn('No se pudo limpiar la caché local:', error);
+      return false;
+    }
+  }
+
+  getZonasByComunidad(comunidadId: string): Observable<ZonaComun[]> {
+    const q = this.inContext(() => query(
+      collection(this.firestore, 'zonas'),
+      where('comunidadId', '==', comunidadId),
+      limit(50)
+    ));
+    return this.inContext(() => collectionData(q, { idField: 'idZona' })).pipe(
+      map(data => (data as unknown as ZonaComun[]).sort((a, b) => a.nombre.localeCompare(b.nombre))),
+      catchError(error => {
+        console.error('Error obteniendo zonas comunes:', error);
+        return throwError(() => new Error('Error al cargar las zonas comunes'));
+      })
+    );
+  }
+
+  addZona(zona: Omit<ZonaComun, 'idZona'>): Observable<string> {
+    const col = this.inContext(() => collection(this.firestore, 'zonas'));
+    return from(this.inContext(() => addDoc(col, zona))).pipe(
+      map(docRef => docRef.id),
+      catchError(error => {
+        console.error('Error creando zona común:', error);
+        return throwError(() => new Error('Error al crear la zona'));
+      })
+    );
+  }
+
+  deleteZona(id: string): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `zonas/${id}`));
+    return from(this.inContext(() => deleteDoc(docRef))).pipe(
+      catchError(error => {
+        console.error('Error eliminando zona común:', error);
+        return throwError(() => new Error('Error al eliminar la zona'));
+      })
+    );
+  }
+
+  // Ocupación de una zona en un día (para pintar los bloques libres y ocupados).
+  getReservasDeZonaYFecha(comunidadId: string, zonaId: string, fecha: string): Observable<Reserva[]> {
+    return this.reservasDesde(this.inContext(() => query(
+      collection(this.firestore, 'reservas'),
+      where('comunidadId', '==', comunidadId),
+      where('zonaId', '==', zonaId),
+      where('fecha', '==', fecha),
+      limit(48)
+    )));
+  }
+
+  getReservasDeUsuario(idUsuario: string, comunidadId: string): Observable<Reserva[]> {
+    return this.reservasDesde(this.inContext(() => query(
+      collection(this.firestore, 'reservas'),
+      where('usuarioId', '==', idUsuario),
+      where('comunidadId', '==', comunidadId),
+      limit(200)
+    )));
+  }
+
+  getReservasDeComunidad(comunidadId: string): Observable<Reserva[]> {
+    return this.reservasDesde(this.inContext(() => query(
+      collection(this.firestore, 'reservas'),
+      where('comunidadId', '==', comunidadId),
+      limit(500)
+    )));
+  }
+
+  // Todos los bloques en un solo lote: si alguno ya fue tomado por otro
+  // vecino, Firestore rechaza el lote completo y no queda reservado ninguno.
+  crearReservas(reservas: Array<Omit<Reserva, 'idReserva' | 'inicio'> & { id: string; inicio: Date }>): Observable<void> {
+    const batch = this.inContext(() => writeBatch(this.firestore));
+    reservas.forEach(({ id, inicio, ...datos }) => {
+      const limpio: Record<string, unknown> = { ...datos, inicio: Timestamp.fromDate(inicio) };
+      Object.keys(limpio).forEach(clave => limpio[clave] === undefined && delete limpio[clave]);
+      batch.set(this.inContext(() => doc(this.firestore, `reservas/${id}`)), limpio);
+    });
+    return from(this.inContext(() => batch.commit())).pipe(
+      catchError(error => {
+        console.error('Error creando reservas:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  cancelarReservas(ids: string[]): Observable<void> {
+    const batch = this.inContext(() => writeBatch(this.firestore));
+    ids.forEach(id => batch.delete(this.inContext(() => doc(this.firestore, `reservas/${id}`))));
+    return from(this.inContext(() => batch.commit())).pipe(
+      catchError(error => {
+        console.error('Error cancelando reservas:', error);
+        return throwError(() => new Error('Error al cancelar la reserva'));
+      })
+    );
+  }
+
+  private reservasDesde(q: Query<DocumentData>): Observable<Reserva[]> {
+    return this.inContext(() => collectionData(q, { idField: 'idReserva' })).pipe(
+      map(data => (data as Array<Record<string, unknown>>).map(reserva => {
+        const inicio = reserva['inicio'] as { toDate?: () => Date } | string | undefined;
+        return {
+          ...reserva,
+          inicio: typeof inicio === 'string' ? inicio : (inicio?.toDate ? inicio.toDate().toISOString() : ''),
+        } as unknown as Reserva;
+      })),
+      catchError(error => {
+        console.error('Error obteniendo reservas:', error);
+        return throwError(() => new Error('Error al cargar reservas'));
+      })
+    );
+  }
+
   private normalizeAviso(data: Aviso & Record<string, unknown>): Aviso {
     return {
       idAviso: data.idAviso,
@@ -609,11 +919,11 @@ export class FirestoreService {
     return { ...usuario, activo: usuario.activo !== false };
   }
 
-  private normalizeRecordatorio(data: Recordatorio & Record<string, unknown>): Recordatorio {
+  private normalizeNotificacion(data: Notificacion & Record<string, unknown>): Notificacion {
     return {
-      idRecordatorios: data.idRecordatorios,
-      tituloRecordatorio: data.tituloRecordatorio || String(data['titulo'] || data['tituloRecordatorio'] || 'Recordatorio'),
-      descripcionRecordatorio: data.descripcionRecordatorio || String(data['descripcion'] || ''),
+      idNotificaciones: data.idNotificaciones,
+      tituloNotificacion: data.tituloNotificacion || String(data['titulo'] || data['tituloNotificacion'] || 'Notificación'),
+      descripcionNotificacion: data.descripcionNotificacion || String(data['descripcion'] || ''),
       fechaHora: data.fechaHora || String(data['fecha'] || data['fechaHora'] || ''),
       idUsuario: data.idUsuario || undefined,
       usuariosAsignados: data.usuariosAsignados,

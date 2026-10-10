@@ -15,8 +15,20 @@ ion-content {
   flex-shrink: 0;
 }
 
+/* En pantallas angostas el botón baja a su propia fila en vez de salirse. */
+@media (max-width: 520px) {
+  .filtro-usuarios {
+    flex-wrap: wrap;
+  }
+
+  .filtro-usuarios ion-button {
+    flex: 1 1 100%;
+  }
+}
+
 .filtro-input {
   flex: 1;
+  min-width: 0;
   min-height: 48px;
   padding: 0 16px;
   border: 1.5px solid var(--ab-border);
@@ -210,6 +222,16 @@ ion-content {
   color: var(--ion-color-primary);
 }
 
+.badge-arrendatario {
+  background: var(--ab-tipo-mantenimiento-bg, rgba(var(--ion-color-warning-rgb), 0.15));
+  color: var(--ion-color-warning-shade, var(--ion-color-warning));
+}
+
+.badge-guarda {
+  background: rgba(var(--ion-color-secondary-rgb), 0.15);
+  color: var(--ion-color-secondary);
+}
+
 .loading-spinner,
 .empty-state {
   display: flex;
@@ -326,10 +348,33 @@ ion-content {
 }
 
 .detalle-valor.badge-admin,
-.detalle-valor.badge-residente {
+.detalle-valor.badge-residente,
+.detalle-valor.badge-arrendatario,
+.detalle-valor.badge-guarda {
   padding: 4px 10px;
   border-radius: var(--ab-radius-pill);
   text-align: center;
+}
+
+/* El selector de rol se ve como el resto de valores de la fila: ocupa solo
+   lo que mide su texto y queda a la derecha (la fila reparte el espacio),
+   con la flecha como único indicio de que se puede cambiar. */
+.detalle-select {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-height: 0;
+  max-width: 70%;
+  margin-left: auto;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  color: var(--ab-text-primary);
+  font-weight: 600;
+}
+
+.detalle-select::part(icon) {
+  opacity: 0.7;
 }
 
 .estado-inactivo {
@@ -387,5 +432,10 @@ ion-content {
     margin-left: 0;
     margin-top: 6px;
     max-width: 100%;
+  }
+
+  .detalle-select {
+    max-width: 100%;
+    margin-left: 0;
   }
 }

@@ -20,7 +20,7 @@ describe('Inicio de sesión', () => {
     cy.contains('La contraseña es obligatoria.').should('be.visible');
   });
 
-  it('inicia sesión con credenciales válidas y redirige al feed de alertas', () => {
+  it('inicia sesión con credenciales válidas y redirige al panel de inicio', () => {
     cy.seedUsuario({
       nombre: 'Vecino E2E',
       correo: 'vecino.e2e@alertbxt.test',
@@ -33,8 +33,8 @@ describe('Inicio de sesión', () => {
     cy.get('ion-input[name="password"] input').type('password123');
     cy.get('.confirm-btn').click();
 
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/alertas-eventos');
-    cy.contains('h2.page-title', 'Alertas y eventos').should('be.visible');
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/inicio');
+    cy.contains('h2.inicio-saludo', /Buen(os|as)/).should('be.visible');
   });
 
   it('muestra un error cuando la contraseña es incorrecta', () => {

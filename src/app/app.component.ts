@@ -18,11 +18,12 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { alertCircle, calendar, chatbubbleEllipses, download, helpCircleOutline, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
+import { alertCircle, bookmark, calendar, car, chatbubbleEllipses, clipboard, download, helpCircleOutline, home, logOut, moonOutline, sunnyOutline, notifications, notificationsOutline, people, person, personCircle, statsChart } from 'ionicons/icons';
 import { Subject, filter, firstValueFrom, takeUntil } from 'rxjs';
 import { Aviso, Usuario } from './models';
 import { AuthService } from './services/auth.service';
 import { FirestoreService } from './services/firestore.service';
+import { ConexionService } from './services/conexion.service';
 import { FcmService } from './services/fcm.service';
 import { LocalNotificationService } from './services/local-notification.service';
 import { PwaInstallService } from './services/pwa-install.service';
@@ -65,6 +66,7 @@ export class AppComponent implements OnDestroy {
   private readonly pwaInstallService = inject(PwaInstallService);
   private readonly themeService = inject(ThemeService);
   private readonly tourService = inject(TourService);
+  private readonly conexionService = inject(ConexionService);
   private readonly destroy$ = new Subject<void>();
 
   nombreUsuario: string | null = null;
@@ -75,6 +77,7 @@ export class AppComponent implements OnDestroy {
   notificationsEnabled = false;
   isMobileDevice = this.getIsMobileDevice();
   showSplash = true;
+  sinConexion = !this.conexionService.enLinea;
   currentUrl = this.router.url;
   sosSosteniendo = false;
   private sosHoldTimeoutId?: ReturnType<typeof setTimeout>;
@@ -86,11 +89,17 @@ export class AppComponent implements OnDestroy {
   }
 
   constructor() {
-    addIcons({alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
+    addIcons({bookmark,car,clipboard,home,alertCircle,notifications,notificationsOutline,calendar,people,person,personCircle,logOut,download,statsChart,chatbubbleEllipses,helpCircleOutline,moonOutline,sunnyOutline});
     void this.clearDevelopmentServiceWorkers();
     window.setTimeout(() => {
       this.showSplash = false;
     }, 900);
+
+    this.conexionService.enLinea$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(enLinea => {
+        this.sinConexion = !enLinea;
+      });
 
     this.authService.currentUser$
       .pipe(takeUntil(this.destroy$))
@@ -143,6 +152,11 @@ export class AppComponent implements OnDestroy {
   async logout(): Promise<void> {
     try {
       await firstValueFrom(this.authService.logout());
+      if (await this.firestoreService.limpiarCacheLocal()) {
+        // Firestore quedó terminado: recargar deja la app limpia en el login.
+        window.location.assign('/login');
+        return;
+      }
       this.router.navigate(['/login']);
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -196,12 +210,55 @@ export class AppComponent implements OnDestroy {
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Enviar alerta',
-          handler: tipo => this.enviarAlertaSos(tipo as string, posicion),
+          handler: tipo => this.manejarTipoSeleccionado(tipo as string | undefined, posicion),
         },
       ],
     });
 
     await form.present();
+  }
+
+  // 'Otra emergencia' no tiene texto libre en la lista (sería un campo de
+  // SOS sin cerrar, más lento de usar en una emergencia real): en vez de
+  // eso, se abre un segundo paso puntual para describirla.
+  private manejarTipoSeleccionado(tipo: string | undefined, posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<boolean> {
+    if (tipo === TIPOS_ALERTA_SOS[TIPOS_ALERTA_SOS.length - 1]) {
+      void this.pedirDescripcionOtraEmergencia(posicionPendiente);
+      return Promise.resolve(true);
+    }
+
+    return this.enviarAlertaSos(tipo, posicionPendiente);
+  }
+
+  private async pedirDescripcionOtraEmergencia(posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<void> {
+    const prompt = await this.alertCtrl.create({
+      header: 'Describe la emergencia',
+      subHeader: 'Cuéntanos brevemente qué está pasando.',
+      inputs: [
+        {
+          name: 'descripcion',
+          type: 'textarea',
+          placeholder: 'Ej: Fuga de agua en el parqueadero...',
+          attributes: { maxlength: 200 },
+        },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Enviar alerta',
+          handler: (data: { descripcion?: string }) => {
+            const descripcion = (data?.descripcion || '').trim();
+            if (!descripcion) {
+              return false;
+            }
+            void this.enviarAlertaSos(`Otra emergencia: ${descripcion}`, posicionPendiente);
+            return true;
+          },
+        },
+      ],
+    });
+
+    await prompt.present();
   }
 
   private async enviarAlertaSos(tipo: string | undefined, posicionPendiente: ReturnType<typeof obtenerPosicion>): Promise<boolean> {
@@ -227,9 +284,14 @@ export class AppComponent implements OnDestroy {
     }
 
     try {
+      // Sin red no se espera a la comunidad: una alerta no puede quedar
+      // detenida por un dato accesorio (solo cambia cómo se escribe la unidad).
+      const comunidadPendiente = firstValueFrom(this.firestoreService.getComunidadById(currentUser.comunidadId)).catch(() => null);
       const [posicion, comunidad] = await Promise.all([
         posicionPendiente,
-        firstValueFrom(this.firestoreService.getComunidadById(currentUser.comunidadId)).catch(() => null),
+        this.conexionService.enLinea
+          ? comunidadPendiente
+          : Promise.race([comunidadPendiente, new Promise<null>(resolve => setTimeout(() => resolve(null), 1500))]),
       ]);
       const unidad = formatearUnidad(currentUser, comunidad?.tipoComunidad === 'casas');
 
@@ -246,6 +308,21 @@ export class AppComponent implements OnDestroy {
         ...(unidad ? { ubicacionAviso: unidad } : {}),
         ...(posicion ? { latitud: posicion.latitud, longitud: posicion.longitud, precisionMetros: posicion.precisionMetros } : {}),
       };
+
+      if (!this.conexionService.enLinea) {
+        // La escritura queda en la caché local y Firestore la envía sola al
+        // volver la conexión; esperar su confirmación bloquearía la pantalla.
+        this.firestoreService.addAviso(avisoData).subscribe({
+          error: error => console.error('Alerta SOS en cola no pudo enviarse:', error),
+        });
+        const enCola = await this.alertCtrl.create({
+          header: 'Sin conexión: alerta guardada',
+          message: 'Tu alerta se enviará automáticamente en cuanto recuperes la conexión. Si es una emergencia grave, llama ya a la línea 123.',
+          buttons: ['OK'],
+        });
+        await enCola.present();
+        return true;
+      }
 
       await firstValueFrom(this.firestoreService.addAviso(avisoData));
 
@@ -270,6 +347,26 @@ export class AppComponent implements OnDestroy {
     }
   }
 
+  goToInicio(){
+    this.navigateTo('/inicio');
+  }
+
+  goToEncuestas(){
+    this.navigateTo('/encuestas');
+  }
+
+  goToVehiculos(){
+    this.navigateTo('/vehiculos');
+  }
+
+  get puedeVerVehiculos(): boolean {
+    return this.currentUser?.rol === 'admin' || this.currentUser?.rol === 'guarda';
+  }
+
+  goToReservas(){
+    this.navigateTo('/reservas');
+  }
+
   goToAlertasyEventos(){
     this.navigateTo('/alertas-eventos');
   }
@@ -278,8 +375,8 @@ export class AppComponent implements OnDestroy {
     this.navigateTo('/gestion-avisos');
   }
 
-  goToRecordatorios(){
-    this.navigateTo('/recordatorios');
+  goToNotificaciones(){
+    this.navigateTo('/notificaciones');
   }
 
   goToPerfilUsuario(){
