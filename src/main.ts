@@ -1,4 +1,6 @@
-import { ErrorHandler, enableProdMode, isDevMode } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeEsCo from '@angular/common/locales/es-CO';
+import { ErrorHandler, LOCALE_ID, enableProdMode, isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { RouteReuseStrategy, provideRouter } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
@@ -26,9 +28,13 @@ if (environment.production) {
   enableProdMode();
 }
 
+// Fechas y horas en español de Colombia (el pipe date usa este idioma).
+registerLocaleData(localeEsCo);
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
+    { provide: LOCALE_ID, useValue: 'es-CO' },
     provideIonicAngular(),
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },

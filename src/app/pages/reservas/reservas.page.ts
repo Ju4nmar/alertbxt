@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { FormsModule } from '@angular/forms';
 import { AlertController, IonButton, IonContent, IonIcon, ToastController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { addOutline, calendarOutline, timeOutline, trashOutline } from 'ionicons/icons';
+import { addOutline, calendarOutline, createOutline, timeOutline, trashOutline } from 'ionicons/icons';
 import { BehaviorSubject, Subject, catchError, combineLatest, distinctUntilChanged, filter, firstValueFrom, of, switchMap, takeUntil } from 'rxjs';
 import { Reserva, Usuario, ZonaComun } from '../../models';
 import { AuthService } from '../../services/auth.service';
@@ -41,7 +41,7 @@ export class ReservasPage implements OnInit, OnDestroy {
   private readonly consulta$ = new BehaviorSubject<{ zonaId: string; fecha: string } | null>(null);
 
   constructor() {
-    addIcons({ addOutline, calendarOutline, timeOutline, trashOutline });
+    addIcons({ addOutline, calendarOutline, createOutline, timeOutline, trashOutline });
   }
 
   usuario: Usuario | null = null;
@@ -59,6 +59,7 @@ export class ReservasPage implements OnInit, OnDestroy {
   cargaError = '';
 
   zonaFormAbierto = false;
+  zonaEditandoId: string | null = null;
   guardandoZona = false;
   zonaError = '';
   zonaNombre = '';
@@ -259,7 +260,18 @@ export class ReservasPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
+  editarZona(zona: ZonaComun): void {
+    this.abrirFormularioZona();
+    this.zonaEditandoId = zona.idZona || null;
+    this.zonaNombre = zona.nombre;
+    this.zonaDescripcion = zona.descripcion || '';
+    this.zonaApertura = zona.horaApertura;
+    this.zonaCierre = zona.horaCierre;
+    this.zonaMaxHoras = zona.maxHoras;
+  }
+
   abrirFormularioZona(): void {
+    this.zonaEditandoId = null;
     this.zonaFormAbierto = true;
     this.zonaError = '';
     this.zonaNombre = '';
@@ -271,6 +283,7 @@ export class ReservasPage implements OnInit, OnDestroy {
 
   cancelarFormularioZona(): void {
     this.zonaFormAbierto = false;
+    this.zonaEditandoId = null;
   }
 
   async guardarZona(): Promise<void> {
@@ -299,6 +312,21 @@ export class ReservasPage implements OnInit, OnDestroy {
     this.zonaError = '';
     try {
       const descripcion = this.zonaDescripcion.trim();
+      if (this.zonaEditandoId) {
+        // Las reservas ya hechas no cambian: si se acorta el horario, las que
+        // queden fuera siguen vigentes hasta que se cancelen.
+        await firstValueFrom(this.firestoreService.updateZona(this.zonaEditandoId, {
+          nombre,
+          ...(descripcion ? { descripcion } : {}),
+          horaApertura: apertura,
+          horaCierre: cierre,
+          maxHoras,
+        }));
+        this.zonaFormAbierto = false;
+        this.zonaEditandoId = null;
+        await this.avisar('Zona actualizada.');
+        return;
+      }
       await firstValueFrom(this.firestoreService.addZona({
         nombre,
         ...(descripcion ? { descripcion } : {}),

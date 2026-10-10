@@ -20,6 +20,7 @@ function configurar(rol: Usuario['rol'], votos: Record<string, number | null> = 
     getMiVoto: (id: string) => of(votos[id] ?? null),
     votarEncuesta: jasmine.createSpy('votarEncuesta').and.returnValue(of(void 0)),
     addEncuesta: jasmine.createSpy('addEncuesta').and.returnValue(of('nueva')),
+    updateEncuesta: jasmine.createSpy('updateEncuesta').and.returnValue(of(void 0)),
     cerrarEncuesta: () => of(void 0),
     deleteEncuesta: () => of(void 0),
   };
@@ -75,6 +76,39 @@ describe('EncuestasPage', () => {
     expect(component.porcentaje(cerrada, 0)).toBe(75);
     expect(component.porcentaje(cerrada, 1)).toBe(25);
     expect(component.porcentaje(abierta, 0)).toBe(0);
+  });
+
+  it('el admin edita una encuesta sin votos, incluidas las opciones', async () => {
+    const { component, firestore } = configurar('admin');
+    const abierta = component.encuestas[0];
+
+    component.editar(abierta);
+    expect(component.idEditando).toBe('abierta');
+    expect(component.opcionesBloqueadas).toBeFalse();
+    component.titulo = 'Título corregido';
+    component.opciones = ['Sí', 'No', 'Quizá'];
+    await component.publicar();
+
+    expect(firestore.updateEncuesta).toHaveBeenCalledWith('abierta', jasmine.objectContaining({
+      titulo: 'Título corregido', opciones: ['Sí', 'No', 'Quizá'],
+    }));
+    expect(firestore.addEncuesta).not.toHaveBeenCalled();
+    expect(component.formAbierto).toBeFalse();
+  });
+
+  it('con votos las opciones quedan bloqueadas y no se envían al editar', async () => {
+    const { component, firestore } = configurar('admin');
+    const cerrada = component.encuestas[1];
+    expect(cerrada.totalVotos).toBe(4);
+
+    component.editar(cerrada);
+    expect(component.opcionesBloqueadas).toBeTrue();
+    component.titulo = 'Solo cambia el título';
+    await component.publicar();
+
+    const [, cambios] = firestore.updateEncuesta.calls.mostRecent().args;
+    expect(cambios.titulo).toBe('Solo cambia el título');
+    expect(cambios.opciones).toBeUndefined();
   });
 
   it('el admin ve resultados siempre y valida el formulario antes de publicar', async () => {

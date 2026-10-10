@@ -8,6 +8,7 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   limit,
@@ -16,6 +17,7 @@ import {
   query,
   setDoc,
   Timestamp,
+  UpdateData,
   updateDoc,
   where,
   writeBatch,
@@ -649,6 +651,42 @@ export class FirestoreService {
       catchError(error => {
         console.error('Error creando encuesta:', error);
         return throwError(() => new Error('Error al crear la encuesta'));
+      })
+    );
+  }
+
+  // opciones solo se envía si nadie ha votado (las reglas lo exigen).
+  updateEncuesta(id: string, cambios: { titulo: string; descripcion?: string; cierre: string; opciones?: string[] }): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `encuestas/${id}`));
+    const datos: UpdateData<DocumentData> = {
+      titulo: cambios.titulo,
+      descripcion: cambios.descripcion ? cambios.descripcion : deleteField(),
+      cierre: Timestamp.fromDate(new Date(cambios.cierre)),
+    };
+    if (cambios.opciones) {
+      datos['opciones'] = cambios.opciones;
+    }
+    return from(this.inContext(() => updateDoc(docRef, datos))).pipe(
+      catchError(error => {
+        console.error('Error actualizando encuesta:', error);
+        return throwError(() => new Error('Error al actualizar la encuesta'));
+      })
+    );
+  }
+
+  updateZona(id: string, zona: Omit<ZonaComun, 'idZona' | 'comunidadId'>): Observable<void> {
+    const docRef = this.inContext(() => doc(this.firestore, `zonas/${id}`));
+    const datos: UpdateData<DocumentData> = {
+      nombre: zona.nombre,
+      descripcion: zona.descripcion ? zona.descripcion : deleteField(),
+      horaApertura: zona.horaApertura,
+      horaCierre: zona.horaCierre,
+      maxHoras: zona.maxHoras,
+    };
+    return from(this.inContext(() => updateDoc(docRef, datos))).pipe(
+      catchError(error => {
+        console.error('Error actualizando zona común:', error);
+        return throwError(() => new Error('Error al actualizar la zona'));
       })
     );
   }
