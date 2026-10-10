@@ -108,6 +108,8 @@ describe('Módulos de la app con sesión iniciada', () => {
     cy.get('input[placeholder="Opción 2"]').type('No');
     cy.contains('ion-button', 'Publicar').click();
     cy.contains('.enc-titulo', '¿Pintamos la fachada?').should('be.visible');
+    // Firestore muestra el documento antes de confirmar el guardado: se espera a que el formulario se cierre.
+    cy.get('form.enc-form').should('not.exist');
 
     cy.contains('ion-button', 'Editar').click();
     cy.get('input[name="titulo"]').clear().type('¿Pintamos la fachada en diciembre?');
@@ -127,6 +129,7 @@ describe('Módulos de la app con sesión iniciada', () => {
     cy.get('input[name="zonaNombre"]').type('Salón E2E');
     cy.contains('ion-button', 'Guardar zona').click();
     cy.contains('.res-chip', 'Salón E2E').should('be.visible');
+    cy.get('.res-form').should('not.exist');
 
     // Editar la zona: cambia el nombre sin crear otra.
     cy.get('button[aria-label="Editar zona Salón E2E"]').click();
