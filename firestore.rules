@@ -274,10 +274,27 @@ service cloud.firestore {
         && request.resource.data.cierre is timestamp
         && request.resource.data.totalVotos == 0;
 
-      // Solo se permite adelantar o mover el cierre ("Cerrar ahora").
+      // El admin puede cambiar título, detalle y cierre ("Cerrar ahora" y
+      // reabrir incluidos). Las opciones solo mientras nadie haya votado: con
+      // votos, cambiarlas falsearía los resultados. No se puede tocar el
+      // conteo, el autor ni a quién va dirigida (soloPropietarios).
       allow update: if isAdminForCommunity(resource.data.comunidadId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cierre'])
-        && request.resource.data.cierre is timestamp;
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['titulo', 'descripcion', 'cierre', 'opciones'])
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() >= 3
+        && request.resource.data.titulo.size() <= 120
+        && request.resource.data.get('descripcion', '') is string
+        && request.resource.data.get('descripcion', '').size() <= 400
+        && request.resource.data.cierre is timestamp
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['opciones'])
+          || (
+            resource.data.totalVotos == 0
+            && request.resource.data.opciones is list
+            && request.resource.data.opciones.size() >= 2
+            && request.resource.data.opciones.size() <= 6
+          )
+        );
 
       allow delete: if isAdminForCommunity(resource.data.comunidadId);
 

@@ -17,8 +17,11 @@ ion-content.inicio-content {
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  text-transform: capitalize;
   color: var(--ab-text-secondary);
+}
+
+.inicio-fecha::first-letter {
+  text-transform: uppercase;
 }
 
 .inicio-saludo {

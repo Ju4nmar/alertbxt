@@ -187,6 +187,13 @@ ion-content.encuestas-content {
   }
 }
 
+.enc-aviso {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--ab-text-secondary);
+}
+
 .enc-opcion-fila {
   display: flex;
   align-items: center;

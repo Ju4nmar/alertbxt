@@ -23,6 +23,7 @@ function configurar(rol: Usuario['rol']) {
     crearReservas: jasmine.createSpy('crearReservas').and.returnValue(of(void 0)),
     cancelarReservas: () => of(void 0),
     addZona: () => of('z2'),
+    updateZona: jasmine.createSpy('updateZona').and.returnValue(of(void 0)),
     deleteZona: () => of(void 0),
   };
   TestBed.configureTestingModule({
@@ -85,6 +86,22 @@ describe('ReservasPage', () => {
     const { component, firestore } = configurar('propietario');
     await component.reservar();
     expect(firestore.crearReservas).not.toHaveBeenCalled();
+  });
+
+  it('el admin edita una zona existente sin crear otra', async () => {
+    const { component, firestore } = configurar('admin');
+
+    component.editarZona(zona);
+    expect(component.zonaEditandoId).toBe('z1');
+    expect(component.zonaNombre).toBe('Salón');
+    component.zonaNombre = 'Salón social';
+    component.zonaMaxHoras = 3;
+    await component.guardarZona();
+
+    expect(firestore.updateZona).toHaveBeenCalledWith('z1', jasmine.objectContaining({
+      nombre: 'Salón social', horaApertura: 8, horaCierre: 12, maxHoras: 3,
+    }));
+    expect(component.zonaFormAbierto).toBeFalse();
   });
 
   it('valida la zona nueva antes de crearla', async () => {

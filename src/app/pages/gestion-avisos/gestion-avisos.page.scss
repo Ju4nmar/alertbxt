@@ -291,29 +291,6 @@ ion-content {
   --color: var(--ion-color-warning-contrast);
 }
 
-@media (min-width: 769px) {
-  .alerta-sos-item {
-    flex-direction: row;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .alerta-sos-content {
-    flex: 1;
-  }
-
-  .alerta-sos-item .acciones {
-    width: auto;
-    justify-content: flex-end;
-  }
-
-  .alerta-sos-item .acciones ion-button {
-    width: auto;
-    max-width: none;
-    margin: 0;
-  }
-}
-
 @media (max-width: 768px) {
   .page-shell {
     padding: 0 0.6rem;

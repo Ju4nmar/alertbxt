@@ -12,7 +12,7 @@
     <div *ngIf="cargaError" class="error-message" role="alert">{{ cargaError }}</div>
 
     <form *ngIf="formAbierto" class="enc-card enc-form" (ngSubmit)="publicar()" novalidate>
-      <h3>Nueva encuesta</h3>
+      <h3>{{ idEditando ? 'Editar encuesta' : 'Nueva encuesta' }}</h3>
 
       <label class="enc-campo">
         <span>Pregunta</span>
@@ -26,13 +26,14 @@
 
       <div class="enc-campo">
         <span>Opciones (2 a {{ opcionesMax }})</span>
+        <p class="enc-aviso" *ngIf="opcionesBloqueadas">Ya hay votos: las opciones no se pueden cambiar.</p>
         <div class="enc-opcion-fila" *ngFor="let opcion of opciones; let i = index; trackBy: trackByIndice">
-          <input type="text" [name]="'opcion' + i" [(ngModel)]="opciones[i]" maxlength="60" [placeholder]="'Opción ' + (i + 1)" />
-          <button type="button" class="enc-icono" *ngIf="opciones.length > 2" (click)="quitarOpcion(i)" aria-label="Quitar opción">
+          <input type="text" [name]="'opcion' + i" [(ngModel)]="opciones[i]" maxlength="60" [placeholder]="'Opción ' + (i + 1)" [disabled]="opcionesBloqueadas" />
+          <button type="button" class="enc-icono" *ngIf="opciones.length > 2 && !opcionesBloqueadas" (click)="quitarOpcion(i)" aria-label="Quitar opción">
             <ion-icon name="close-circle-outline"></ion-icon>
           </button>
         </div>
-        <button type="button" class="enc-link" *ngIf="opciones.length < opcionesMax" (click)="agregarOpcion()">+ Agregar opción</button>
+        <button type="button" class="enc-link" *ngIf="opciones.length < opcionesMax && !opcionesBloqueadas" (click)="agregarOpcion()">+ Agregar opción</button>
       </div>
 
       <label class="enc-campo">
@@ -41,7 +42,7 @@
       </label>
 
       <label class="enc-check">
-        <input type="checkbox" name="soloPropietarios" [(ngModel)]="soloPropietarios" />
+        <input type="checkbox" name="soloPropietarios" [(ngModel)]="soloPropietarios" [disabled]="!!idEditando" />
         Solo propietarios (los arrendatarios no la ven ni reciben aviso)
       </label>
 
@@ -49,7 +50,7 @@
 
       <div class="enc-acciones">
         <ion-button fill="outline" type="button" (click)="cancelarFormulario()">Cancelar</ion-button>
-        <ion-button type="submit" [disabled]="publicando">{{ publicando ? 'Publicando...' : 'Publicar' }}</ion-button>
+        <ion-button type="submit" [disabled]="publicando">{{ publicando ? 'Guardando...' : (idEditando ? 'Guardar cambios' : 'Publicar') }}</ion-button>
       </div>
     </form>
 
@@ -98,6 +99,7 @@
       </ng-container>
 
       <div class="enc-acciones" *ngIf="esAdmin">
+        <ion-button size="small" fill="outline" (click)="editar(encuesta)">Editar</ion-button>
         <ion-button size="small" fill="outline" *ngIf="estaAbierta(encuesta)" (click)="cerrarAhora(encuesta)">Cerrar ahora</ion-button>
         <ion-button size="small" fill="outline" color="danger" (click)="eliminar(encuesta)">
           <ion-icon slot="start" name="trash-outline"></ion-icon>
