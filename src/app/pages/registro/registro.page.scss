@@ -187,24 +187,35 @@ ion-input {
   color: var(--ion-color-secondary-contrast);
 }
 
+/* Casilla de términos: alineada al borde del formulario (como títulos y
+   botones), sin la "píldora" de fondo, y arriba de la primera línea del texto
+   para que no flote cuando el texto ocupa varias líneas. */
 .chekbox {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
   --min-height: auto;
+  margin-top: 8px;
   border: none !important;
   background: transparent !important;
 }
 
+.chekbox::part(native) {
+  align-items: flex-start;
+  padding: 8px 0;
+}
+
 .chekbox ion-checkbox {
-  margin-right: 12px;
+  margin: 2px 12px 0 0;
   --size: 22px;
   --checkbox-background-checked: var(--ion-color-secondary);
   --border-color-checked: var(--ion-color-secondary);
 }
 
 .chekbox ion-label {
+  margin: 0;
   font-size: 14px;
+  line-height: 1.45;
   color: var(--ab-text-secondary);
   white-space: normal;
 }
