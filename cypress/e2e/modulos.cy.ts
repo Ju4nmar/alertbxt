@@ -65,8 +65,8 @@ describe('Módulos de la app con sesión iniciada', () => {
 
     cy.get('[data-testid="nueva-encuesta"]').click();
     cy.get('input[name="titulo"]').type('¿Aprobamos la nueva portería?');
-    cy.get('input[name="opcion0"]').type('Sí');
-    cy.get('input[name="opcion1"]').type('No');
+    cy.get('input[placeholder="Opción 1"]').type('Sí');
+    cy.get('input[placeholder="Opción 2"]').type('No');
     cy.contains('ion-button', 'Publicar').click();
 
     cy.contains('.enc-titulo', '¿Aprobamos la nueva portería?').should('be.visible');
