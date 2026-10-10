@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage';
 import {
   AlertController,
@@ -71,12 +71,14 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   archivo: File | null = null;
   compressionInfo = '';
   imagenExistente: string | null = null;
+  // Solo "guardando el formulario". No debe reflejar el indicador compartido
+  // de FirestoreService (isLoading$): cualquier otra consulta lo deja en true
+  // y el botón "Guardar aviso" quedaba bloqueado en "Guardando...".
   isLoading = false;
-  // Separado de isLoading (compartido con firestoreService.isLoading$ y con
-  // "guardando el formulario"): reusarlo para el skeleton de la lista la
-  // haría parpadear cada vez que se guarda o edita un aviso, no solo en la
-  // carga inicial.
+  // Skeleton de la lista, solo en la carga inicial (no al guardar o editar).
   isLoadingLista = true;
+  @ViewChild('avisoForm') private avisoForm?: NgForm;
+  @ViewChild('archivoInput') private archivoInput?: ElementRef<HTMLInputElement>;
   avisoError = '';
   cargaError = '';
   readonly skeletonPlaceholders = [1, 2, 3];
@@ -108,10 +110,6 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
         this.cargaError = 'No se pudieron cargar los avisos. Revisa tu conexión e intenta de nuevo.';
         this.isLoadingLista = false;
       },
-    });
-
-    this.firestoreService.isLoading$.pipe(takeUntil(this.destroy$)).subscribe(loading => {
-      this.isLoading = loading;
     });
   }
 
@@ -254,7 +252,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       }
 
       this.limpiarFormulario();
-      await this.toastService.success(estabaEditando ? 'Aviso actualizado' : 'Aviso publicado');
+      // Sin await: el botón no debe seguir en "Guardando..." mientras el aviso emergente termina su animación.
+      void this.toastService.success(estabaEditando ? 'Aviso actualizado' : 'Aviso publicado');
     } catch (error) {
       console.error('Error guardando aviso:', error);
       this.avisoError = 'No se pudo guardar el aviso. Intenta nuevamente.';
@@ -275,6 +274,19 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
     this.compressionInfo = '';
     this.imagenExistente = null;
     this.avisoError = '';
+    // Sin esto los campos vacíos quedan "tocados" y el formulario recién
+    // guardado se pinta lleno de errores en rojo.
+    this.avisoForm?.resetForm({
+      titulo: '',
+      tipo: '',
+      descripcion: '',
+      fechaAviso: this.fechaAviso,
+      ubicacion: '',
+      soloPropietarios: false,
+    });
+    if (this.archivoInput) {
+      this.archivoInput.nativeElement.value = '';
+    }
   }
 
   async eliminarAviso(id: string | undefined): Promise<void> {

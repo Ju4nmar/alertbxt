@@ -78,6 +78,48 @@ describe('Módulos de la app con sesión iniciada', () => {
     cy.get('.enc-radio').should('not.exist');
   });
 
+  it('el administrador guarda un aviso: el botón no se bloquea y el formulario queda limpio', () => {
+    sembrarUsuario('admin', 'Ana Admin');
+    cy.iniciarSesion('admin@alertbxt.test', PASSWORD);
+    irA('avisos');
+
+    cy.get('ion-input[name="titulo"] input').type('Mantenimiento del ascensor');
+    cy.get('ion-select[name="tipo"]').click();
+    cy.get('ion-alert .alert-radio-label').contains('Informativo').click();
+    cy.get('ion-alert .alert-button').last().click();
+    cy.get('ion-textarea[name="descripcion"] textarea').first().type('El ascensor de la torre 10 estará fuera de servicio mañana.');
+    cy.get('ion-button.guardar-aviso').should('not.have.attr', 'disabled');
+    cy.get('ion-button.guardar-aviso').click();
+
+    cy.contains('.aviso-titulo', 'Mantenimiento del ascensor').should('be.visible');
+    // Tras guardar, el formulario vuelve a su estado inicial: sin errores en rojo y botón libre.
+    cy.get('.aviso-form .field-error').should('not.exist');
+    cy.get('ion-button.guardar-aviso').should('contain.text', 'Guardar aviso').and('have.attr', 'disabled');
+  });
+
+  it('el administrador edita una encuesta sin votos, incluidas las opciones', () => {
+    sembrarUsuario('admin', 'Ana Admin');
+    cy.iniciarSesion('admin@alertbxt.test', PASSWORD);
+    irA('encuestas');
+
+    cy.get('[data-testid="nueva-encuesta"]').click();
+    cy.get('input[name="titulo"]').type('¿Pintamos la fachada?');
+    cy.get('input[placeholder="Opción 1"]').type('Sí');
+    cy.get('input[placeholder="Opción 2"]').type('No');
+    cy.contains('ion-button', 'Publicar').click();
+    cy.contains('.enc-titulo', '¿Pintamos la fachada?').should('be.visible');
+    // Firestore muestra el documento antes de confirmar el guardado: se espera a que el formulario se cierre.
+    cy.get('form.enc-form').should('not.exist');
+
+    cy.contains('ion-button', 'Editar').click();
+    cy.get('input[name="titulo"]').clear().type('¿Pintamos la fachada en diciembre?');
+    cy.get('input[placeholder="Opción 2"]').clear().type('Más adelante');
+    cy.contains('ion-button', 'Guardar cambios').click();
+
+    cy.contains('.enc-titulo', '¿Pintamos la fachada en diciembre?').should('be.visible');
+    cy.contains('.enc-radio', 'Más adelante').should('be.visible');
+  });
+
   it('el administrador crea una zona y reserva un horario', () => {
     sembrarUsuario('admin', 'Ana Admin');
     cy.iniciarSesion('admin@alertbxt.test', PASSWORD);
@@ -87,6 +129,14 @@ describe('Módulos de la app con sesión iniciada', () => {
     cy.get('input[name="zonaNombre"]').type('Salón E2E');
     cy.contains('ion-button', 'Guardar zona').click();
     cy.contains('.res-chip', 'Salón E2E').should('be.visible');
+    cy.get('.res-form').should('not.exist');
+
+    // Editar la zona: cambia el nombre sin crear otra.
+    cy.get('button[aria-label="Editar zona Salón E2E"]').click();
+    cy.get('input[name="zonaNombre"]').clear().type('Salón comunal');
+    cy.contains('ion-button', 'Guardar cambios').click();
+    cy.contains('.res-chip', 'Salón comunal').should('be.visible');
+    cy.get('.res-chip').should('have.length', 1);
 
     cy.get('input[name="fecha"]').type(fechaLocal(1));
     cy.get('.res-bloque--libre').first().click();

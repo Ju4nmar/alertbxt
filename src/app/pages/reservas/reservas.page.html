@@ -97,9 +97,14 @@
               <strong>{{ z.nombre }}</strong>
               <span>{{ etiqueta(z.horaApertura) }} a {{ etiqueta(z.horaCierre) }} · máx. {{ z.maxHoras }} h</span>
             </div>
-            <button type="button" class="res-icono" (click)="eliminarZona(z)" [attr.aria-label]="'Eliminar zona ' + z.nombre">
-              <ion-icon name="trash-outline"></ion-icon>
-            </button>
+            <div class="res-fila-acciones">
+              <button type="button" class="res-icono res-icono--editar" (click)="editarZona(z)" [attr.aria-label]="'Editar zona ' + z.nombre">
+                <ion-icon name="create-outline"></ion-icon>
+              </button>
+              <button type="button" class="res-icono" (click)="eliminarZona(z)" [attr.aria-label]="'Eliminar zona ' + z.nombre">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
           </li>
         </ul>
 
@@ -129,7 +134,7 @@
           <div *ngIf="zonaError" class="error-message" role="alert">{{ zonaError }}</div>
           <div class="res-acciones">
             <ion-button size="small" fill="outline" type="button" (click)="cancelarFormularioZona()">Cancelar</ion-button>
-            <ion-button size="small" type="submit" [disabled]="guardandoZona">{{ guardandoZona ? 'Guardando...' : 'Guardar zona' }}</ion-button>
+            <ion-button size="small" type="submit" [disabled]="guardandoZona">{{ guardandoZona ? 'Guardando...' : (zonaEditandoId ? 'Guardar cambios' : 'Guardar zona') }}</ion-button>
           </div>
         </form>
       </section>

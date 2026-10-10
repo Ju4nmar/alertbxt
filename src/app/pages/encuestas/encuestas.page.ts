@@ -41,6 +41,8 @@ export class EncuestasPage implements OnInit, OnDestroy {
   cargaError = '';
 
   formAbierto = false;
+  idEditando: string | null = null;
+  private encuestaEditada: Encuesta | null = null;
   publicando = false;
   formError = '';
   titulo = '';
@@ -153,7 +155,26 @@ export class EncuestasPage implements OnInit, OnDestroy {
     }
   }
 
+  // Con votos emitidos no se pueden cambiar las opciones (falsearía los
+  // resultados): se muestran bloqueadas.
+  get opcionesBloqueadas(): boolean {
+    return !!this.encuestaEditada && this.encuestaEditada.totalVotos > 0;
+  }
+
+  editar(encuesta: Encuesta): void {
+    this.abrirFormulario();
+    this.idEditando = encuesta.idEncuesta || null;
+    this.encuestaEditada = encuesta;
+    this.titulo = encuesta.titulo;
+    this.descripcion = encuesta.descripcion || '';
+    this.opciones = [...encuesta.opciones];
+    this.soloPropietarios = encuesta.soloPropietarios;
+    this.cierre = this.formatoLocal(new Date(encuesta.cierre));
+  }
+
   abrirFormulario(): void {
+    this.idEditando = null;
+    this.encuestaEditada = null;
     this.formAbierto = true;
     this.formError = '';
     this.titulo = '';
@@ -165,6 +186,8 @@ export class EncuestasPage implements OnInit, OnDestroy {
 
   cancelarFormulario(): void {
     this.formAbierto = false;
+    this.idEditando = null;
+    this.encuestaEditada = null;
   }
 
   agregarOpcion(): void {
@@ -200,11 +223,15 @@ export class EncuestasPage implements OnInit, OnDestroy {
       this.formError = 'El título debe tener entre 3 y 120 caracteres.';
       return;
     }
-    if (opciones.length < OPCIONES_MIN || new Set(opciones.map(o => o.toLowerCase())).size !== opciones.length) {
+    if (!this.opcionesBloqueadas
+      && (opciones.length < OPCIONES_MIN || new Set(opciones.map(o => o.toLowerCase())).size !== opciones.length)) {
       this.formError = 'Escribe al menos dos opciones distintas.';
       return;
     }
-    if (Number.isNaN(cierre.getTime()) || cierre.getTime() <= Date.now()) {
+    // Al editar una encuesta ya cerrada se puede dejar el cierre como está.
+    const cierreSinCambios = !!this.encuestaEditada
+      && Math.abs(new Date(this.encuestaEditada.cierre).getTime() - cierre.getTime()) < 60_000;
+    if (Number.isNaN(cierre.getTime()) || (cierre.getTime() <= Date.now() && !cierreSinCambios)) {
       this.formError = 'La fecha de cierre debe ser futura.';
       return;
     }
@@ -213,6 +240,19 @@ export class EncuestasPage implements OnInit, OnDestroy {
     this.formError = '';
     try {
       const descripcion = this.descripcion.trim();
+      if (this.idEditando) {
+        await firstValueFrom(this.firestoreService.updateEncuesta(this.idEditando, {
+          titulo,
+          descripcion,
+          cierre: cierreSinCambios && this.encuestaEditada ? this.encuestaEditada.cierre : cierre.toISOString(),
+          ...(this.opcionesBloqueadas ? {} : { opciones }),
+        }));
+        this.formAbierto = false;
+        this.idEditando = null;
+        this.encuestaEditada = null;
+        await this.avisar('Encuesta actualizada.');
+        return;
+      }
       await firstValueFrom(this.firestoreService.addEncuesta({
         titulo,
         ...(descripcion ? { descripcion } : {}),

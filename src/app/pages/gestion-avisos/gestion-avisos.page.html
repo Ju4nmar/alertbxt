@@ -56,7 +56,7 @@
 
     <div class="upload-container">
       <label class="custom-file-upload">
-        <input type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" />
+        <input #archivoInput type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" />
         <span>Seleccionar archivo</span>
       </label>
       <p class="field-hint">Formatos permitidos: JPG, PNG o WebP. Tamaño máximo original: 10 MB.</p>

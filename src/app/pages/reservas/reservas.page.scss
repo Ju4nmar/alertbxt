@@ -197,6 +197,17 @@ ion-content.reservas-content {
   }
 }
 
+.res-fila-acciones {
+  display: flex;
+  flex-direction: row !important;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.res-icono--editar {
+  color: var(--ion-color-primary);
+}
+
 .res-icono {
   background: none;
   border: 0;
