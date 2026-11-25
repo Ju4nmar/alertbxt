@@ -17,11 +17,16 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(payload => {
-  const title = payload.notification?.title || payload.data?.title || 'AlertBxt';
+  // Firebase ya mostró el mensaje antes de invocar este callback.
+  if (payload.notification) {
+    return;
+  }
+
+  const title = payload.data?.title || 'AlertBxt';
   const options = {
-    body: payload.notification?.body || payload.data?.body || '',
-    icon: 'assets/icon/favicon.png',
+    body: payload.data?.body || '',
+    icon: '/assets/icon/favicon.png',
   };
 
-  self.registration.showNotification(title, options);
+  return self.registration.showNotification(title, options);
 });

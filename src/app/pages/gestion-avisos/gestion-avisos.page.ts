@@ -75,6 +75,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   // de FirestoreService (isLoading$): cualquier otra consulta lo deja en true
   // y el botón "Guardar aviso" quedaba bloqueado en "Guardando...".
   isLoading = false;
+  eliminandoAviso = false;
+  eliminacionError = '';
   // Skeleton de la lista, solo en la carga inicial (no al guardar o editar).
   isLoadingLista = true;
   @ViewChild('avisoForm') private avisoForm?: NgForm;
@@ -290,7 +292,7 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   }
 
   async eliminarAviso(id: string | undefined): Promise<void> {
-    if (!id || this.authService.getCurrentUser()?.rol !== 'admin') {
+    if (this.eliminandoAviso || !id || this.authService.getCurrentUser()?.rol !== 'admin') {
       return;
     }
 
@@ -299,20 +301,27 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       message: 'Esta acción no se puede deshacer. ¿Quieres eliminar este aviso?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAviso(id) },
+        { text: 'Eliminar', role: 'destructive', handler: () => { void this.confirmarEliminarAviso(id); } },
       ],
     });
     await alerta.present();
   }
 
-  private async confirmarEliminarAviso(id: string): Promise<void> {
+  private async confirmarEliminarAviso(id: string, esSos = false): Promise<void> {
+    if (this.eliminandoAviso) {
+      return;
+    }
+    this.eliminandoAviso = true;
+    this.eliminacionError = '';
     try {
       await firstValueFrom(this.firestoreService.deleteAviso(id));
-      await this.toastService.success('Aviso eliminado');
+      await this.toastService.success(esSos ? 'Alerta SOS eliminada' : 'Aviso eliminado');
     } catch (error) {
       console.error('Error eliminando aviso:', error);
-      this.avisoError = 'No se pudo eliminar el aviso.';
-      await this.toastService.error('No se pudo eliminar el aviso.');
+      this.eliminacionError = esSos ? 'No se pudo eliminar la alerta.' : 'No se pudo eliminar el aviso.';
+      await this.toastService.error(this.eliminacionError);
+    } finally {
+      this.eliminandoAviso = false;
     }
   }
 
@@ -377,7 +386,8 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
   // historial. "Rechazar" sigue siendo la forma normal de cerrar una alerta
   // atendida sin borrar su registro.
   async eliminarAlertaSos(alerta: Aviso): Promise<void> {
-    if (!alerta.idAviso || this.authService.getCurrentUser()?.rol !== 'admin') {
+    const id = alerta.idAviso;
+    if (this.eliminandoAviso || !id || this.authService.getCurrentUser()?.rol !== 'admin') {
       return;
     }
 
@@ -386,20 +396,10 @@ export class GestionAvisosPage implements OnInit, OnDestroy {
       message: 'Esta acción no se puede deshacer. ¿Quieres eliminar permanentemente esta alerta?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarAlertaSos(alerta.idAviso as string) },
+        { text: 'Eliminar', role: 'destructive', handler: () => { void this.confirmarEliminarAviso(id, true); } },
       ],
     });
     await confirmacion.present();
-  }
-
-  private async confirmarEliminarAlertaSos(id: string): Promise<void> {
-    try {
-      await firstValueFrom(this.firestoreService.deleteAviso(id));
-      await this.toastService.success('Alerta SOS eliminada');
-    } catch (error) {
-      console.error('Error eliminando alerta SOS:', error);
-      await this.toastService.error('No se pudo eliminar la alerta.');
-    }
   }
 
   enlaceMapa(aviso: Aviso): string | null {

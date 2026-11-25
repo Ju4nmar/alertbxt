@@ -3,7 +3,7 @@ import { Aviso, Usuario } from '../../models';
 import { ToastService } from '../../services/toast.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Storage } from '@angular/fire/storage';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ImageOptimizerService } from '../../services/image-optimizer.service';
@@ -245,12 +245,38 @@ describe('GestionAvisosPage', () => {
     expect(eliminar).not.toHaveBeenCalled();
     expect(confirmar).toBeDefined();
     await confirmar!();
+    await Promise.resolve();
 
     await component.eliminarAlertaSos(sos);
     expect(eliminar.calls.count()).toBe(1);
     expect(confirmar).toBeDefined();
     await confirmar!();
 
+    expect(eliminar.calls.allArgs()).toEqual([['aviso-1'], ['sos-1']]);
+  });
+
+  it('permite cerrar la confirmación de aviso o SOS sin esperar la escritura ni repetirla', async () => {
+    spyOn(console, 'error');
+    const escritura = new Subject<void>();
+    const eliminar = spyOn(firestore, 'deleteAviso').and.returnValues(escritura, of(void 0));
+    await component.eliminarAviso(aviso.idAviso);
+    expect(confirmar!()).toBeUndefined();
+    confirmar!();
+    await component.eliminarAlertaSos(sos);
+    expect(eliminar).toHaveBeenCalledOnceWith('aviso-1');
+    expect(component.eliminandoAviso).toBeTrue();
+    expect(toast.success).not.toHaveBeenCalled();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.lists-col [role="status"]')?.textContent).toContain('Eliminando');
+
+    escritura.error(new Error('Sin conexión'));
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.lists-col [role="alert"]')?.textContent)
+      .toContain('No se pudo eliminar el aviso.');
+    await component.eliminarAlertaSos(sos);
+    expect(confirmar!()).toBeUndefined();
     expect(eliminar.calls.allArgs()).toEqual([['aviso-1'], ['sos-1']]);
   });
 });
