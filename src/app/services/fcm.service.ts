@@ -55,7 +55,7 @@ export class FcmService {
         token,
         fechaRegistro: new Date().toISOString(),
       }));
-      this.configurarMensajesEnPrimerPlano(usuario.idUsuario);
+      this.configurarMensajesEnPrimerPlano(usuario.idUsuario, serviceWorkerRegistration);
     } catch (error) {
       console.error('No se pudo inicializar Firebase Cloud Messaging:', error);
     }
@@ -67,19 +67,43 @@ export class FcmService {
     this.currentUserId = '';
   }
 
-  private configurarMensajesEnPrimerPlano(idUsuario: string): void {
+  private configurarMensajesEnPrimerPlano(idUsuario: string, registration: ServiceWorkerRegistration): void {
     if (this.currentUserId === idUsuario && this.stopForegroundListener) {
       return;
     }
 
     this.detener();
     this.currentUserId = idUsuario;
-    this.stopForegroundListener = this.messagingClient.onMessage(payload => this.mostrarMensajeEnPrimerPlano(payload));
+    this.stopForegroundListener = this.messagingClient.onMessage(payload => {
+      void this.mostrarMensajeEnPrimerPlano(payload, registration).catch(error =>
+        console.error('No se pudo mostrar la notificación push:', error)
+      );
+    });
   }
 
-  private mostrarMensajeEnPrimerPlano(payload: MessagePayload): void {
+  private async mostrarMensajeEnPrimerPlano(payload: MessagePayload, registration: ServiceWorkerRegistration): Promise<void> {
     const title = payload.notification?.title || payload.data?.['title'] || 'AlertBxt';
     const body = payload.notification?.body || payload.data?.['body'] || '';
+    const eventoId = payload.data?.['eventoId']
+      || (payload.data?.['notificacionId'] ? payload.messageId : undefined);
+    if (eventoId) {
+      // Las pestañas comparten el registro de FCM y el bloqueo de este origen.
+      const mostrarUnaVez = async () => {
+        if (!(await registration.getNotifications({ tag: eventoId })).length) {
+          await registration.showNotification(title, {
+            body, tag: eventoId, icon: '/assets/icon/favicon.png', badge: '/assets/icon/favicon.png',
+          });
+        }
+      };
+      if (navigator.locks) {
+        await navigator.locks.request(`alertbxt-push:${eventoId}`, mostrarUnaVez);
+      } else {
+        // La etiqueta reemplaza un aviso activo incluso sin Web Locks.
+        await mostrarUnaVez();
+      }
+      return;
+    }
+
     this.localNotificationService.showNotification(title, {
       body,
       tag: payload.messageId || `fcm-${Date.now()}`,

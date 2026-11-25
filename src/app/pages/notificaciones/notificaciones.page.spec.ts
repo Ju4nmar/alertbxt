@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NgForm } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { AlertController } from '@ionic/angular/standalone';
 import type { AlertButton, AlertOptions } from '@ionic/core';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { Notificacion, Usuario } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
@@ -71,7 +73,10 @@ describe('NotificacionesPage', () => {
             deleteNotificacion: () => of(void 0),
           },
         },
-        { provide: ToastService, useValue: { success: jasmine.createSpy('success').and.resolveTo() } },
+        { provide: ToastService, useValue: {
+          success: jasmine.createSpy('success').and.resolveTo(),
+          error: jasmine.createSpy('error').and.resolveTo(),
+        } },
         {
           provide: LocalNotificationService,
           useValue: {
@@ -87,6 +92,61 @@ describe('NotificacionesPage', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('oculta los cuatro mensajes de campo después de guardar y vuelve a validar al interactuar', async () => {
+    const formulario = fixture.debugElement.query(By.directive(NgForm));
+    const ngForm = formulario.injector.get(NgForm);
+    const errores = () => formulario.nativeElement.querySelectorAll('.field-error');
+    await fixture.whenStable();
+    expect(errores().length).toBe(0);
+    ngForm.form.markAllAsTouched();
+    fixture.detectChanges();
+    expect(errores().length).toBe(4);
+
+    component.tituloNotificacion = aviso.tituloNotificacion;
+    component.descripcionNotificacion = aviso.descripcionNotificacion;
+    component.fechaNotificacion = '2099-06-12';
+    component.horaNotificacion = '09:30';
+    fixture.detectChanges();
+    await fixture.whenStable();
+    formulario.nativeElement.dispatchEvent(new Event('submit', { cancelable: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(addNotificacionSpy).toHaveBeenCalledTimes(1);
+    expect(formulario.nativeElement.querySelector('#fechaNotificacion').value).toBe('');
+    expect(errores().length).toBe(0);
+    expect(ngForm.submitted).toBeFalse();
+
+    formulario.nativeElement.querySelector('#fechaNotificacion').dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(errores().length).toBe(1);
+    expect(errores()[0]?.textContent).toContain('La fecha es requerida.');
+  });
+
+  it('mantiene bloqueado el formulario si la lista se actualiza antes de confirmar la escritura', async () => {
+    const lista = new Subject<Notificacion[]>();
+    const escritura = new Subject<string>();
+    spyOn(TestBed.inject(FirestoreService), 'getNotificacionesVisibles').and.returnValue(lista);
+    addNotificacionSpy.and.returnValue(escritura);
+    sesion.next(residente);
+    component.tituloNotificacion = aviso.tituloNotificacion;
+    component.descripcionNotificacion = aviso.descripcionNotificacion;
+    component.fechaNotificacion = '2099-06-12';
+    component.horaNotificacion = '09:30';
+
+    const guardado = component.guardarNotificacion();
+    lista.next([aviso]);
+    expect(component.isLoadingLista).toBeFalse();
+    expect(component.isLoading).toBeTrue();
+    const segundoIntento = component.guardarNotificacion();
+    expect(addNotificacionSpy).toHaveBeenCalledTimes(1);
+
+    escritura.next('notificacion-1');
+    await Promise.all([guardado, segundoIntento]);
+    expect(component.isLoading).toBeFalse();
   });
 
   it('carga las notificaciones y ordena los vecinos del administrador excluyéndolo', () => {
@@ -134,12 +194,24 @@ describe('NotificacionesPage', () => {
     expect(component.idEditando).toBeNull();
 
     sesion.next(admin);
-    component.editarNotificacion(aviso);
+    await fixture.whenStable();
+    const formulario = fixture.debugElement.query(By.directive(NgForm));
+    const ngForm = formulario.injector.get(NgForm);
+    ngForm.form.markAllAsTouched();
+    fixture.detectChanges();
+    expect(formulario.nativeElement.querySelectorAll('.field-error').length).toBe(4);
+    fixture.nativeElement.querySelector('.btn-editar').click();
+    fixture.detectChanges();
     expect(component.editandoAsignado).toBeTrue();
     expect(component.fechaNotificacion).toBe('2099-06-12');
     expect(component.horaNotificacion).toBe('09:30');
+    expect(ngForm.pristine).toBeTrue();
+    expect(ngForm.touched).toBeFalse();
+    expect(formulario.nativeElement.querySelectorAll('.field-error').length).toBe(0);
+    ngForm.form.markAllAsTouched();
     component.tituloNotificacion = 'Nueva reunión';
     await component.guardarNotificacion();
+    fixture.detectChanges();
 
     expect(actualizar).toHaveBeenCalledOnceWith('notificacion-1', {
       tituloNotificacion: 'Nueva reunión',
@@ -147,6 +219,8 @@ describe('NotificacionesPage', () => {
       fechaHora: aviso.fechaHora,
     });
     expect(component.idEditando).toBeNull();
+    expect(formulario.nativeElement.querySelectorAll('.field-error').length).toBe(0);
+    expect(ngForm.touched).toBeFalse();
   });
 
   it('libera el formulario y conserva los datos si falla el guardado', async () => {
@@ -158,10 +232,16 @@ describe('NotificacionesPage', () => {
     component.horaNotificacion = '09:30';
 
     await component.guardarNotificacion();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(component.notificacionError).toBe('Sin conexión');
     expect(component.isLoading).toBeFalse();
     expect(component.tituloNotificacion).toBe(aviso.tituloNotificacion);
+    expect(fixture.nativeElement.querySelector('.notificacion-form [role="alert"]').textContent).toContain('Sin conexión');
+    expect(fixture.nativeElement.querySelector('#fechaNotificacion').value).toBe('2099-06-12');
+    expect(fixture.nativeElement.querySelector('#horaNotificacion').value).toBe('09:30');
   });
 
   it('elimina una notificación propia solo después de confirmar', async () => {
@@ -178,6 +258,82 @@ describe('NotificacionesPage', () => {
     expect(eliminar).toHaveBeenCalledOnceWith('notificacion-1');
     expect(TestBed.inject(ToastService).success).toHaveBeenCalledOnceWith('Notificación eliminada');
     expect(component.isLoading).toBeFalse();
+  });
+
+  it('cierra el cuadro de Ionic mientras la eliminación y el resultado siguen pendientes', async () => {
+    const controlador = new AlertController();
+    const confirmacion = new Subject<void>();
+    const lista = new BehaviorSubject<Notificacion[]>([{ ...aviso, idUsuario: residente.idUsuario }]);
+    const db = TestBed.inject(FirestoreService);
+    spyOn(db, 'getNotificacionesVisibles').and.returnValue(lista);
+    const eliminar = spyOn(db, 'deleteNotificacion').and.returnValue(confirmacion);
+    sesion.next(residente);
+    crearAlerta.and.callFake(options => controlador.create(options) as unknown as ReturnType<typeof crearAlerta>);
+    await component.eliminarNotificacion(lista.value[0]);
+    const cuadro = (await controlador.getTop())!;
+    const cerrado = cuadro.onDidDismiss();
+    const inicio = performance.now();
+    let listaMs = 0;
+    let escrituraMs = 0;
+    let resultadoMs = 0;
+    let resultado!: () => void;
+    const resultadoMostrado = new Promise<void>(resolve => { resultado = resolve; });
+    const toast = TestBed.inject(ToastService).success as jasmine.Spy;
+    toast.and.callFake(async () => {
+      resultadoMs = performance.now() - inicio;
+      resultado();
+    });
+    const boton = cuadro.querySelector<HTMLButtonElement>('.alert-button-role-destructive')!;
+    boton.click();
+    boton.click();
+    const cambioLista = setTimeout(() => {
+      lista.next([]);
+      listaMs = performance.now() - inicio;
+    }, 100);
+    const escritura = setTimeout(() => {
+      escrituraMs = performance.now() - inicio;
+      confirmacion.next();
+    }, 800);
+    try {
+      await cerrado;
+      const cierreMs = performance.now() - inicio;
+      expect(escrituraMs).toBe(0);
+      expect(eliminar).toHaveBeenCalledTimes(1);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain('Eliminando notificación');
+      await resultadoMostrado;
+      expect(toast).toHaveBeenCalledOnceWith('Notificación eliminada');
+      console.info('Medición Notificaciones (ms)', { cierreMs, listaMs, escrituraMs, resultadoMs });
+    } finally {
+      clearTimeout(cambioLista);
+      clearTimeout(escritura);
+      await cuadro.dismiss();
+    }
+  });
+
+  it('muestra el error de eliminación en la lista y permite confirmar un reintento', async () => {
+    spyOn(console, 'error');
+    const eliminar = spyOn(TestBed.inject(FirestoreService), 'deleteNotificacion').and.returnValues(
+      throwError(() => new Error('Sin conexión')), of(void 0),
+    );
+    sesion.next(residente);
+    const propia = { ...aviso, idUsuario: residente.idUsuario };
+    const confirmar = async () => {
+      await component.eliminarNotificacion(propia);
+      const botones = crearAlerta.calls.mostRecent().args[0].buttons as AlertButton[];
+      expect(botones.find(boton => boton.role === 'destructive')!.handler!(undefined)).toBeUndefined();
+      await Promise.resolve();
+      await Promise.resolve();
+    };
+    await confirmar();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.lista-notificaciones [role="alert"]')?.textContent)
+      .toContain('No se pudo eliminar la notificación.');
+    expect(TestBed.inject(ToastService).success).not.toHaveBeenCalled();
+    expect(component.eliminandoNotificacion).toBeFalse();
+    await confirmar();
+    expect(eliminar).toHaveBeenCalledTimes(2);
+    expect(component.eliminacionError).toBe('');
   });
 
   it('rechaza crear una notificación con fecha y hora en el pasado', async () => {
