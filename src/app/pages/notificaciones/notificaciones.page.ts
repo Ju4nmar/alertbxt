@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
 import { AlertController, IonButton, IonContent, IonInput, IonItem, IonTextarea } from '@ionic/angular/standalone';
 import { Subject, distinctUntilChanged, filter, firstValueFrom, switchMap, takeUntil } from 'rxjs';
 import { Notificacion, Usuario } from '../../models';
@@ -26,6 +26,7 @@ export class NotificacionesPage implements OnInit, OnDestroy {
   private readonly alertController = inject(AlertController);
   private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
+  @ViewChild('notificacionForm') private notificacionForm?: NgForm;
 
   usuario: Usuario | null = null;
   notificaciones: Notificacion[] = [];
@@ -39,6 +40,8 @@ export class NotificacionesPage implements OnInit, OnDestroy {
   // paraTodaLaComunidad, solo el contenido y la fecha/hora.
   editandoAsignado = false;
   isLoading = false;
+  eliminandoNotificacion = false;
+  eliminacionError = '';
   // Separado de isLoading (que también cubre "guardando el formulario"):
   // reusarlo para el skeleton de la lista la haría parpadear cada vez que
   // se guarda una notificación, no solo en la carga inicial.
@@ -104,12 +107,10 @@ export class NotificacionesPage implements OnInit, OnDestroy {
       .subscribe({
         next: notificaciones => {
           this.notificaciones = notificaciones;
-          this.isLoading = false;
           this.isLoadingLista = false;
         },
         error: error => {
           console.error('Error cargando notificaciones:', error);
-          this.isLoading = false;
           this.isLoadingLista = false;
           this.cargaError = 'No se pudieron cargar las notificaciones. Revisa tu conexión e intenta de nuevo.';
         },
@@ -180,7 +181,7 @@ export class NotificacionesPage implements OnInit, OnDestroy {
   }
 
   async guardarNotificacion(): Promise<void> {
-    if (this.isLoading) {
+    if (this.isLoading || this.eliminandoNotificacion) {
       return;
     }
 
@@ -303,10 +304,12 @@ export class NotificacionesPage implements OnInit, OnDestroy {
     this.horaNotificacion = this.toLocalTimeInputValue(fechaHora);
     this.idEditando = notificacion.idNotificaciones || null;
     this.editandoAsignado = esAsignado;
+    this.reiniciarControles();
   }
 
   async eliminarNotificacion(notificacion: Notificacion): Promise<void> {
-    if (!notificacion.idNotificaciones || !(this.esPersonal(notificacion) || this.esCreador(notificacion))) {
+    if (this.isLoading || this.eliminandoNotificacion || !notificacion.idNotificaciones
+      || !(this.esPersonal(notificacion) || this.esCreador(notificacion))) {
       return;
     }
 
@@ -316,23 +319,27 @@ export class NotificacionesPage implements OnInit, OnDestroy {
       message: 'Esta acción no se puede deshacer. ¿Quieres eliminar esta notificación?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { text: 'Eliminar', role: 'destructive', handler: () => this.confirmarEliminarNotificacion(id) },
+        { text: 'Eliminar', role: 'destructive', handler: () => { void this.confirmarEliminarNotificacion(id); } },
       ],
     });
     await alerta.present();
   }
 
   private async confirmarEliminarNotificacion(id: string): Promise<void> {
-    this.isLoading = true;
+    if (this.isLoading || this.eliminandoNotificacion) {
+      return;
+    }
+    this.eliminandoNotificacion = true;
+    this.eliminacionError = '';
     try {
       await firstValueFrom(this.firestoreService.deleteNotificacion(id));
       await this.toastService.success('Notificación eliminada');
     } catch (error) {
       console.error('Error eliminando notificacion:', error);
-      this.notificacionError = 'No se pudo eliminar la notificación.';
-      await this.toastService.error('No se pudo eliminar la notificación.');
+      this.eliminacionError = 'No se pudo eliminar la notificación.';
+      await this.toastService.error(this.eliminacionError);
     } finally {
-      this.isLoading = false;
+      this.eliminandoNotificacion = false;
     }
   }
 
@@ -368,5 +375,16 @@ export class NotificacionesPage implements OnInit, OnDestroy {
     this.modoAsignacion = 'yo';
     this.idsAsignados.clear();
     this.filtroVecino = '';
+    this.reiniciarControles();
+  }
+
+  private reiniciarControles(): void {
+    this.notificacionForm?.resetForm({
+      tituloNotificacion: this.tituloNotificacion,
+      descripcionNotificacion: this.descripcionNotificacion,
+      fechaNotificacion: this.fechaNotificacion,
+      horaNotificacion: this.horaNotificacion,
+      filtroVecino: this.filtroVecino,
+    });
   }
 }

@@ -45,7 +45,7 @@
         La hora es requerida.
       </div>
 
-      <ion-button type="submit" [disabled]="notificacionForm.invalid || isLoading">
+      <ion-button type="submit" [disabled]="notificacionForm.invalid || isLoading || eliminandoNotificacion">
         {{ isLoading ? 'Guardando...' : (idEditando ? 'Actualizar' : 'Guardar') }}
       </ion-button>
     </div>
@@ -84,6 +84,9 @@
   <div class="lista-notificaciones">
     <h3>Lista de notificaciones</h3>
 
+    <p *ngIf="eliminandoNotificacion" class="field-hint" role="status">Eliminando notificación...</p>
+    <div *ngIf="eliminacionError" class="error-message" role="alert">{{ eliminacionError }}</div>
+
     <div *ngIf="cargaError" class="error-message" role="alert">
       {{ cargaError }}
     </div>
@@ -116,7 +119,7 @@
 
       <div class="acciones" *ngIf="esPersonal(notificacion) || esCreador(notificacion)">
         <button class="btn-editar" (click)="editarNotificacion(notificacion)">Editar</button>
-        <button class="btn-eliminar" (click)="eliminarNotificacion(notificacion)">Eliminar</button>
+        <button class="btn-eliminar" [disabled]="isLoading || eliminandoNotificacion" (click)="eliminarNotificacion(notificacion)">Eliminar</button>
       </div>
     </div>
   </div>

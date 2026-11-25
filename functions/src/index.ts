@@ -277,23 +277,29 @@ export const enviarNotificacionPush = onTaskDispatched<NotificacionTaskPayload>(
       destinatarioIds = data.idUsuario ? [data.idUsuario] : [];
     }
 
-    const tokenRefs: TokenRef[] = [];
-    await Promise.all(destinatarioIds.map(async id => {
+    const usuariosPorToken = new Map<string, string[]>();
+    await Promise.all([...new Set(destinatarioIds)].map(async id => {
       const dispositivosSnap = await db.collection(`usuarios/${id}/dispositivos`).get();
-      dispositivosSnap.docs.forEach(doc => tokenRefs.push({ idUsuario: id, token: doc.id }));
+      dispositivosSnap.docs.forEach(doc => {
+        const usuarios = usuariosPorToken.get(doc.id) ?? [];
+        usuarios.push(id);
+        usuariosPorToken.set(doc.id, usuarios);
+      });
     }));
 
-    if (tokenRefs.length) {
+    if (usuariosPorToken.size) {
+      const eventoId = `notificacion:${idNotificacion}:${fechaHoraEsperada}`;
       const messaging = getMessaging();
-      for (const tokenChunk of chunk(tokenRefs, FCM_MULTICAST_LIMIT)) {
+      for (const tokens of chunk([...usuariosPorToken.keys()], FCM_MULTICAST_LIMIT)) {
         const response = await messaging.sendEachForMulticast({
-          tokens: tokenChunk.map(ref => ref.token),
+          tokens,
           notification: {
             title: 'Notificación',
             body: data.tituloNotificacion || 'Tienes una notificación pendiente.',
           },
-          data: { notificacionId: idNotificacion },
+          data: { notificacionId: idNotificacion, eventoId },
           webpush: {
+            notification: { tag: eventoId, icon: '/assets/icon/favicon.png' },
             fcmOptions: { link: '/notificaciones' },
           },
         });
@@ -305,8 +311,10 @@ export const enviarNotificacionPush = onTaskDispatched<NotificacionTaskPayload>(
 
           const code = result.error?.code;
           if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-            const tokenRef = tokenChunk[index];
-            await db.doc(`usuarios/${tokenRef.idUsuario}/dispositivos/${tokenRef.token}`).delete();
+            const token = tokens[index];
+            await Promise.all(usuariosPorToken.get(token)!.map(id =>
+              db.doc(`usuarios/${id}/dispositivos/${token}`).delete()
+            ));
           }
         }));
       }
